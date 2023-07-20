@@ -1,0 +1,24 @@
+#for beautifulsoup
+beautifulsoup4
+lxml
+
+# additionnal
+colorama
+pandas
+pandas-stubs
+openai
+langchain
+python-dotenv
+tiktoken
+weaviate-client
+termcolor
+torch
+nltk
+transformers
+sentence_transformers
+einops
+bitsandbytes
+accelerate
+rank_bm25
+datasets
+peft
