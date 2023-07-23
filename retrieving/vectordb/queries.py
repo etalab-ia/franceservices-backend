@@ -1,17 +1,19 @@
 from typing import List, Optional
 
-from vectordb.embedding import VectorEmbeddor
+from weaviate import Client
 
-
-from .settings import WEAVIATE_CLIENT
+from .embedding import VectorEmbeddor
 
 
 def query_n_contexts(
-    question, n_neighbors: int, embeddor: Optional[VectorEmbeddor] = None
+    weaviate_client: Client,
+    question,
+    n_neighbors: int,
+    embeddor: Optional[VectorEmbeddor] = None,
 ) -> List[dict]:
     if not embeddor:
         contexts = (
-            WEAVIATE_CLIENT.query.get(
+            weaviate_client.query.get(
                 "Contexts",
                 ["title", "theme", "content", "xml_url"],
             )
@@ -23,7 +25,7 @@ def query_n_contexts(
 
     vector = embeddor.embed(question)
     contexts = (
-        WEAVIATE_CLIENT.query.get(
+        weaviate_client.query.get(
             "Contexts",
             ["title", "theme", "content", "xml_url"],
         )
@@ -34,7 +36,9 @@ def query_n_contexts(
     return contexts["data"]["Get"]["Contexts"]
 
 
-def get_all_xml_attribute(attribute: str, batch_size=20) -> List[str]:
+def get_all_xml_attribute(
+    weaviate_client: Client, attribute: str, batch_size=20
+) -> List[str]:
     class_name = "Contexts"
     cursor = None
 
@@ -42,7 +46,7 @@ def get_all_xml_attribute(attribute: str, batch_size=20) -> List[str]:
         attributes: list[str], cursor: Optional[str], batch_size: int
     ) -> list[str]:
         query = (
-            WEAVIATE_CLIENT.query.get(class_name, [attribute])
+            weaviate_client.query.get(class_name, [attribute])
             .with_additional(["id"])
             .with_limit(batch_size)
         )

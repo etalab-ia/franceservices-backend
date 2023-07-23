@@ -47,7 +47,7 @@ def generate_questions(
         raw_questions = question_generator.get_question(contexts, QUESTION_NB)
         gen_questions = raw_questions.split("\n")
 
-        with open("generated_questions.csv", "a", encoding="utf-8") as file:
+        with open(GENERATED_QUESTIONS, "a", encoding="utf-8") as file:
             writer = csv.writer(file, delimiter=";")
             for i in range(len(gen_questions)):
                 question = gen_questions[i][3:]

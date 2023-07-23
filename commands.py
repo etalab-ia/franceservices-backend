@@ -1,20 +1,25 @@
+import json
 import argparse
+
+from retrieving.bm25_retriever import BM25Retriever
+from retrieving.vectordb import WeaviateRetriever
+
+from fine_tuning import fine_tune_model
 from corpus_generation.gpt_generators.question_generators import (
     GPTQuestionGenerator,
     GPTQuestionReformulation,
 )
-
-from retrieving.bm25_retriever import BM25Retriever
-
-# from fine_tuning import fine_tune_model
 from corpus_generation import CorpusGenerator, generate_questions
+from corpus_generation.gpt_generators import GPTAnswerGenerator, GPTPromptGenerator
 from corpus_generation.xgen_generators import (
     XGENAnswerGenerator,
     XGenPromptGenerator,
     get_count_tokens_fn,
 )
 
-from corpus_generation.gpt_generators import GPTAnswerGenerator, GPTPromptGenerator
+from xml_parsing import complete_parsing
+
+from evaluation import crucial_words_tfidf_textcollection, calculate_tfidf
 
 COMMANDS_PARSER = argparse.ArgumentParser(
     description="Run commands for the project",
@@ -57,17 +62,41 @@ COMMANDS_PARSER.add_argument(
     action="store_true",
 )
 
+COMMANDS_PARSER.add_argument(
+    "--evaluate_dataset_quality",
+    help="This command will generate a json with all apperances\
+          of keywords of answers in corresponding contexts",
+    action="store_true",
+)
+COMMANDS_PARSER.add_argument(
+    "--update_tfidf_for_evaluation",
+    help="This command will compute tfidf on a chose dataset to update tfidf weights",
+    action="store_true",
+)
+
 
 def execute_commands(**commands):
     if commands.get("fine_tune_model"):
-        # fine_tune_model()
+        fine_tune_model()
         return
 
     if commands.get("parse_xml"):
+        complete_parsing()
+        return
+
+    if commands.get("evaluate_dataset_quality"):
+        crucial_words_tfidf_textcollection()
+        return
+
+    if commands.get("update_tfidf_for_evaluation"):
+        calculate_tfidf()
         return
 
     if commands.get("run_weaviate_migration"):
-        return
+        context_retriever = WeaviateRetriever()
+        with open("json_database.json", "r", encoding="utf-8") as json_file:
+            xml_files_to_vectorize = json.load(json_file)
+        context_retriever.run_weaviate_migration(xml_files_to_vectorize)
 
     context_retriever = BM25Retriever()
     token_counter_fn = get_count_tokens_fn("Salesforce/xgen-7b-4k-base")

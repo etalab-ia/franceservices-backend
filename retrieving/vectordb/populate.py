@@ -2,10 +2,10 @@ from ast import Raise
 from typing import List, Optional
 import json
 
-import pandas as pd  # type: ignore
+import pandas as pd
+from weaviate import Client  # type: ignore
 
-from .settings import WEAVIATE_CLIENT
-from .text_spliter import HybridSplitter
+from ..text_spliter import HybridSplitter
 from .embedding import VectorEmbeddor
 
 
@@ -22,7 +22,7 @@ def get_xml_datas(xml_parsed_path: str) -> List[dict]:
     return xml_files_to_vectorize
 
 
-def create_schema(schema_name: str):
+def create_schema(weaviate_client: Client, schema_name: str):
     class_obj = {
         "class": schema_name,
         "description": "Contexts to be used for answering questions with a chatbot",
@@ -67,22 +67,22 @@ def create_schema(schema_name: str):
 
     existing_classes = [
         existing_class["class"]
-        for existing_class in WEAVIATE_CLIENT.schema.get()["classes"]
+        for existing_class in weaviate_client.schema.get()["classes"]
     ]
     if schema_name not in existing_classes:
         print('Creating class "Contexts" in Weaviate...')
-        WEAVIATE_CLIENT.schema.create_class(class_obj)
+        weaviate_client.schema.create_class(class_obj)
 
 
-def reset_schema(schema_name: str):
+def reset_schema(weaviate_client: Client, schema_name: str):
     existing_classes = [
         existing_class["class"]
-        for existing_class in WEAVIATE_CLIENT.schema.get()["classes"]
+        for existing_class in weaviate_client.schema.get()["classes"]
     ]
 
     if schema_name in existing_classes:
         print('Deleting schema "Contexts" in Weaviate...')
-        WEAVIATE_CLIENT.schema.delete_class(schema_name)
+        weaviate_client.schema.delete_class(schema_name)
 
 
 def print_import_logs(import_number: int, *args) -> None:
@@ -92,13 +92,15 @@ def print_import_logs(import_number: int, *args) -> None:
 
 
 def run_weaviate_migration(
-    xml_files_to_vectorize: List[dict], embeddor: Optional[VectorEmbeddor] = None
+    weaviate_client: Client,
+    xml_files_to_vectorize: List[dict],
+    embeddor: Optional[VectorEmbeddor] = None,
 ) -> None:
-    reset_schema("Contexts")
-    create_schema("Contexts")
+    reset_schema(weaviate_client, "Contexts")
+    create_schema(weaviate_client, "Contexts")
     text_splitter = HybridSplitter(chunk_size=1000, chunk_overlap=100)
 
-    with WEAVIATE_CLIENT.batch as batch:
+    with weaviate_client.batch as batch:
         batch.batch_size = 10
         for index, xml_file in enumerate(xml_files_to_vectorize):
             xml_text_chunks = text_splitter.split_text(xml_file["data"])
@@ -122,6 +124,6 @@ def run_weaviate_migration(
                 if embeddor:
                     vector = embeddor.embed(xml_text_chunk)
 
-                WEAVIATE_CLIENT.batch.add_data_object(
+                weaviate_client.batch.add_data_object(
                     properties, "Contexts", vector=vector
                 )

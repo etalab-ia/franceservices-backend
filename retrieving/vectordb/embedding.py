@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from weaviate import Client  # type: ignore
 
 from sentence_transformers import SentenceTransformer  # type: ignore
 from transformers import AutoTokenizer, AutoModel
@@ -8,10 +7,6 @@ from torch import Tensor
 
 
 class VectorEmbeddor(ABC):
-    def __init__(self, database: Client, moduleconfig="text2vec-transformers"):
-        self.database = database
-        self.moduleconfig = moduleconfig
-
     @abstractmethod
     def embed(self, context: str):
         pass
@@ -22,8 +17,7 @@ class VectorEmbeddor(ABC):
 
 
 class CPUEmbeddor(VectorEmbeddor):
-    def __init__(self, database: Client):
-        super().__init__(database)
+    def __init__(self):
         self.model = self.launch_model()
 
     def embed(self, context: str):
@@ -34,8 +28,7 @@ class CPUEmbeddor(VectorEmbeddor):
 
 
 class MultiLingualE5Embeddor(VectorEmbeddor):
-    def __init__(self, database: Client):
-        super().__init__(database)
+    def __init__(self):
         self.model_name = "intfloat/multilingual-e5-large"
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.model = self.launch_model()

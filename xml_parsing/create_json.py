@@ -1,20 +1,13 @@
 import csv
 import json
-import os
 import sys
 import copy
 from retrieving.text_spliter import HybridSplitter
 
-# Chemin vers le fichier CSV
-CSV_PATH = os.path.join("datas/cleaned_xml", "string_publications_xml_parsed.csv")
-JSON_PARSED_PATH = os.path.join("datas/json_files", "string_complete_db.json")
-JSON_ORGANIZED_PATH = os.path.join("datas/json_files", "organized_string_db.json")
-
-DATA_COLUMN = ["introduction", "liste_situations", "other_content"]
-METADATA_COLUMN = ["file", "title", "xml_url", "surtitre", "subject", "theme"]
+from .params import METADATA_COLUMN
 
 
-def csv_to_json(csv_path: str = "datas/cleaned_xml/publications_xml_parsed.csv"):
+def csv_to_listdict(csv_path: str):
     # Augmentation de la taille maximale du champ
     csv.field_size_limit(sys.maxsize)
 
@@ -36,7 +29,7 @@ def csv_to_json(csv_path: str = "datas/cleaned_xml/publications_xml_parsed.csv")
         return liste_dictionnaires
 
 
-def organize_datas(input_dico, metadata_columns):
+def organize_datas(input_dico, metadata_columns=METADATA_COLUMN):
     output_dico = {"data": "", "metadata": {}}
     for key in input_dico:
         if key in metadata_columns:
@@ -49,33 +42,24 @@ def organize_datas(input_dico, metadata_columns):
     return output_dico
 
 
-def save_json(
-    liste_dictionnaires, json_path: str = "datas/json_files/string_complete_db.json"
-):
+def save_json(liste_dictionnaires, json_path: str):
     with open(json_path, "w", encoding="utf-8") as fichier_json:
         json.dump(liste_dictionnaires, fichier_json, ensure_ascii=False)
 
 
-def create_main_json(xml_parsed_json_path, json_organized_path):
+def create_main_json(
+    csv_path: str = "_data/json_database/files.json",
+    json_organized_path: str = "_data/json_database/files.json",
+):
     output_list = []
-    with open(xml_parsed_json_path, "r", encoding="utf-8") as json_file:
-        xml_files_to_organize = json.load(json_file)
-        for input_dico in xml_files_to_organize:
-            output_dico = organize_datas(input_dico, METADATA_COLUMN)
-            output_list.append(output_dico)
-        save_json(output_list, json_organized_path)
-
-
-def all_json_actions(csv_path: str, json_parsed_path: str, json_organized_path: str):
-    save_json(csv_to_json(csv_path), json_parsed_path)
-    create_main_json(json_parsed_path, json_organized_path)
+    list_dict = csv_to_listdict(csv_path)
+    for input_dico in list_dict:
+        output_dico = organize_datas(input_dico, METADATA_COLUMN)
+        output_list.append(output_dico)
+    save_json(output_list, json_organized_path)
 
 
 ### Code to chunk data
-
-
-JSON_FILE_SOURCE = os.path.join("datas/json_files", "organized_string_db.json")
-JSON_FILE_TARGET = os.path.join("datas/json_files", "chunk_organized_string_db.json")
 
 
 def all_to_chunk(json_file_source, json_file_target):
@@ -95,12 +79,14 @@ def all_to_chunk(json_file_source, json_file_target):
         json.dump(new_list, target_file, ensure_ascii=False)
 
 
-def chunk_db():
-    all_to_chunk(JSON_FILE_SOURCE, JSON_FILE_TARGET)
+### Final Command for create json
 
 
-#### Final Command for create json
-
-
-def final_command_json():
-    all_json_actions(CSV_PATH, JSON_PARSED_PATH, JSON_ORGANIZED_PATH)
+def create_json_db(
+    csv_path="_data/json_database/files.json",
+    json_organized_path="_data/json_database/files.json",
+    json_file_source="_data/json_database/files.json",
+    json_file_target="_data/json_database/xmlfiles_as_chunks.json",
+):
+    create_main_json(csv_path, json_organized_path)
+    all_to_chunk(json_file_source, json_file_target)
