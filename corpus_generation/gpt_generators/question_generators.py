@@ -21,9 +21,7 @@ class GPTQuestionGenerator(QuestionGenerator):
             ],
         )
 
-        return first_prompt["choices"][0]["message"][
-            "content"
-        ]  # List(str) des mots-clés
+        return first_prompt["choices"][0]["message"]["content"]  # List(str) des mots-clés
 
         # Prompt pour la génération de questions
 
@@ -50,24 +48,16 @@ class GPTQuestionGenerator(QuestionGenerator):
                 + "Numérote les questions. Voici les questions :",
             },
         ]
-        return self.prompt_openai_api(
-            messages, retry_on_fail=True
-        )  # Liste numérotée des questions générées
+        return self.prompt_openai_api(messages, retry_on_fail=True)  # Liste numérotée des questions générées
 
-    def prompt_openai_api(
-        self, messages: list[dict], retry_on_fail: bool = True
-    ) -> dict:
+    def prompt_openai_api(self, messages: list[dict], retry_on_fail: bool = True) -> dict:
         if not retry_on_fail:
-            return openai.ChatCompletion.create(
-                model=self.model_name, messages=messages
-            )
+            return openai.ChatCompletion.create(model=self.model_name, messages=messages)
 
         retry = True
         while retry:
             try:
-                response = openai.ChatCompletion.create(
-                    model=self.model_name, messages=messages
-                )
+                response = openai.ChatCompletion.create(model=self.model_name, messages=messages)
                 retry = False
             except Exception as error:
                 print(error)
@@ -96,20 +86,14 @@ class GPTQuestionReformulation(QuestionGenerator):
 
         return self.prompt_openai_api(messages, retry_on_fail=True)
 
-    def prompt_openai_api(
-        self, messages: list[dict], retry_on_fail: bool = True
-    ) -> dict:
+    def prompt_openai_api(self, messages: list[dict], retry_on_fail: bool = True) -> dict:
         if not retry_on_fail:
-            return openai.ChatCompletion.create(
-                model=self.model_name, messages=messages
-            )
+            return openai.ChatCompletion.create(model=self.model_name, messages=messages)
 
         retry = True
         while retry:
             try:
-                response = openai.ChatCompletion.create(
-                    model=self.model_name, messages=messages
-                )
+                response = openai.ChatCompletion.create(model=self.model_name, messages=messages)
                 retry = False
             except Exception as error:  # pylint: disable=broad-except
                 print(error)

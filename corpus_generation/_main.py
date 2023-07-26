@@ -1,26 +1,18 @@
 import csv
 import json
 import time
+
 import pandas as pd
 
-
 from retrieving.retrieving import ContextRetriever
-from .prompt_generation import PromptGenerator
+
 from .llm_generation import AnswerQuestionGenerator, QuestionGenerator
-
-from .params import (
-    XML_PARSED_PATH,
-    GENERATED_QUESTIONS,
-    QUESTION_NB,
-)
+from .params import GENERATED_QUESTIONS, QUESTION_NB, XML_PARSED_PATH
+from .prompt_generation import PromptGenerator
 
 
-def generate_questions(
-    question_generator: QuestionGenerator, reformu_generator: QuestionGenerator
-):
-    with open(
-        XML_PARSED_PATH, "r", encoding="utf-8"
-    ) as origin:  # Récupération de l'ensemble des chunks
+def generate_questions(question_generator: QuestionGenerator, reformu_generator: QuestionGenerator):
+    with open(XML_PARSED_PATH, "r", encoding="utf-8") as origin:  # Récupération de l'ensemble des chunks
         data = json.load(origin)
 
     progres, chunks_nb = 0, len(data)
@@ -37,9 +29,7 @@ def generate_questions(
         contexts = []
 
         while (
-            progres != chunks_nb - 1
-            and len(contexts) < 10
-            and data[progres]["metadata"]["xml_url"] == url_fiche
+            progres != chunks_nb - 1 and len(contexts) < 10 and data[progres]["metadata"]["xml_url"] == url_fiche
         ):  # on génère les questions par rappport à une seule fiche. La taille maximale de chunks est de 10, observée en testant à la main.
             contexts.append(data[progres]["data"])
             progres += 1
@@ -51,9 +41,7 @@ def generate_questions(
             writer = csv.writer(file, delimiter=";")
             for i in range(len(gen_questions)):
                 question = gen_questions[i][3:]
-                if (
-                    len(question) > 10
-                ):  # par sécurité, il arrive que des problèmes arrivent lors du split
+                if len(question) > 10:  # par sécurité, il arrive que des problèmes arrivent lors du split
                     reformulated_questions = reformu_generator.get_question(
                         question
                     )  # obtention des 4 questions reformulées

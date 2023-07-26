@@ -65,20 +65,14 @@ def create_schema(weaviate_client: Client, schema_name: str):
         ],
     }
 
-    existing_classes = [
-        existing_class["class"]
-        for existing_class in weaviate_client.schema.get()["classes"]
-    ]
+    existing_classes = [existing_class["class"] for existing_class in weaviate_client.schema.get()["classes"]]
     if schema_name not in existing_classes:
         print('Creating class "Contexts" in Weaviate...')
         weaviate_client.schema.create_class(class_obj)
 
 
 def reset_schema(weaviate_client: Client, schema_name: str):
-    existing_classes = [
-        existing_class["class"]
-        for existing_class in weaviate_client.schema.get()["classes"]
-    ]
+    existing_classes = [existing_class["class"] for existing_class in weaviate_client.schema.get()["classes"]]
 
     if schema_name in existing_classes:
         print('Deleting schema "Contexts" in Weaviate...')
@@ -124,6 +118,4 @@ def run_weaviate_migration(
                 if embeddor:
                     vector = embeddor.embed(xml_text_chunk)
 
-                weaviate_client.batch.add_data_object(
-                    properties, "Contexts", vector=vector
-                )
+                weaviate_client.batch.add_data_object(properties, "Contexts", vector=vector)

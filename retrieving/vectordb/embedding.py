@@ -36,12 +36,8 @@ class MultiLingualE5Embeddor(VectorEmbeddor):
     def launch_model(self) -> SentenceTransformer:
         return AutoModel.from_pretrained(self.model_name)
 
-    def average_pool(
-        self, last_hidden_states: Tensor, attention_mask: Tensor
-    ) -> Tensor:
-        last_hidden = last_hidden_states.masked_fill(
-            ~attention_mask[..., None].bool(), 0.0
-        )
+    def average_pool(self, last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
+        last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
         return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
 
     def embed(self, text_to_embed: str):
@@ -53,8 +49,6 @@ class MultiLingualE5Embeddor(VectorEmbeddor):
             return_tensors="pt",
         )
         outputs = self.model(**batch_dict)
-        embedding = self.average_pool(
-            outputs.last_hidden_state, batch_dict["attention_mask"]
-        )
+        embedding = self.average_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
         embedding = F.normalize(embedding, p=2, dim=1)
         return embedding

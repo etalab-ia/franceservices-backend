@@ -18,9 +18,7 @@ class SearchResult(TypedDict):
     title: str
 
 
-def bm25_retrieval(
-    question: str, json_file: str, top_k: Union[int, None] = 3, model=BM25Okapi
-) -> List[SearchResult]:
+def bm25_retrieval(question: str, json_file: str, top_k: Union[int, None] = 3, model=BM25Okapi) -> List[SearchResult]:
     # Load law documents from JSON file
     with open(json_file, "r", encoding="utf-8") as data_file:
         law_documents = json.load(data_file)
@@ -62,6 +60,4 @@ class BM25Retriever(ContextRetriever):
         self.database = json_database
 
     def retrieve_contexts(self, question: str, n_contexts: int) -> List[SearchResult]:
-        return bm25_retrieval(
-            question, self.database, top_k=n_contexts, model=BM25Okapi
-        )
+        return bm25_retrieval(question, self.database, top_k=n_contexts, model=BM25Okapi)

@@ -49,9 +49,7 @@ def load_model() -> PeftModel:
 
     class CastOutputToFloat(torch.nn.Sequential):
         def forward(self, vector):  # pylint: disable=arguments-renamed
-            return (
-                super().forward(vector).to(torch.float32)  # pylint: disable=no-member
-            )
+            return super().forward(vector).to(torch.float32)  # pylint: disable=no-member
 
     model.lm_head = CastOutputToFloat(model.lm_head)
 

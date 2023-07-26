@@ -140,9 +140,7 @@ class HybridSplitter(NLTKTextSplitter):
         self,
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
-        length_function: Callable[
-            [str], int
-        ] = None,  # This argument should really not be overwritten
+        length_function: Callable[[str], int] = None,  # This argument should really not be overwritten
         separator: str = "\n\n",
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
@@ -168,16 +166,12 @@ class HybridSplitter(NLTKTextSplitter):
     def split_text(self, text: str) -> List[str]:
         # When looking at the code for NTLKTextSplitter.split_text(), notice that self._tokenizer splits into individual sentences, then re-merges them into chunks.
 
-        sentences = (
-            sentence + ("" if sentence[-1] == " " else " ")
-            for sentence in self._tokenizer(text)
-        )
+        sentences = (sentence + ("" if sentence[-1] == " " else " ") for sentence in self._tokenizer(text))
         # Add a space to the end of every sentence so that we don't transform 'Sen1. Sen2' into 'Sen1.Sen2' when merging
         # This is important if we want to re-use the NLTK splitter down the line, as it actually is sensitive to the presence of this space
 
         merges = [
-            merge + ("" if merge[-1] == " " else " ")
-            for merge in self._merge_splits(sentences, "")
+            merge + ("" if merge[-1] == " " else " ") for merge in self._merge_splits(sentences, "")
         ]  # Same as above, also add spaces
         # Makes use of our custom length_function in _merge_splits
         return merges
@@ -191,9 +185,7 @@ class PartEnforceHybridSplitter(HybridSplitter):
     """
 
     def __init__(self, part_separator: str = "\n ====== _-_ ===== \n", **kwargs: Any):
-        super().__init__(
-            **kwargs
-        )  # super().__init__() call to the parent NLTKTextSplitter class
+        super().__init__(**kwargs)  # super().__init__() call to the parent NLTKTextSplitter class
         self.part_separator = part_separator
 
     def split_text(self, text: str) -> List[str]:

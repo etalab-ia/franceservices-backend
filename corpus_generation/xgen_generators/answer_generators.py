@@ -15,9 +15,7 @@ class XGENAnswerGenerator(AnswerQuestionGenerator):
         max_new_tokens: int = 100,
         repetition_penalty: float = 1.2,
     ) -> None:
-        super().__init__(
-            prompt_generator, model_name, max_new_tokens, repetition_penalty
-        )
+        super().__init__(prompt_generator, model_name, max_new_tokens, repetition_penalty)
         self.tokenizer = get_tokenizer(self.prompt_generator.model_name)
         if self.model_name.startswith("./"):
             self.model = self.load_local_model(self.model_name)
@@ -31,9 +29,7 @@ class XGENAnswerGenerator(AnswerQuestionGenerator):
 
     def load_local_model(self, model_name: str) -> AutoModelForCausalLM:
         config = PeftConfig.from_pretrained(model_name)
-        print(
-            f"loading fine-tuned model {config.base_model_name_or_path} from {model_name}..."
-        )
+        print(f"loading fine-tuned model {config.base_model_name_or_path} from {model_name}...")
         model = AutoModelForCausalLM.from_pretrained(
             config.base_model_name_or_path,
             return_dict=True,
@@ -45,10 +41,7 @@ class XGENAnswerGenerator(AnswerQuestionGenerator):
 
     def get_answer(self, question: str, contexts: list[str]) -> str:
         prompt = self.prompt_generator.create_prompt_messages(question, contexts)
-        print(
-            f"prompting {self.model_name} with "
-            f"{self.prompt_generator.count_tokens(prompt)} tokens..."
-        )
+        print(f"prompting {self.model_name} with " f"{self.prompt_generator.count_tokens(prompt)} tokens...")
         inputs = self.tokenizer(prompt, return_tensors="pt").to("cuda")
         response = self.model.generate(
             **inputs,

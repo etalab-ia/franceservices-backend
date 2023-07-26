@@ -24,12 +24,8 @@ def get_xml_content(xml_filepath: str) -> dict:
                 context["xml_url"] = soup.find("Publication")["spUrl"]
 
         if soup.find("Introduction") is not None:
-            context["introduction"] = soup.find("Introduction").get_text(
-                " ", strip=True
-            )
-            context["introduction"] = unicodedata.normalize(
-                "NFKC", context["introduction"]
-            )
+            context["introduction"] = soup.find("Introduction").get_text(" ", strip=True)
+            context["introduction"] = unicodedata.normalize("NFKC", context["introduction"])
         else:
             context["introduction"] = ""
 
@@ -58,34 +54,19 @@ def get_xml_content(xml_filepath: str) -> dict:
         context["liste_situations"] = ""
         if soup.find("ListeSituations") is not None:
             context["liste_situations"] = "Liste des situations : "
-            for i, situation in enumerate(
-                soup.find("ListeSituations").find_all("Situation")
-            ):
+            for i, situation in enumerate(soup.find("ListeSituations").find_all("Situation")):
                 situation_title = situation.find("Titre").get_text(" ", strip=True)
                 situation_texte = situation.find("Texte").get_text(" ", strip=True)
                 situation_title = unicodedata.normalize("NFKC", situation_title)
                 situation_texte = unicodedata.normalize("NFKC", situation_texte)
 
-                context["liste_situations"] += (
-                    " Cas n°"
-                    + str(i + 1)
-                    + " : "
-                    + situation_title
-                    + " : "
-                    + situation_texte
-                )
+                context["liste_situations"] += " Cas n°" + str(i + 1) + " : " + situation_title + " : " + situation_texte
 
         context["other_content"] = ""
         if soup.find("Publication") is not None:
             if soup.find("Publication").find("Texte", recursive=False) is not None:
-                context["other_content"] = (
-                    soup.find("Publication")
-                    .find("Texte", recursive=False)
-                    .get_text(" ", strip=True)
-                )
-                context["other_content"] = unicodedata.normalize(
-                    "NFKC", context["other_content"]
-                )
+                context["other_content"] = soup.find("Publication").find("Texte", recursive=False).get_text(" ", strip=True)
+                context["other_content"] = unicodedata.normalize("NFKC", context["other_content"])
 
         return context
 

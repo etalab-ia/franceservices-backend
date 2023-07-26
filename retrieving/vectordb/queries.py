@@ -36,20 +36,12 @@ def query_n_contexts(
     return contexts["data"]["Get"]["Contexts"]
 
 
-def get_all_xml_attribute(
-    weaviate_client: Client, attribute: str, batch_size=20
-) -> List[str]:
+def get_all_xml_attribute(weaviate_client: Client, attribute: str, batch_size=20) -> List[str]:
     class_name = "Contexts"
     cursor = None
 
-    def recursive_attributes_query(
-        attributes: list[str], cursor: Optional[str], batch_size: int
-    ) -> list[str]:
-        query = (
-            weaviate_client.query.get(class_name, [attribute])
-            .with_additional(["id"])
-            .with_limit(batch_size)
-        )
+    def recursive_attributes_query(attributes: list[str], cursor: Optional[str], batch_size: int) -> list[str]:
+        query = weaviate_client.query.get(class_name, [attribute]).with_additional(["id"]).with_limit(batch_size)
 
         if cursor is not None:
             result = query.with_after(cursor).do()

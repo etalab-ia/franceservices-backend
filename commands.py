@@ -1,33 +1,22 @@
-import json
 import argparse
+import json
 
-from retrieving.bm25_retriever import BM25Retriever
-from retrieving.vectordb import WeaviateRetriever
-
-from fine_tuning import fine_tune_model
-from corpus_generation.gpt_generators.question_generators import (
-    GPTQuestionGenerator,
-    GPTQuestionReformulation,
-)
 from corpus_generation import CorpusGenerator, generate_questions
 from corpus_generation.gpt_generators import GPTAnswerGenerator, GPTPromptGenerator
-from corpus_generation.xgen_generators import (
-    XGENAnswerGenerator,
-    XGenPromptGenerator,
-    get_count_tokens_fn,
-)
-
+from corpus_generation.gpt_generators.question_generators import GPTQuestionGenerator, GPTQuestionReformulation
+from corpus_generation.xgen_generators import XGENAnswerGenerator, XGenPromptGenerator, get_count_tokens_fn
+from evaluation import calculate_tfidf, crucial_words_tfidf_textcollection
+from fine_tuning import fine_tune_model
+from retrieving.bm25_retriever import BM25Retriever
+from retrieving.vectordb import WeaviateRetriever
 from xml_parsing import complete_parsing
-
-from evaluation import crucial_words_tfidf_textcollection, calculate_tfidf
 
 COMMANDS_PARSER = argparse.ArgumentParser(
     description="Run commands for the project",
 )
 COMMANDS_PARSER.add_argument(
     "--parse_xml",
-    help="This command will parse the xml files, "
-    "cut them into chunks of 1000 tokens and save them in a json file",
+    help="This command will parse the xml files, " "cut them into chunks of 1000 tokens and save them in a json file",
     action="store_true",
 )
 
@@ -51,8 +40,7 @@ COMMANDS_PARSER.add_argument(
 
 COMMANDS_PARSER.add_argument(
     "--run_weaviate_migration",
-    help="This command will run the migration script for weaviate, "
-    "importing the xml files in a vector database",
+    help="This command will run the migration script for weaviate, " "importing the xml files in a vector database",
     action="store_true",
 )
 

@@ -44,9 +44,7 @@ class FalconQuestionAnswering7B(AnswerQuestionGenerator):
 
     def get_answer(self, question: str, contexts: list[str]) -> str:
         prompt = self.prompt_generator.create_prompt_messages(question, contexts)
-        print(
-            f"prompting {self.model_name} with {self.count_tokens([prompt])} tokens..."
-        )
+        print(f"prompting {self.model_name} with {self.count_tokens([prompt])} tokens...")
         sequences = self.pipeline(
             prompt,
             max_length=1300,
@@ -77,9 +75,7 @@ class FalconQuestionAnswering40B(AnswerQuestionGenerator):
             device_map=self.device,
             load_in_8bit=True,
         )
-        self.pipeline = transformers.pipeline(
-            "text-generation", model=self.model, tokenizer=self.tokenizer
-        )
+        self.pipeline = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
 
     def count_tokens(self, contexts: list[str]) -> int:
         num_tokens = 0
@@ -89,9 +85,7 @@ class FalconQuestionAnswering40B(AnswerQuestionGenerator):
 
     def get_answer(self, question: str, contexts: list[str]) -> str:
         prompt = self.prompt_generator.create_prompt_messages(question, contexts)
-        print(
-            f"prompting {self.model_name} with {self.count_tokens([prompt])} tokens..."
-        )
+        print(f"prompting {self.model_name} with {self.count_tokens([prompt])} tokens...")
         sequences = self.pipeline(
             prompt,
             max_length=1300,

@@ -3,9 +3,7 @@ from ..prompt_generation import PromptGenerator
 
 class XGenPromptGenerator(PromptGenerator):
     def create_context_text(self, contexts: list[str]) -> str:
-        texts_for_context = [
-            f"référence {index} : {context}" for index, context in enumerate(contexts)
-        ]
+        texts_for_context = [f"référence {index} : {context}" for index, context in enumerate(contexts)]
         return "\n\n".join(texts_for_context)
 
     def create_prompt_messages(self, question: str, contexts: list[str]) -> str:

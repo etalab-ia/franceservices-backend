@@ -24,9 +24,7 @@ def ner_fr(texte, model_name=MOD2):
     """
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForTokenClassification.from_pretrained(model_name)
-    nlp = pipeline(
-        "ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple"
-    )
+    nlp = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
     result_ner = nlp(texte)
     output = {"LOC": [], "PER": [], "ORG": [], "MISC": []}
     for dico in result_ner:
@@ -75,7 +73,9 @@ def extract_numerical_data(texte):
         current_text = current_text.replace(date_complete, "")
 
     ### Partial Dates
-    pattern_monthyear = r"\b(?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+\d{4}\b"
+    pattern_monthyear = (
+        r"\b(?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+\d{4}\b"
+    )
     monthyear = re.findall(pattern_monthyear, current_text, re.IGNORECASE)
     complete_numerical_data += monthyear
     only_numbers += monthyear
@@ -96,9 +96,7 @@ def extract_numerical_data(texte):
     symbols = re.findall(pattern_symbols, current_text, re.IGNORECASE)
     complete_numerical_data += symbols
 
-    pattern_symbols_tuple = (
-        r"\b(?<!\d|[,.])(\d{1,3}(?:\s?\d{3})*(?:[,\.]\d+)?)(?:\s*|$)([$€%£])"
-    )
+    pattern_symbols_tuple = r"\b(?<!\d|[,.])(\d{1,3}(?:\s?\d{3})*(?:[,\.]\d+)?)(?:\s*|$)([$€%£])"
     # Return a tuple number/symbols
     symbols_tuple = re.findall(pattern_symbols_tuple, current_text, re.IGNORECASE)
     only_numbers += [symbol_tuple[0] for symbol_tuple in symbols_tuple]
@@ -107,9 +105,7 @@ def extract_numerical_data(texte):
         current_text = current_text.replace(symbol, "")
 
     ### Numbers followed by nouns
-    pattern_numbernoun = (
-        r"\b(?<!\S)(\d{1,3}(?:\s?\d{3})*(?:[,\.]\d+)?)(?:\s+|$)([a-zA-ZÀ-ÿ]+)\b"
-    )
+    pattern_numbernoun = r"\b(?<!\S)(\d{1,3}(?:\s?\d{3})*(?:[,\.]\d+)?)(?:\s+|$)([a-zA-ZÀ-ÿ]+)\b"
     # Return a tuple number/noun
     numbernouns = re.findall(pattern_numbernoun, current_text, re.IGNORECASE)
 
