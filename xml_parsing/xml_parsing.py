@@ -1,12 +1,11 @@
+import os
 import unicodedata
 
+import pandas as pd  # type: ignore
 from bs4 import BeautifulSoup
-import pandas as pd
-
-from .files_management import get_xml_files
 
 
-def get_xml_content(xml_filepath: str) -> dict:
+def parse_xml_sheet(xml_filepath: str) -> dict:
     """
     On utilise cette fonction pour créer un csv pour les fichiers qui commencent par N ou F.
     Ils correspondent soit à des fiches pratiques,
@@ -71,10 +70,7 @@ def get_xml_content(xml_filepath: str) -> dict:
         return context
 
 
-def parse_xml(
-    save_path_xml: str = "_data/csv_database/xml_parsed.csv",
-    xml_3_folders_path: str = "_data/xml",
-):
+def parse_xml(xml_3_folders_path: str = "_data/xml") -> pd.DataFrame:
     scrapped_context = pd.DataFrame(
         columns=[
             "file",
@@ -89,24 +85,32 @@ def parse_xml(
         ]
     )
 
-    xml_files = get_xml_files(xml_3_folders_path)
+    xml_files = []
+    for root, _, files in os.walk(xml_3_folders_path):
+        for file in files:
+            fullpath = os.path.join(root, file)
+            if file.endswith(".xml"):
+                xml_files.append(fullpath)
+
     current_percentage = 0
     for xml_index, xml_file in enumerate(xml_files):
         # Print the percentage of total time
         if (100 * xml_index) // (len(xml_files) - 1) > current_percentage:
             current_percentage = (100 * xml_index) // (len(xml_files) - 1)
-            print(f"temps : {current_percentage} %")
+            print(f"Process: {current_percentage}%\r", end="")
 
         if not ("N" in xml_file.split("/")[-1] or "F" in xml_file.split("/")[-1]):
             # Permet de garder uniquement les fiches pratiques,
             # fiches questions-réponses, fiches thème, fiches dossier.
             continue
-        context = get_xml_content(xml_file)
+
+        context = parse_xml_sheet(xml_file)
         if not context:
             continue
+
         scrapped_context.loc[len(scrapped_context.index)] = [
             xml_file,
             *context.values(),
         ]
 
-    scrapped_context.to_csv(save_path_xml, sep=";", index=False)
+    return scrapped_context

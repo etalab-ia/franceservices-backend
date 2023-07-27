@@ -42,7 +42,7 @@ Chaque fonctionnalité du projet est organisé dans un dossier qui contient les 
 
 Les fonctionnalités sont les suivantes :
 
-- `xml_parsing` : contient la logique pour parser les fichiers xml et les transformer en fiches sous format JSON. Chaque élement JSON correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
+
 - `corpus_generation` : contient la logique pour générer des questions à partir des fiches sous format JSON et à répondre à ces questions via openai ou autres llm.
 - `fine_tuning` : permet d'entraîner un modèle XGEN de Salesforce via le Trainer d'HuggingFace. Le modèle est entraîné sur un corpus de questions / réponses générées par openai à partir des JSON.
 

@@ -1,1 +1,1 @@
-from ._main import complete_parsing
+from .xml_parsing import parse_xml

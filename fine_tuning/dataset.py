@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 
 def get_dataset(q_a_file: str, tokenizer: AutoTokenizer) -> tuple[Dataset, Dataset]:
     data_df = pd.read_csv(q_a_file, delimiter=";")
-    if not "full_prompt" in data_df.columns:
+    if "full_prompt" not in data_df.columns:
         data_df["full_prompt"] = data_df["prompt"] + "\n>>>ANSWER<<<\n" + data_df["answer"] + tokenizer.eos_token
         data_df["full_prompt"].to_csv(q_a_file.replace(".csv", ".only-full-prompt.csv"), sep=";", index=False)
 

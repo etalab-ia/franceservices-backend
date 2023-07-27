@@ -1,6 +1,4 @@
-_env
-.DS_Store
-.vscode/
+_data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -16,12 +14,13 @@ eggs/
 lib/
 lib64/
 
-
-
 # Jupyter Notebook
 .ipynb_checkpoints
 
 # Environments
+.DS_Store
+.vscode/
+_env
 .env
 .venv
 env/
