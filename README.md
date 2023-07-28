@@ -100,3 +100,11 @@ python main.py --run_weaviate_migration
 ```
 
 Et ensuite, changer la variable `context_retriever` dans [commands.py](./commands.py) par la classe `WeaviateRetriver` défini dans [retrieving/vector_db/retriever.py](./retrieving/vector_db/retriever.py)
+
+## Ressources
+
+Xgen
+- article: https://blog.salesforceairesearch.com/xgen/
+- huggingface: https://huggingface.co/Salesforce/xgen-7b-4k-base
+
+LLama: see https://github.com/etalab-ia/legal-information-assistant/issues/2
