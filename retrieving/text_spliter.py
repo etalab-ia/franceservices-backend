@@ -132,7 +132,8 @@ def split_along_md_or_parts(text: str, max_splitting_depth: int = 1, n_parts: in
 class HybridSplitter(NLTKTextSplitter):
     """
     Custom splitter that combines an NLTKTextSplitter and a token encoder (like TokenTextSplitter or the result of TextSplitter.from_tiktoken_encoder).
-    Returns splits with a length based on token count rather than character count: returned splits will have less tokens than the specified chunk_size - as long as no one sentence exceeds the chunk_size - and will chunk_overlap based on tokens.
+    Returns splits with a length based on token count rather than character count: returned splits will have less tokens than the specified chunk_size
+    - as long as no one sentence exceeds the chunk_size - and will chunk_overlap based on tokens.
     However, the splits may be signficantly shorter than the requested size, in order to ensure we never split in the middle of a sentence.
     """
 
