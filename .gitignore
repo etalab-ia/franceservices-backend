@@ -16,6 +16,11 @@ lib64/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+.virtual_documents/ 
+notebooks/*.json
+notebooks/*.csv
+notebooks/notes/
+notebooks/answers
 
 # Environments
 .DS_Store
