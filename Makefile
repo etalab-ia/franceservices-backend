@@ -8,3 +8,7 @@ reorder_json_chunks:
 	# Usefull t compare different version of this file.
 	cat ~/Downloads/files_as_chunks.json | jq 'sort_by(.metadata.xml_url) | map(del(.metadata.file))' > tmp.json
 
+
+fetch_colab_notebooks:
+	wget 'https://colab.research.google.com/drive/1_FQw20VjpKaE-Al-dh4jfVRtPawbD0fe' -O llama-finetuning-7b-4bit.ipynb
+	wget 'https://colab.research.google.com/drive/148aZEs2-3hkCeTya1h4YPdfpqGIL5A4p' -O llama-inference-7b-4bit.ipynb
