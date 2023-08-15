@@ -165,7 +165,8 @@ class HybridSplitter(NLTKTextSplitter):
         )  # super().__init__() call to the parent NLTKTextSplitter class
 
     def split_text(self, text: str) -> List[str]:
-        # When looking at the code for NTLKTextSplitter.split_text(), notice that self._tokenizer splits into individual sentences, then re-merges them into chunks.
+        # When looking at the code for NTLKTextSplitter.split_text(), notice that self._tokenizer splits into individual sentences,
+        # then re-merges them into chunks.
 
         sentences = (sentence + ("" if sentence[-1] == " " else " ") for sentence in self._tokenizer(text))
         # Add a space to the end of every sentence so that we don't transform 'Sen1. Sen2' into 'Sen1.Sen2' when merging

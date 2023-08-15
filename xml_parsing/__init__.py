@@ -1,1 +1,1 @@
-from .xml_parsing import parse_xml
+from .xml_parsing import make_chunks

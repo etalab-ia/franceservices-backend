@@ -1,8 +1,14 @@
+import hashlib
+import json
 import os
 import unicodedata
+from collections import defaultdict
 
-import pandas as pd  # type: ignore
+import numpy as np
+import pandas as pd
 from bs4 import BeautifulSoup
+
+from retrieving.text_spliter import HybridSplitter
 
 
 def parse_xml_sheet(xml_filepath: str) -> dict:
@@ -28,11 +34,23 @@ def parse_xml_sheet(xml_filepath: str) -> dict:
         else:
             context["introduction"] = ""
 
+        if soup.find("dc:description") is not None:
+            context["description"] = soup.find("dc:description").get_text(" ", strip=True)
+            context["description"] = unicodedata.normalize("NFKC", context["description"])
+        else:
+            context["description"] = ""
+
+        # == dc:type
         if soup.find("SurTitre") is not None:
             context["surtitre"] = soup.find("SurTitre").get_text(" ", strip=True)
             context["surtitre"] = unicodedata.normalize("NFKC", context["surtitre"])
         else:
             context["surtitre"] = ""
+
+        if soup.find("Audience") is not None:
+            context["audience"] = [audience.get_text(" ", strip=True) for audience in soup.find_all("Audience")]
+        else:
+            context["audience"] = []
 
         if soup.find("dc:subject") is not None:
             context["subject"] = soup.find("dc:subject").get_text(" ", strip=True)
@@ -71,20 +89,6 @@ def parse_xml_sheet(xml_filepath: str) -> dict:
 
 
 def parse_xml(xml_3_folders_path: str = "_data/xml") -> pd.DataFrame:
-    scrapped_context = pd.DataFrame(
-        columns=[
-            "file",
-            "title",
-            "xml_url",
-            "introduction",
-            "surtitre",
-            "subject",
-            "theme",
-            "liste_situations",
-            "other_content",
-        ]
-    )
-
     xml_files = []
     for root, _, files in os.walk(xml_3_folders_path):
         for file in files:
@@ -92,6 +96,7 @@ def parse_xml(xml_3_folders_path: str = "_data/xml") -> pd.DataFrame:
             if file.endswith(".xml"):
                 xml_files.append(fullpath)
 
+    data = []
     current_percentage = 0
     for xml_index, xml_file in enumerate(xml_files):
         # Print the percentage of total time
@@ -108,9 +113,78 @@ def parse_xml(xml_3_folders_path: str = "_data/xml") -> pd.DataFrame:
         if not context:
             continue
 
-        scrapped_context.loc[len(scrapped_context.index)] = [
-            xml_file,
-            *context.values(),
-        ]
+        context["file"] = xml_file
+        data.append(context)
 
-    return scrapped_context
+    return pd.DataFrame(data)
+
+
+def make_chunks(directory: str, chunk_size: int = 1100, chunk_overlap: int = 200) -> None:
+    # Parse XML
+    return
+    df = parse_xml(directory)
+
+    # Chunkify and save to a Json file
+    basedir = "_data/"
+    json_file_target = os.path.join(basedir, "xmlfiles_as_chunks.json")
+    metadata_columns = ["file", "title", "xml_url", "surtitre", "subject", "theme"]
+    text_columns = ["introduction", "liste_situations", "other_content"]  # introduction OR description
+    chunks = []
+    text_splitter = HybridSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    hashes = []  # checks for duplicate chunks
+    info = defaultdict(lambda: defaultdict(list))
+    for sheet in df.to_dict(orient="records"):
+        data = {"text": []}
+        for key in metadata_columns:
+            if key in sheet:
+                data[key] = sheet[key]
+
+        for key in text_columns:
+            if key in sheet:
+                data["text"].append(sheet[key])
+            elif key == "introduction" and "description" in sheet:
+                data["text"].append(sheet["description"])
+
+        data["text"] = " ".join(data["text"])
+
+        if not data["text"]:
+            continue
+
+        print(
+            f"""
+              \rfile: {sheet["file"]}
+              \rtitle: {sheet["title"]}
+              \rsurtitre: {sheet["surtitre"]}
+              \raudience: {sheet["audience"]}
+              \rdescription: {sheet["introduction"] or sheet["description"]}
+              \r{len(data["text"])}
+
+             """
+        )
+
+        info[sheet["surtitre"]]["len"].append(len(data["text"]))
+
+        for index, fragment in enumerate(text_splitter.split_text(data["text"])):
+            h = hashlib.blake2b(fragment.encode(), digest_size=8).hexdigest()
+            if h in hashes:
+                continue
+            else:
+                hashes.append(h)
+
+            chunk = data.copy()
+            chunk["text"] = fragment
+            chunk["chunk_index"] = index
+            chunks.append(chunk)
+
+    with open(json_file_target, "w", encoding="utf-8") as f:
+        json.dump(chunks, f, ensure_ascii=False, indent=4)
+
+    info_summary = ""
+    for k, v in info.items():
+        info_summary += f"### {k}\n"
+        info_summary += f"total doc: {len(v['len'])}\n"
+        info_summary += f"mean length: {np.mean(v['len']):.0f} ± {np.std(v['len']):.0f}\n"
+        info_summary += "\n"
+
+    with open(os.path.join(basedir, "chunks.info"), "w", encoding="utf-8") as f:
+        f.write(info_summary)
