@@ -3,15 +3,19 @@
 """ Manage the legal information assistant.
 
 Usage:
-    gpt.py chunks [--chunk-size INT] [--chunk-overlap INT] DIRECTORY
+    gpt.py chunks [--chunk-size N] [--chunk-overlap N] DIRECTORY
+    gpt.py finetune MODEL VERSION
 
 Commands:
     chunks DIRECTORY    Parse les fichiers Xml issue de data.gouv, situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
                         Chaque élement Json correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
 
+    finetune MODEL VERSION    Fine-tune the given model. Parameters will be read from fine_tuning/x/{MODEL}-{VERSION}/
+                              Results will be saved in _data/x/{MODEL}-{VERSION}
+
 Options:
-    --chunk-size INT      The maximum size of the chunks (token count...) [default: 1100]
-    --chunk-overlap INT   The size of the overlap between chunk [default: 200]
+    --chunk-size N      The maximum size of the chunks (token count...) [default: 1100]
+    --chunk-overlap N   The size of the overlap between chunks [default: 200]
 
 
 Examples:
@@ -21,7 +25,6 @@ Examples:
 
 from docopt import docopt
 
-from xml_parsing import make_chunks
 
 if __name__ == "__main__":
     # Parse CLI arguments
@@ -29,6 +32,9 @@ if __name__ == "__main__":
 
     # Run command
     if args["chunks"]:
+        from xml_parsing import make_chunks
         make_chunks(args["DIRECTORY"], chunk_size=int(args["--chunk-size"]), chunk_overlap=int(args["--chunk-overlap"]))
+    elif args["finetune"]:
+        raise NotImplementedError
     else:
         raise NotImplementedError
