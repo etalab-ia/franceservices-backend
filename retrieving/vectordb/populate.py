@@ -97,21 +97,21 @@ def run_weaviate_migration(
     with weaviate_client.batch as batch:
         batch.batch_size = 10
         for index, xml_file in enumerate(xml_files_to_vectorize):
-            xml_text_chunks = text_splitter.split_text(xml_file["data"])
+            xml_text_chunks = text_splitter.split_text(xml_file["text"])
             print_import_logs(
                 index,
-                xml_file["metadata"]["xml_url"],
-                xml_file["metadata"]["title"],
+                xml_file["xml_url"],
+                xml_file["title"],
                 f"{len(xml_text_chunks)} chunks exctracted",
             )
             for xml_text_chunk in xml_text_chunks:
                 properties = {
                     "content": xml_text_chunk,
-                    "xml_url": xml_file["metadata"]["xml_url"],
-                    "theme": xml_file["metadata"]["theme"],
-                    "title": xml_file["metadata"]["title"],
-                    "subject": xml_file["metadata"]["subject"],
-                    "surtitre": xml_file["metadata"]["surtitre"],
+                    "xml_url": xml_file["xml_url"],
+                    "theme": xml_file["theme"],
+                    "title": xml_file["title"],
+                    "subject": xml_file["subject"],
+                    "surtitre": xml_file["surtitre"],
                 }
 
                 vector = None

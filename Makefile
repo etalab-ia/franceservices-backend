@@ -6,7 +6,7 @@ format_code:
 reorder_json_chunks:
 	@# Reorder and clean the json database.
 	# Usefull t compare different version of this file.
-	cat ~/Downloads/files_as_chunks.json | jq 'sort_by(.metadata.xml_url) | map(del(.metadata.file))' > tmp.json
+	cat ~/Downloads/files_as_chunks.json | jq 'sort_by(.xml_url) | map(del(.file))' > tmp.json
 
 
 fetch_colab_notebooks:

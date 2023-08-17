@@ -30,10 +30,10 @@ Le projet est structuré de la manière suivante :
 
 - `main.py` : fichier principal qui lance les commandes
 - `commands.py` : fichier qui définit les commandes disponibles
-- `_data` : dossier qui contient les données
+- `_data/` : dossier qui contient les données
 
   - `xml_files` : dossier qui contient les fichiers xml
-  - `json_database` : dossier qui contient les chunks de fiches sous format json
+  - `xmlfiles_as_chunks.json` : dossier qui contient les chunks de fiches sous format json
 
 Chaque fonctionnalité du projet est organisé dans un dossier qui contient les fichiers suivants :
 

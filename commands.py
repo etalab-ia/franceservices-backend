@@ -72,7 +72,7 @@ def execute_commands(**commands):
 
     if commands.get("run_weaviate_migration"):
         context_retriever = WeaviateRetriever()
-        with open("json_database.json", "r", encoding="utf-8") as json_file:
+        with open("_data/xmlfiles_as_chunks.json", "r", encoding="utf-8") as json_file:
             xml_files_to_vectorize = json.load(json_file)
         context_retriever.run_weaviate_migration(xml_files_to_vectorize)
 

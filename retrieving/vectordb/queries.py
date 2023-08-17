@@ -5,6 +5,8 @@ from weaviate import Client
 from .embedding import VectorEmbeddor
 
 
+# @DEBUG: do "data" field should be "text" after xml_parser refactorization ot its a Weavier field ?
+
 def query_n_contexts(
     weaviate_client: Client,
     question,
