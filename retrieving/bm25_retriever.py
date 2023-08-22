@@ -13,7 +13,6 @@ class SearchResult(TypedDict):
     doc_id: int
     score: float
     text: str
-    filename: str
     url: str
     title: str
 
@@ -45,10 +44,9 @@ def bm25_retrieval(question: str, json_file: str, top_k: Union[int, None] = 3, m
         result: SearchResult = {
             "doc_id": doc_index,
             "score": score,
-            "text": document["text"],
-            "filename": document["file"],
-            "url": document["xml_url"],
             "title": document["title"],
+            "text": document["text"],
+            "url": document["url"],
         }
         results.append(result)
 

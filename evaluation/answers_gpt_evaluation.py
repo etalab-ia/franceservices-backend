@@ -22,7 +22,7 @@ nltk.download("stopwords", quiet=True)
 
 def calculate_tfidf(csv_file_gpt=CSV_FILE_GPT) -> None:
     """
-    This function creates ths TFIDF model from answers of GPT.
+    This function creates the TFIDF model from answers of GPT.
     WARNING : the csv in argument has to be in a particular format (if you want to recalculate the tfidf,
     you have to check your csv is similar to CSV_FILE_GPT)
     It uses the 20 000 answers to compute TFIDF.

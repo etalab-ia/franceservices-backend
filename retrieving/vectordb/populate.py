@@ -55,7 +55,7 @@ def create_schema(weaviate_client: Client, schema_name: str):
             {
                 "dataType": ["text"],
                 "description": "The URL of the original xml file",
-                "name": "xml_url",
+                "name": "url",
                 "moduleConfig": {
                     "text2vec-contextionary": {
                         "skip": True,
@@ -100,14 +100,14 @@ def run_weaviate_migration(
             xml_text_chunks = text_splitter.split_text(xml_file["text"])
             print_import_logs(
                 index,
-                xml_file["xml_url"],
+                xml_file["url"],
                 xml_file["title"],
                 f"{len(xml_text_chunks)} chunks exctracted",
             )
             for xml_text_chunk in xml_text_chunks:
                 properties = {
                     "content": xml_text_chunk,
-                    "xml_url": xml_file["xml_url"],
+                    "url": xml_file["url"],
                     "theme": xml_file["theme"],
                     "title": xml_file["title"],
                     "subject": xml_file["subject"],
