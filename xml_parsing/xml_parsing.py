@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import string
 import unicodedata
 from collections import defaultdict
 from typing import List
@@ -17,11 +18,11 @@ def make_questions(directory: str) -> None:
     # Parses service-public XML
     basedir = "_data/"
     df = parse_questions(directory)
-    df.drop_duplicates(subset=['question'], inplace=True)
+    df.drop_duplicates(subset=["question"], inplace=True)
     q_fn = os.path.join(basedir, "questions.json")
-    #df.to_json(q_fn, orient="records", indent=2, force_ascii=False)
+    # df.to_json(q_fn, orient="records", indent=2, force_ascii=False)
     with open(q_fn, "w", encoding="utf-8") as f:
-        json.dump(df.to_dict(orient='records'), f, ensure_ascii=False, indent=4)
+        json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=4)
     print("Questions created in", q_fn)
 
 
@@ -29,11 +30,14 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
     # Parses service-public XML
     df = parse_xml(directory, structured)
 
+    if structured:
+        chunk_overlap = 20
+
     # Chunkify and save to a Json file
     basedir = "_data/"
     data_columns = ["file", "url", "surtitre", "theme", "title", "subject", "introduction", "text", "context"]
     chunks = []
-    text_splitter = HybridSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap, separator="\n\n\n")
+    text_splitter = HybridSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     hashes = []  # checks for duplicate chunks
     info = defaultdict(lambda: defaultdict(list))
     for sheet in df.to_dict(orient="records"):
@@ -73,7 +77,7 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
             else:
                 natural_text_chunk = natural_chunk
 
-            # for fragment in [natural_text_chunk]:
+            #for fragment in [natural_text_chunk]:
             for fragment in text_splitter.split_text(natural_text_chunk):
                 if not fragment:
                     print("Warning: empty fragment")
@@ -180,8 +184,8 @@ def parse_questions(xml_3_folders_path: str = "_data/xml") -> pd.DataFrame:
         with open(xml_file, "r", encoding="utf-8") as f:
             soup = BeautifulSoup(f, "xml")
 
-        #doc = get_metadata(soup)
-        #doc["file"] = xml_file
+        # doc = get_metadata(soup)
+        # doc["file"] = xml_file
 
         # Extract questions
         for x in soup.find_all("QuestionReponse"):
@@ -307,8 +311,8 @@ def parse_xml_sheet(xml_file: str, structured: bool = False) -> dict:
         # Add introduction into the first chunk
         current = [doc["introduction"]]
 
-        # Save sections for later
-        sections = set([get_text(a.Titre) for a in soup.find_all("Chapitre") if a.Titre and not a.find_parent("Chapitre")])
+        # Save sections for later (de-duplicate keeping order)
+        sections = list(dict.fromkeys([get_text(a.Titre) for a in soup.find_all("Chapitre") if a.Titre and not a.find_parent("Chapitre")]))
 
         context = []
         top_list = []
@@ -373,6 +377,7 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
             for j, child in enumerate(part.children):
                 # Purge current
                 current = [c for c in current if c]
+
                 if isinstance(child, NavigableString):
                     current.append(get_text(child))
                     continue
@@ -415,8 +420,7 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
                     state.extend(parse_structure([], new_context, [child], recurse=False, depth=depth + 1))
 
                 elif child.name == "BlocCas":
-                    blocs = current[-1] if len(current) > 0 else ""
-                    blocs += "\n"
+                    blocs = "\n"
                     for subchild in child.children:
                         if subchild.name != "Cas":
                             if subchild.string.strip():
@@ -425,13 +429,12 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
 
                         title = extract(subchild, "Titre", recursive=False)
                         s = parse_structure([], context, [subchild], recurse=False, depth=depth + 1)
-                        content = " ".join([" ".join(x["text"]) for x in s])
+                        content = " ".join([" ".join(x["text"]) for x in s]).strip()
                         blocs += f"Cas {title}: {content}\n"
 
-                    current[-1:] = [blocs]
+                    current.append(blocs)
                 elif child.name == "Liste":
-                    blocs = current[-1] if len(current) > 0 else ""
-                    blocs += "\n"
+                    blocs = "\n"
                     for subchild in child.children:
                         if subchild.name != "Item":
                             if subchild.string.strip():
@@ -439,18 +442,31 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
                             continue
 
                         s = parse_structure([], context, [subchild], recurse=False, depth=depth + 1)
-                        content = " ".join([" ".join(x["text"]) for x in s])
+                        content = " ".join([" ".join(x["text"]) for x in s]).strip()
                         blocs += f"- {content}\n"
 
-                    current[-1:] = [blocs]
+                    current.append(blocs)
+                elif child.name == "Tableau":
+                    title = extract(child, "Titre", recursive=False)
+                    sep = ""
+                    if not title.strip()[-1:] in string.punctuation:
+                        sep = ":"
+                    table = table_to_md(child)
+                    table = f"\n{title}{sep}\n{table}"
+                    current.append(table)
                 elif child.name in ["ANoter", "ASavoir", "Attention", "Rappel"]:
                     if child.find("Titre", recursive=False):
-                        current.append("({0}: {1})".format(extract(child, "Titre", recursive=False), get_text(child)))
+                        current.append("({0}: {1})\n".format(extract(child, "Titre", recursive=False), get_text(child)))
                     else:
-                        current.append("({0})".format(get_text(child)))
-                # elif insert ot push special TAG
-                # - list joins
-                # - table joins
+                        current.append("({0})\n".format(get_text(child)))
+
+                elif child.name == "Titre":
+                    # Format title inside chunks (sub-sub sections etc)
+                    title = get_text(child)
+                    sep = ""
+                    if not title.strip()[-1:] in string.punctuation:
+                        sep = ":"
+                    current.append(f"{title}{sep}")
                 else:
                     # Space joins
                     s = parse_structure(current, context, [child], recurse=recurse, depth=depth + 1)
@@ -458,9 +474,19 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
                     sub_state = []
                     for x in s:
                         if len(x["context"]) == len(context):
+                            # Same context
+                            if child.name in ["Chapitre", "SousChapitre", "Cas", "Situation"]:
+                                # add a separator
+                                x["text"][-1] += "\n"
+                            elif child.name in ["Paragraphe"] and child.parent.name not in ["Item", "Cellule"] and not x["text"][-1].strip()[-1:] in string.punctuation:
+                                # title !
+                                x["text"][-1] += ":"
+
                             current.extend(x["text"])
                         else:
+                            # new chunk
                             sub_state.append(x)
+
                     if sub_state:
                         state.append({"text": current, "context": context})
                         current = []
@@ -481,10 +507,13 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
                     continue
 
                 if i > 0 and x.startswith(punctuations):
-                    #  Stretch joins / Fix punctuations extra space
+                    # Stretch join / fix punctuations extra space
+                    texts += x
+                elif x.startswith("\n") or texts.endswith("\n"):
+                    # Strech join / do not surround newline with space
                     texts += x
                 else:
-                    # Space joins
+                    # Space join
                     texts += " " + x
 
             d["text"] = texts.strip()
@@ -493,23 +522,28 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
 
 
 def table_to_md(soup):
-    md_table = "| "
+    # @DEBUG: multi-column header are lost. See for example https://entreprendre.service-public.fr/vosdroits/F3094
+
+    md_table = ""
 
     # Headers
-    for cell in soup.find_all("cellule", parent=lambda tag: tag.name == "rangée" and tag.get("type") == "header"):
-        md_table += cell.paragraphe.string + " | "
-    md_table += "\n"
+    for row in soup.find_all("Rangée", {"type": "header"}):
+        md_table += "| "
+        for cell in row.find_all("Cellule"):
+            md_table += get_text(cell) + " | "
+        md_table += "\n"
 
-    # Separator
-    for _ in soup.find_all("cellule", parent=lambda tag: tag.name == "rangée" and tag.get("type") == "header"):
-        md_table += "| --- "
-    md_table += "|\n"
+        # Separator
+        md_table += "| "
+        for _ in row.find_all("Cellule"):
+            md_table += "- | "
+        md_table += "\n"
 
     # Rows
-    for row in soup.find_all("rangée", {"type": "normal"}):
+    for row in soup.find_all("Rangée", {"type": "normal"}):
         md_table += "| "
-        for cell in row.find_all("cellule"):
-            md_table += cell.paragraphe.string + " | "
+        for cell in row.find_all("Cellule"):
+            md_table += get_text(cell) + " | "
         md_table += "\n"
 
     return md_table
