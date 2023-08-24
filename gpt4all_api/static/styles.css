@@ -1,0 +1,139 @@
+/* Reset some default styles */
+body, html, div, h1, form, input, button {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+}
+
+article {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 10vh;
+    padding: 20px;
+}
+
+.title_zone {
+    width: 100%;
+    display: block;
+}
+
+input, label, form, .result, .loader {
+  background: inherit;
+}
+
+.submission_text {
+    background-color: #fff;
+    float:left;
+    width: 50%;
+    padding: 20px;
+    margin: 10px;
+    height: 75vh;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+}
+
+.result_text {
+    background-color: #fff;
+    float:left;
+    width: 50%;
+    padding: 20px;
+    margin: 10px;
+    height: 75vh;
+    margin-left:10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+}
+
+.result {
+    font-size: 20px;
+    color: #514f4f;
+    margin-top: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 2.5rem;
+    color: #333;
+}
+
+h2 {
+    color: #777575;
+    font-size: 1.5rem;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-top: 1rem;
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+input {
+    font-size: 16px;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    margin-top: 1rem;
+    font-size: 16px;
+    padding: 10px;
+    background-color: #1E90FF;
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #4169E1;
+}
+
+a:link {
+    text-decoration: none;
+    color: #5c8eb9;
+}
+
+textarea {
+    font-size: 16px;
+    font-family: 'Arial', sans-serif;
+    margin-bottom:5px;
+}
+
+.loader {
+  margin-left: 15px;
+  border: 8px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 8px solid #3498db;
+  width: 20px;
+  height: 20px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Fabrique du texte</title>
+</head>
+<body>
+    <div class="title_zone">
+        <h1>Fabrique de texte ServicesPublics+</h1>
+    </div>
+
+    <article>
+        <div class="submission_text">
+            <h2>Éléments du texte à générer</h2>
+            <form action="/" method="post">
+                <label for="user_text">La question posée par un citoyen français</label>
+                <textarea type="text" id="user_text" name="user_text" value="" rows="5" required>{{ user_text|safe }}</textarea>
+                <label for="institution">L'institution concernée</label>
+                <input type="text" id="institution" name="institution" value="{{ institution|safe }}">
+                <label for="context">De courts éléments de réponses</label>
+                <textarea type="text" id="context" name="context" value="" rows="3">{{ context|safe }}</textarea>
+                <label for="links">Un ou plusieurs liens (séparés par des virgules)</label>
+                <textarea type="text" id="links" name="links" value="" rows="3">{{ links|safe }}</textarea>
+                <label for="temperature">Degré d'originalité de la génération de texte (entre 0 et 1)</label>
+                <input type="text" value="{{ temperature|safe }}" id="temperature" name="temperature" style="width:40px;">
+                <button type="submit">Générer une réponse</button>
+            </form>
+        </div>
+
+        <div class="result_text">
+          <h2>
+            Réponse
+            <div id="loader" class="loader" style="display: none;"></div>
+          </h2>
+
+          {% if isStreaming %}
+            <div id="result" class="result">
+            </div>
+            <script>
+              var target_output = document.getElementById("result");
+              var stream_chat = new EventSource("/stream_chat");
+              var $t = document.getElementById("loader");
+              $t.style.display = 'inline-block';
+
+              stream_chat.onmessage = function (e) {
+                if (e.data == "[DONE]") {
+                  stream_chat.close();
+                  $t.style.display = 'none';
+                } else {
+                  target_output.innerHTML += e.data;
+                }
+              };
+
+            </script>
+          {% endif %}
+
+        </div>
+    </article>
+</body>
+</html>

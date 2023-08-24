@@ -1,4 +1,5 @@
 _data/
+gpt4all_api/model/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
