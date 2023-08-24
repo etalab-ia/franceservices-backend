@@ -101,6 +101,14 @@ python main.py --run_weaviate_migration
 
 Et ensuite, changer la variable `context_retriever` dans [commands.py](./commands.py) par la classe `WeaviateRetriver` défini dans [retrieving/vector_db/retriever.py](./retrieving/vector_db/retriever.py)
 
+## API
+
+Une API de test, utilisant gpt4all permettant de faire tourner des modèle quantizé sur CPU, et ainsi faciliter les test et le développement d'interface, si situe dans le répertoire `gpt4all_api`.
+Lancer l'API pour Service public + (fabrique de text) : 
+
+    python gpt4all_api/app_spp.py
+
+
 ## Ressources
 
 Xgen
