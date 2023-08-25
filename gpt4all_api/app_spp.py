@@ -45,7 +45,6 @@ def stream_chat():
             yield "data: " + "".join(acc) + "\n\n"
 
         yield "data: [DONE]\n\n"
-        print("finished")
 
     return Response(generate(), mimetype="text/event-stream")
 

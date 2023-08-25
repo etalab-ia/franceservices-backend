@@ -16,7 +16,6 @@ python-dotenv
 rank_bm25
 sentence_transformers
 termcolor
-text
 tiktoken
 torch
 transformers
