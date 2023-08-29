@@ -4,7 +4,11 @@ body, html, div, h1, form, input, button {
     padding: 0;
     border: 0;
     font-family: 'Arial', sans-serif;
+}
+
+.main {
     background-color: #f4f4f4;
+    height: 100vh;
 }
 
 article {
@@ -12,7 +16,6 @@ article {
     justify-content: center;
     align-items: center;
     min-height: 10vh;
-    padding: 20px;
 }
 
 .title_zone {
@@ -20,16 +23,12 @@ article {
     display: block;
 }
 
-input, label, form, .result, .loader {
-  background: inherit;
-}
-
 .submission_text {
     background-color: #fff;
     float:left;
     width: 50%;
     padding: 20px;
-    margin: 10px;
+    margin: 10px 15px 10px 30px;
     height: 75vh;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     border-radius: 15px;
@@ -40,9 +39,8 @@ input, label, form, .result, .loader {
     float:left;
     width: 50%;
     padding: 20px;
-    margin: 10px;
+    margin: 10px 30px 10px 15px;
     height: 75vh;
-    margin-left:10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     border-radius: 15px;
 }
@@ -53,10 +51,22 @@ input, label, form, .result, .loader {
     margin-top: 20px;
 }
 
+.submission_text > form > div {
+  overflow: auto;
+  display: grid;
+  height: 62vh;
+}
+
+.result_text > .result {
+  overflow: auto;
+  height: 65vh;
+}
+
+
 h1 {
     text-align: center;
-    margin-top: 20px;
-    margin-bottom: 20px;
+    padding-top: 20px;
+    padding-bottom: 20px;
     font-family: 'Roboto', sans-serif;
     font-size: 2.5rem;
     color: #333;
@@ -90,18 +100,31 @@ input {
 }
 
 button {
-    margin-top: 1rem;
     font-size: 16px;
     padding: 10px;
-    background-color: #1E90FF;
     color: white;
     border-radius: 10px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    align-self: center;
 }
 
-button:hover {
+button.generator {
+    background-color: #1E90FF;
+    margin-top: 1rem;
+    width: 50%;
+}
+
+button.generator:hover {
     background-color: #4169E1;
+}
+
+button.stop_generator {
+  background-color: #f8c471;
+}
+
+button.stop_generator:hover {
+    background-color:  #FFC300;
 }
 
 a:link {
@@ -116,7 +139,7 @@ textarea {
 }
 
 .loader {
-  margin-left: 15px;
+  display: inline-block;
   border: 8px solid #f3f3f3;
   border-radius: 50%;
   border-top: 8px solid #3498db;
@@ -126,6 +149,13 @@ textarea {
   animation: spin 2s linear infinite;
   display: inline-block;
   vertical-align: middle;
+}
+
+.loader.is-small {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  width: 10px;
+  height: 10px;
 }
 
 @-webkit-keyframes spin {

@@ -1,0 +1,4 @@
+flask
+gunicorn
+gpt4all
+gevent

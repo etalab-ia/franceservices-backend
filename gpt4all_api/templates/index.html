@@ -7,6 +7,7 @@
     <title>Fabrique du texte</title>
 </head>
 <body>
+  <div class="main">
     <div class="title_zone">
         <h1>Fabrique de texte ServicesPublics+</h1>
     </div>
@@ -15,6 +16,7 @@
         <div class="submission_text">
             <h2>Éléments du texte à générer</h2>
             <form action="/" method="post">
+              <div>
                 <label for="user_text">La question posée par un citoyen français</label>
                 <textarea type="text" id="user_text" name="user_text" value="" rows="5" required>{{ user_text|safe }}</textarea>
                 <label for="institution">L'institution concernée</label>
@@ -25,38 +27,55 @@
                 <textarea type="text" id="links" name="links" value="" rows="3">{{ links|safe }}</textarea>
                 <label for="temperature">Degré d'originalité de la génération de texte (entre 0 et 1)</label>
                 <input type="text" value="{{ temperature|safe }}" id="temperature" name="temperature" style="width:40px;">
-                <button type="submit">Générer une réponse</button>
+              </div>
+              <button class="generator" type="submit">Générer une réponse</button>
             </form>
         </div>
 
         <div class="result_text">
           <h2>
             Réponse
-            <div id="loader" class="loader" style="display: none;"></div>
+            <button id="stop" class="stop_generator" style="display: none;"><div id="loader" class="loader is-small" style="margin-right: 10px;"></div>Stop generation</button>
           </h2>
 
           {% if isStreaming %}
             <div id="result" class="result">
             </div>
+
             <script>
-              var target_output = document.getElementById("result");
               var stream_chat = new EventSource("/stream_chat");
-              var $t = document.getElementById("loader");
-              $t.style.display = 'inline-block';
+              var target_output = document.getElementById("result");
+              var $loader = document.getElementById("stop");
+
+              $loader.style.display = 'inline-block';
 
               stream_chat.onmessage = function (e) {
                 if (e.data == "[DONE]") {
-                  stream_chat.close();
-                  $t.style.display = 'none';
+                    stream_chat.close();
+                    $loader.style.display = 'none';
                 } else {
                   target_output.innerHTML += e.data;
                 }
               };
+
+              function stopGeneration() {
+                console.log("get in there ?")
+                  stream_chat.close();
+                  $loader.style.display = 'none';
+
+                  fetch('/stop_generation')
+                    .then(response => {})
+                    .catch(error => console.error('Error:', error));
+              }
+
+              // Attach the function event to the button
+              $loader.addEventListener('click', stopGeneration);
 
             </script>
           {% endif %}
 
         </div>
     </article>
+  </div>
 </body>
 </html>
