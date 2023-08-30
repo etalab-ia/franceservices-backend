@@ -27,3 +27,15 @@ download_servicepublic_sheets:
 
 sync_etalab_repo:
 	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@datascience-01.infra.data.gouv.fr:~/
+
+build_llama.cpp:
+	git clone https://github.com/ggerganov/llama.cpp
+	cd llama.cpp
+	## @DEBUG/Upgrade
+	git reset --hard "dadbed9" #Stick to the older version until gguf is fully supported
+	# /
+	make
+
+convert_model_for_cpu:
+	python llama.cpp/convert.py <model> -outfile <outfile>
+	python llama.cpp/quantize <outfile> <outquantfile> q4_K

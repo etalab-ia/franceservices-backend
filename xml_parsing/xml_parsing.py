@@ -49,7 +49,8 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
         if not data["text"]:
             continue
         if data["surtitre"] in ["Dossier", "Recherche guidée"]:
-            # @TODO: can be used for cross-reference
+            # @TODO: can be used for cross-reference...
+            # see also <LienInterne>...
             continue
 
         # print(
@@ -322,7 +323,7 @@ def parse_xml_sheet(xml_file: str, structured: bool = False) -> dict:
                     top_list.append(obj)
                 elif obj.name == "ListeSituations":
                     top_list.append(obj)
-        texts = parse_structure(current, context, top_list)
+        texts = parse_structured(current, context, top_list)
 
         if texts:
             # Add all sections title into the first chunk
@@ -351,7 +352,7 @@ def parse_xml_sheet(xml_file: str, structured: bool = False) -> dict:
     return doc
 
 
-def parse_structure(current: List[str], context: List[str], soups: List[Tag], recurse=True, depth=0) -> List[dict]:
+def parse_structured(current: List[str], context: List[str], soups: List[Tag], recurse=True, depth=0) -> List[dict]:
     # Separate text on Situation and Chapitre.
     # Keep the contexts (the history of titles) while iterating.
     #
@@ -365,8 +366,9 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
     #
     # @Improvments:
     # - could probably be optimized by not extracting tag, just reading it (see extract())
-    # - a <TitreAlternatif> can be present next to title...
-    # - extraire text et loi de référence (legifrance.fr): see <Reference>
+    # - <TitreAlternatif> can be present next to title...
+    # - extraire texte et loi de référence (legifrance.fr): see <Reference>
+    # -
     state = []
 
     for i, part in enumerate(soups):
@@ -393,7 +395,7 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
                     else:
                         new_context = context
 
-                    state.extend(parse_structure([], new_context, [child], recurse=True, depth=depth + 1))
+                    state.extend(parse_structured([], new_context, [child], recurse=True, depth=depth + 1))
                 elif child.name == "Chapitre" and recurse:
                     # New chunk
                     if current:
@@ -405,7 +407,7 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
                     else:
                         new_context = context
 
-                    state.extend(parse_structure([], new_context, [child], recurse=True, depth=depth + 1))
+                    state.extend(parse_structured([], new_context, [child], recurse=True, depth=depth + 1))
                 elif child.name == "SousChapitre" and recurse:
                     # New chunk
                     if current:
@@ -417,7 +419,7 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
                     else:
                         new_context = context
 
-                    state.extend(parse_structure([], new_context, [child], recurse=False, depth=depth + 1))
+                    state.extend(parse_structured([], new_context, [child], recurse=False, depth=depth + 1))
 
                 elif child.name == "BlocCas":
                     blocs = "\n"
@@ -428,7 +430,7 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
                             continue
 
                         title = extract(subchild, "Titre", recursive=False)
-                        s = parse_structure([], context, [subchild], recurse=False, depth=depth + 1)
+                        s = parse_structured([], context, [subchild], recurse=False, depth=depth + 1)
                         content = " ".join([" ".join(x["text"]) for x in s]).strip()
                         blocs += f"Cas {title}: {content}\n"
 
@@ -441,7 +443,7 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
                                 print("XML warning: Item has orphan text")
                             continue
 
-                        s = parse_structure([], context, [subchild], recurse=False, depth=depth + 1)
+                        s = parse_structured([], context, [subchild], recurse=False, depth=depth + 1)
                         content = " ".join([" ".join(x["text"]) for x in s]).strip()
                         blocs += f"- {content}\n"
 
@@ -469,7 +471,7 @@ def parse_structure(current: List[str], context: List[str], soups: List[Tag], re
                     current.append(f"{title}{sep}")
                 else:
                     # Space joins
-                    s = parse_structure(current, context, [child], recurse=recurse, depth=depth + 1)
+                    s = parse_structured(current, context, [child], recurse=recurse, depth=depth + 1)
                     current = []
                     sub_state = []
                     for x in s:

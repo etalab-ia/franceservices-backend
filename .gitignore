@@ -38,3 +38,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# api
+gpt4all_api/gptcache.db
