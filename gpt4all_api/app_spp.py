@@ -34,6 +34,7 @@ temperature = "0.5"
 
 
 def random_username(length=8):
+    """Help uniquely identify client"""
     characters = string.ascii_letters + "_-" + string.digits
     return "".join(random.choice(characters) for _ in range(length))
 
@@ -61,8 +62,12 @@ with app.app_context():
 
 
 class User(db.Model):
+    # uniquely identify a user/client.
     username = Column(String(80), primary_key=True)
+    # Use by the llm generator callback to stop the stream.
     is_streaming = Column(Boolean, default=False)
+    # Limit the max number of allowed stream.
+    concurent_stream = Column(Integer, default=0)
 
     def __init__(self, username):
         self.username = username
@@ -86,6 +91,12 @@ def setIsStreaming(db, username, is_streaming):
             user = addUser(db, username)
 
         user.is_streaming = bool(is_streaming)
+
+        if is_streaming:
+            user.concurent_stream += 1
+        elif user.concurent_stream > 0:
+            user.concurent_stream -= 1
+
         db.session.commit()
 
 
@@ -97,6 +108,9 @@ def getIsStreaming(db, username):
         else:
             return False
 
+
+with app.app_context():
+    db.create_all()
 
 #
 # App
@@ -176,10 +190,10 @@ def index():
 
     if request.method == "POST":
         user_text = request.form["user_text"]
-        context = request.form["context"]
-        institution = request.form["institution"]
-        links = request.form["links"]
-        temperature = request.form["temperature"]
+        context = request.form.get("context", context)
+        institution = request.form.get("institution", institution)
+        links = request.form.get("links", links)
+        temperature = request.form.get("temperature", temperature)
         session["is_streaming"] = True
     else:
         session["is_streaming"] = False
@@ -201,7 +215,4 @@ def index():
 
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-
     app.run(threaded=True, debug=True)

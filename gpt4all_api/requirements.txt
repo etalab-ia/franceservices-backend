@@ -2,3 +2,5 @@ flask
 gunicorn
 gpt4all
 gevent
+flask-sqlalchemy
+watchdog
