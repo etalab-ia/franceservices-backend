@@ -110,7 +110,8 @@ def getIsStreaming(db, username):
 
 
 with app.app_context():
-    db.create_all()
+    if not os.path.exists(os.path.join(os.getcwd(), "gptcache.db")):
+        db.create_all()
 
 #
 # App
