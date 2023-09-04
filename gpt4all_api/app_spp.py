@@ -5,14 +5,18 @@ from datetime import timedelta
 
 from flask import (Flask, Response, g, jsonify, render_template, request,
                    session, stream_with_context)
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from gpt4all import GPT4All
 from sqlalchemy import Boolean, Column, Integer, String
 
 app = Flask(__name__)
+CORS(app)
+# CORS(app, origins=['https://127.0.0.1:5173, https://localhost:5173'])
 app.secret_key = "secret4all"
 app.permanent_session_lifetime = timedelta(hours=24)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(os.getcwd(), "gptcache.db")
+cache_db_name = "gptcache.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(os.getcwd(), cache_db_name)
 
 
 # Default model
@@ -109,10 +113,6 @@ def getIsStreaming(db, username):
             return False
 
 
-with app.app_context():
-    if not os.path.exists(os.path.join(os.getcwd(), "gptcache.db")):
-        db.create_all()
-
 #
 # App
 #
@@ -130,8 +130,7 @@ def stream_chat():
         username = session["username"]
         setIsStreaming(db, username, session["is_streaming"])
     else:
-        print("user need to login...")
-        return
+        return "user need to POST on / before streaming", 400
 
     # Route that stream the generation results
     def generate():
@@ -216,4 +215,5 @@ def index():
 
 
 if __name__ == "__main__":
+
     app.run(threaded=True, debug=True)

@@ -1,6 +1,7 @@
 flask
+flask-sqlalchemy
+flask_cors
+gevent
 gunicorn
 gpt4all
-gevent
-flask-sqlalchemy
 watchdog
