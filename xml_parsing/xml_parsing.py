@@ -109,6 +109,7 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
         info_summary += f"### {k}\n"
         info_summary += f"total doc: {len(v['len'])}\n"
         info_summary += f"mean length: {np.mean(v['len']):.0f} ± {np.std(v['len']):.0f}    max:{np.max(v['len'])} min:{np.min(v['len'])}\n"
+        info_summary += f"total chunk: {len(v['chunk_len'])}\n"
         info_summary += f"mean chunks length: {np.mean(v['chunk_len']):.0f} ± {np.std(v['chunk_len']):.0f}    max:{np.max(v['chunk_len'])} min:{np.min(v['chunk_len'])}\n"
         info_summary += "\n"
 
@@ -328,8 +329,9 @@ def parse_xml_sheet(xml_file: str, structured: bool = False) -> dict:
         if texts:
             # Add all sections title into the first chunk
             sections = "\n".join("- " + item for item in sections)
-            sections = "\n\nVoici une liste de différents cas possibles:\n" + sections
-            texts[0]["text"] += sections
+            if sections:
+                sections = "\n\nVoici une liste de différents cas possibles:\n" + sections
+                texts[0]["text"] += sections
 
         doc["text"] = texts
     else:

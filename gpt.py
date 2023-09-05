@@ -11,9 +11,12 @@ Usage:
 Commands:
     chunks      Parse les fichiers Xml issue de data.gouv, situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
                 Chaque élement Json correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
+                Chunks are created under _data/xmlfiles_as_chunks.json.
+
     questions   Generate a corpus of questions from the XML files.
 
-    index       Create the index to search relevant document given a query. The index are stored (if managed by the repo) in _data/x/{MODEL}-{VERSION}.
+    index       Create the index to search relevant document given a query. It uses the chunks in _data/xmlfiles_as_chunks.json as documents.
+                The index are stored (if managed by the repo) in _data/x/{MODEL}-{VERSION}.
 
     finetune    Fine-tune the given model. Parameters will be read from fine_tuning/x/{MODEL}-{VERSION}/.
                 Results will be saved in _data/x/{MODEL}-{VERSION}.
