@@ -3,8 +3,9 @@ import random
 import string
 from datetime import timedelta
 
-from flask import (Flask, Response, g, jsonify, render_template, request,
-                   session, stream_with_context)
+import meilisearch
+from flask import (Flask, Response, jsonify, redirect, render_template,
+                   request, session, stream_with_context, url_for)
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from gpt4all import GPT4All
@@ -118,8 +119,8 @@ def getIsStreaming(db, username):
 #
 
 
-@app.route("/stream_chat")
-def stream_chat():
+@app.route("/api/fabrique_stream")
+def fabrique_stream():
     global user_text
     global context
     global institution
@@ -161,8 +162,8 @@ def stream_chat():
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
 
-@app.route("/stop_generation")
-def stop_generation():
+@app.route("/api/fabrique_stop")
+def fabrique_stop():
     if "username" in session:
         session["is_streaming"] = False
         setIsStreaming(db, session["username"], False)
@@ -170,8 +171,8 @@ def stop_generation():
     return "ok", 200
 
 
-@app.route("/", methods=["GET", "POST"])
-def index():
+@app.route("/api/fabrique", methods=["GET", "POST"])
+def fabrique():
     global user_text
     global context
     global institution
@@ -209,11 +210,46 @@ def index():
     )
 
 
+@app.route("/api/search/<string:index_name>", methods=["POST"])
+def search(index_name):
+    if index_name not in ["experiences", "sheets", "chunks"]:
+        error = {"message": "Invalid route: index unknwown."}
+        return jsonify(error), 400
+
+    # Text search index
+    client = meilisearch.Client("http://localhost:7700", "masterKey")
+    text_index = client.index(index_name)
+
+    data = request.get_json()
+    if "q" not in data:
+        error = {"message": 'Attribute "q" is missing'}
+        return jsonify(error), 400
+
+    if index_name == "experiences":
+        retrieves = ["title", "description", "intitule_typologie_1", "reponse_structure_1"]
+    elif index_name == "sheets":
+        retrieves = ["title", "url"]
+    else:
+        raise NotImplementedError
+
+
+    res = text_index.search(data["q"], {"limit": data.get("n", 3), "attributesToRetrieve": retrieves})
+
+    # print("total hit ~ %s" % res["estimatedTotalHits"])
+    response = jsonify(res["hits"])
+    response.headers["Content-Type"] = "application/json; charset=utf-8"
+    return response
+
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    return redirect(url_for("fabrique"))
+
+
 # @app.teardown_appcontext
 # def teardown_db(exception=None):
 #    db.terminate()
 
 
 if __name__ == "__main__":
-
     app.run(threaded=True, debug=True)

@@ -9,7 +9,12 @@ import pandas as pd
 from scipy import sparse
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
-from spacy.lang.fr.stop_words import STOP_WORDS as fr_stop
+
+# Load stop words
+stopwords = []
+with open("../_data/stopwords/fr.txt", "r") as file:
+    for line in file:
+        stopwords.append(line.strip())
 
 # Do not print up warnings on a CPU machine only
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -34,8 +39,8 @@ now = time()
 
 if score == "bm25":
     # Initialize the TF-IDF vectorizer (do not match number)
-    # vectorizer = TfidfVectorizer(norm=None, smooth_idf=False, stop_words=fr_stop, min_df=0.05, max_df=0.9, token_pattern=r"\b[A-Za-z_][A-Za-z_]+\b")
-    vectorizer = TfidfVectorizer(norm=None, smooth_idf=False, stop_words=fr_stop, token_pattern=r"\b[A-Za-z_][A-Za-z_]+\b")
+    # vectorizer = TfidfVectorizer(norm=None, smooth_idf=False, stop_words=stopwords, min_df=0.05, max_df=0.9, token_pattern=r"\b[A-Za-z_][A-Za-z_]+\b")
+    vectorizer = TfidfVectorizer(norm=None, smooth_idf=False, stop_words=stopwords, token_pattern=r"\b[A-Za-z_][A-Za-z_]+\b")
 
     # Compute the TF-IDF matrix
     X = vectorizer.fit_transform(documents)
@@ -62,8 +67,8 @@ if score == "bm25":
     final = (numer / denom).sum(1).A1
 elif score == "cosine":
     # Initialize the TF-IDF vectorizer (do not match number)
-    # vectorizer = TfidfVectorizer(norm=None, smooth_idf=False, stop_words=fr_stop, min_df=0.05, max_df=0.9, token_pattern=r"\b[A-Za-z_][A-Za-z_]+\b")
-    vectorizer = TfidfVectorizer(norm=None, smooth_idf=False, stop_words=fr_stop, token_pattern=r"\b[A-Za-z_][A-Za-z_]+\b")
+    # vectorizer = TfidfVectorizer(norm=None, smooth_idf=False, stop_words=stopwords, min_df=0.05, max_df=0.9, token_pattern=r"\b[A-Za-z_][A-Za-z_]+\b")
+    vectorizer = TfidfVectorizer(norm=None, smooth_idf=False, stop_words=stopwords, token_pattern=r"\b[A-Za-z_][A-Za-z_]+\b")
 
     # Compute the TF-IDF matrix
     X = vectorizer.fit_transform(documents)

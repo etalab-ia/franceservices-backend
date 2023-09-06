@@ -15,7 +15,7 @@
     <article>
         <div class="submission_text">
             <h2>Éléments du texte à générer</h2>
-            <form action="/" method="post">
+            <form action="/api/fabrique" method="post">
               <div>
                 <label for="user_text">La question posée par un citoyen français</label>
                 <textarea type="text" id="user_text" name="user_text" value="" rows="5" required>{{ user_text|safe }}</textarea>
@@ -43,7 +43,7 @@
             </div>
 
             <script>
-              var stream_chat = new EventSource("/stream_chat");
+              var stream_chat = new EventSource("/api/fabrique_stream");
               var target_output = document.getElementById("result");
               var $loader = document.getElementById("stop");
 
@@ -59,11 +59,10 @@
               };
 
               function stopGeneration() {
-                console.log("get in there ?")
                   stream_chat.close();
                   $loader.style.display = 'none';
 
-                  fetch('/stop_generation')
+                  fetch('/api/fabrique_stop')
                     .then(response => {})
                     .catch(error => console.error('Error:', error));
               }

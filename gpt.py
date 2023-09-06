@@ -5,7 +5,7 @@
 Usage:
     gpt.py chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
     gpt.py questions DIRECTORY
-    gpt.py index (elasticsearch | embedding) VERSION
+    gpt.py index (experiences | sheets | chunks)
     gpt.py finetune (xgen | llama) VERSION
 
 Commands:
@@ -15,8 +15,8 @@ Commands:
 
     questions   Generate a corpus of questions from the XML files.
 
-    index       Create the index to search relevant document given a query. It uses the chunks in _data/xmlfiles_as_chunks.json as documents.
-                The index are stored (if managed by the repo) in _data/x/{MODEL}-{VERSION}.
+    index       Create the given index to search relevant document given a query. Each index is created using a specific file as ground-truth.
+                See doc to see which files are used by which index.
 
     finetune    Fine-tune the given model. Parameters will be read from fine_tuning/x/{MODEL}-{VERSION}/.
                 Results will be saved in _data/x/{MODEL}-{VERSION}.
@@ -53,6 +53,13 @@ if __name__ == "__main__":
         from xml_parsing import make_questions
 
         make_questions(args["DIRECTORY"])
+    elif args["index"]:
+        from ir import create_index
+
+        indexes = ["experiences", "chunks", "sheets"]
+        for name in indexes:
+            if name in args and args[name]:
+                create_index(name)
     elif args["finetune"]:
         raise NotImplementedError
     else:

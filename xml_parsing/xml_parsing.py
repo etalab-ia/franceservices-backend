@@ -140,7 +140,7 @@ def parse_xml(xml_3_folders_path: str = "_data/xml", structured: bool = False) -
         # Print the percentage of total time
         if (100 * xml_index) // (len(xml_files)) > current_percentage:
             current_percentage = (100 * xml_index) // (len(xml_files))
-            print(f"Process: {current_percentage}%\r", end="")
+            print(f"Processing sheet: {current_percentage}%\r", end="")
 
         if not (xml_file.split("/")[-1].startswith("N") or xml_file.split("/")[-1].startswith("F")):
             # Permet de garder uniquement les fiches pratiques,
@@ -176,7 +176,7 @@ def parse_questions(xml_3_folders_path: str = "_data/xml") -> pd.DataFrame:
         # Print the percentage of total time
         if (100 * xml_index) // (len(xml_files)) > current_percentage:
             current_percentage = (100 * xml_index) // (len(xml_files))
-            print(f"Process: {current_percentage}%\r", end="")
+            print(f"Processing sheet: {current_percentage}%\r", end="")
 
         if not (xml_file.split("/")[-1].startswith("N") or xml_file.split("/")[-1].startswith("F")):
             # Permet de garder uniquement les fiches pratiques,
