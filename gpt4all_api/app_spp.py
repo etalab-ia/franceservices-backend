@@ -9,7 +9,7 @@ from flask import (Flask, Response, jsonify, redirect, render_template,
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from gpt4all import GPT4All
-from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String, Text
 
 app = Flask(__name__)
 CORS(app)
@@ -24,14 +24,84 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(os.getcwd(),
 N_THREADS = 4
 model = GPT4All("ggml-model-fabrique-q4_K.bin", model_path="model", n_threads=N_THREADS)
 
-# Default value for the form.
-user_text = "Le service chat a été très facile à utiliser et la policière était très gentille, elle a répondu à toutes mes questions et es très patiente merci de son aide et de l'aide du système.  ri le 02/07/2023 à 59130 Lambersart  Posté par La personne concernée"
-context = (
-    "La plateforme ma Sécurité permet de mettre en relation les citoyens avec des policières et ds policiers 24h sur 24"
-)
-institution = "moncommissariat.fr"
-links = "https://www.masecurite.interieur.gouv.fr/fr"
-temperature = "0.5"
+
+#
+# Database
+#
+
+db = SQLAlchemy(app)
+
+
+class User(db.Model):
+    # uniquely identify a user/client.
+    username = Column(String(80), primary_key=True)
+    # Use by the llm generator callback to stop the stream.
+    is_streaming = Column(Boolean, default=False)
+    # Limit the max number of allowed stream.
+    concurent_stream = Column(Integer, default=0)
+
+    # Fabrique parameters
+    # --
+    user_text = Column(
+        Text,
+        default="Le service chat a été très facile à utiliser et la policière était très gentille, elle a répondu à toutes mes questions et es très patiente merci de son aide et de l'aide du système.  ri le 02/07/2023 à 59130 Lambersart  Posté par La personne concernée",
+    )
+    context = Column(
+        Text,
+        default="La plateforme ma Sécurité permet de mettre en relation les citoyens avec des policières et ds policiers 24h sur 24",
+    )
+    institution = Column(Text, default="moncommissariat.fr")
+    links = Column(Text, default="https://www.masecurite.interieur.gouv.fr/fr")
+    temperature = Column(String(5), default="0.5")
+
+    def __init__(self, username):
+        self.username = username
+
+    def __repr__(self):
+        return "<User %r : is_streaming=%s>" % (self.username, self.is_streaming)
+
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+        db.session.commit()
+
+    @staticmethod
+    def addUser(username):
+        user = User(username)
+        db.session.add(user)
+        db.session.commit()
+        return user
+
+    @staticmethod
+    def getUser(username):
+        return db.session.get(User, username)
+
+
+    @staticmethod
+    def getIsStreaming(username):
+        user = db.session.get(User, username)
+        if user:
+            return user.is_streaming
+        else:
+            return False
+
+    def setIsStreaming(self, is_streaming):
+
+        self.is_streaming = bool(is_streaming)
+
+        if is_streaming:
+            self.concurent_stream += 1
+        elif self.concurent_stream > 0:
+            self.concurent_stream -= 1
+
+        db.session.commit()
+
+
+with app.app_context():
+    db.create_all()
+
 
 #
 # Utils
@@ -47,72 +117,13 @@ def random_username(length=8):
 class StopGen:
     """Callback to pass to the generator"""
 
-    def __init__(self, db, username):
-        self.db = db
-        self.username = username
-
-    def callback(self, token_id, token_string):
-        is_streaming = getIsStreaming(self.db, self.username)
-        return is_streaming
-
-
-#
-# Database
-#
-
-db = SQLAlchemy(app)
-
-with app.app_context():
-    db.create_all()
-
-
-class User(db.Model):
-    # uniquely identify a user/client.
-    username = Column(String(80), primary_key=True)
-    # Use by the llm generator callback to stop the stream.
-    is_streaming = Column(Boolean, default=False)
-    # Limit the max number of allowed stream.
-    concurent_stream = Column(Integer, default=0)
-
     def __init__(self, username):
         self.username = username
 
-    def __repr__(self):
-        return "<User %r : is_streaming=%s>" % (self.username, self.is_streaming)
-
-
-def addUser(db, username):
-    with app.app_context():
-        user = User(username)
-        db.session.add(user)
-        db.session.commit()
-        return user
-
-
-def setIsStreaming(db, username, is_streaming):
-    with app.app_context():
-        user = db.session.get(User, username)
-        if not user:
-            user = addUser(db, username)
-
-        user.is_streaming = bool(is_streaming)
-
-        if is_streaming:
-            user.concurent_stream += 1
-        elif user.concurent_stream > 0:
-            user.concurent_stream -= 1
-
-        db.session.commit()
-
-
-def getIsStreaming(db, username):
-    with app.app_context():
-        user = db.session.get(User, username)
-        if user:
-            return user.is_streaming
-        else:
-            return False
-
+    def callback(self, token_id, token_string):
+        with app.app_context():
+            is_streaming = User.getIsStreaming(self.username)
+            return is_streaming
 
 #
 # App
@@ -121,28 +132,23 @@ def getIsStreaming(db, username):
 
 @app.route("/api/fabrique_stream")
 def fabrique_stream():
-    global user_text
-    global context
-    global institution
-    global links
-    global temperature
-
     if "username" in session:
         username = session["username"]
-        setIsStreaming(db, username, session["is_streaming"])
+        user = User.getUser(username)
+        user.setIsStreaming(session["is_streaming"])
     else:
         return "user need to POST on / before streaming", 400
 
     # Route that stream the generation results
     def generate():
         try:
-            prompt = f"""Question soumise au service {institution} : {user_text}
-                \rPrompt : {context} {links}
+            prompt = f"""Question soumise au service {user.institution} : {user.user_text}
+                \rPrompt : {user.context} {user.links}
                 \r---Réponse : """
 
             acc = []
             for t in model.generate(
-                prompt, max_tokens=700, temp=float(temperature), streaming=True, callback=StopGen(db, username).callback
+                prompt, max_tokens=700, temp=float(user.temperature), streaming=True, callback=StopGen(username).callback
             ):
                 # t = t.replace("\n", "<br>") # Better to  use <pre> to format generated text
                 acc.append(t)
@@ -156,7 +162,7 @@ def fabrique_stream():
             yield "data: [DONE]\n\n"
         finally:
             session["is_streaming"] = False
-            setIsStreaming(db, session["username"], False)
+            user.setIsStreaming(False)
 
     # return Response(generate(), mimetype="text/event-stream")
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
@@ -166,46 +172,41 @@ def fabrique_stream():
 def fabrique_stop():
     if "username" in session:
         session["is_streaming"] = False
-        setIsStreaming(db, session["username"], False)
+        User.getUser(session["username"]).setIsStreaming(False)
 
     return "ok", 200
 
 
 @app.route("/api/fabrique", methods=["GET", "POST"])
 def fabrique():
-    global user_text
-    global context
-    global institution
-    global links
-    global temperature
-
+    # @TODO: rolling database / forget user after a certain amount of times...
     # if len(db) > 20000:
     #    db.clear()
 
     if "username" not in session:
         username = random_username()
         session["username"] = username
-        addUser(db, username)
-    elif not db.session.get(User, session["username"]):
-        addUser(db, session["username"])
+        user = User.addUser(username)
+    elif not User.getUser(session["username"]):
+        username = session["username"]
+        user = User.addUser(username)
+    else:
+        username = session["username"]
+        user = User.getUser(session["username"])
 
     if request.method == "POST":
-        user_text = request.form["user_text"]
-        context = request.form.get("context", context)
-        institution = request.form.get("institution", institution)
-        links = request.form.get("links", links)
-        temperature = request.form.get("temperature", temperature)
+        user.update(**request.form)
         session["is_streaming"] = True
     else:
         session["is_streaming"] = False
 
     return render_template(
         "index.html",
-        user_text=user_text,
-        institution=institution,
-        context=context,
-        links=links,
-        temperature=temperature,
+        user_text=user.user_text,
+        institution=user.institution,
+        context=user.context,
+        links=user.links,
+        temperature=user.temperature,
         is_streaming=session["is_streaming"],
     )
 
@@ -231,7 +232,6 @@ def search(index_name):
         retrieves = ["title", "url"]
     else:
         raise NotImplementedError
-
 
     res = text_index.search(data["q"], {"limit": data.get("n", 3), "attributesToRetrieve": retrieves})
 
