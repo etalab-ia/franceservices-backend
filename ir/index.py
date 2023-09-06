@@ -83,13 +83,54 @@ def create_index(index_name, add_doc=True):
             from xml_parsing import parse_xml
 
             # Add documents
-            df = parse_xml("../../data/data.gouv/vos-droits-et-demarche/", structured=False)
+            df = parse_xml("_data/data.gouv/vos-droits-et-demarche/", structured=False)
             documents = [d for d in df.to_dict(orient="records") if d["text"][0]]
 
             for doc in documents:
                 # one chunks for unstructured parsing.
                 doc["text"] = doc["text"][0]
                 doc["id"] = doc["url"].split("/")[-1]
+
+            index.update_documents_in_batches(documents)
+
+    elif index_name == "chunks":
+        # Load stop words
+        stopwords = []
+        with open("_data/stopwords/fr.txt", "r") as file:
+            for line in file:
+                stopwords.append(line.strip())
+
+        # Create index
+        client.create_index(index_name, {"primaryKey": "hash"})
+        client.index(index_name).update_settings(
+            {
+                "searchableAttributes": [
+                    "title",
+                    "context",
+                    "text"
+                    "introduction",
+                ],
+                "displayedAttributes": [
+                    "title",
+                    "context",
+                    "text",
+                    "url",
+                ],
+                "stopWords": stopwords,
+            }
+        )
+
+        # Get index
+        index = client.get_index(index_name)
+
+        if add_doc:
+            # Add documents
+            with open("_data/xmlfiles_as_chunks.json") as f:
+                documents = json.load(f)
+
+            for doc in documents:
+                if "context" in doc:
+                    doc["context"] = " > ".join(doc["context"])
 
             index.update_documents_in_batches(documents)
 

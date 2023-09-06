@@ -54,11 +54,26 @@ For index=experiences:
     "title" : "Title of the experience",
     "description" : "The user experience", 
     "intitule_typologie_1" : "where it comes from"
+    "reponse_structure_1" : "see https://opendata.plus.transformation.gouv.fr/explore/dataset/export-expa-c-riences/information"
 }
 ```
 
 For index=sheets
-...Tt be completed
+```
+{
+    "title" : "Title of the sheet",
+    "url" : "Url of the sheet", 
+    "introduction" : "Introduction of the sheet"
+}
+```
 
 For index=chunks
-...to be completed
+```
+{
+    "title" : "Title of the sheet",
+    "url" : "Url of the sheet", 
+    "introduction" : "Introduction of the sheet"
+    "text" : "The text part of the sheet (the chunk)"
+    "context" : "The context of the chunk (successive chapter/sub-chapter/situation titles if any)"
+}
+```

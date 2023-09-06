@@ -3,23 +3,23 @@
 """ Manage the legal information assistant.
 
 Usage:
-    gpt.py chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
-    gpt.py questions DIRECTORY
+    gpt.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
+    gpt.py make_questions DIRECTORY
     gpt.py index (experiences | sheets | chunks)
     gpt.py finetune (xgen | llama) VERSION
 
 Commands:
-    chunks      Parse les fichiers Xml issue de data.gouv, situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
-                Chaque élement Json correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
-                Chunks are created under _data/xmlfiles_as_chunks.json.
+    make_chunks     Parse les fichiers Xml issue de data.gouv, situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
+                    Chaque élement Json correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
+                    Chunks are created under _data/xmlfiles_as_chunks.json.
 
-    questions   Generate a corpus of questions from the XML files.
+    make_questions  add_doc corpus of questions from the XML files.
 
-    index       Create the given index to search relevant document given a query. Each index is created using a specific file as ground-truth.
-                See doc to see which files are used by which index.
+    index           Create the given index to search relevant document given a query. Each index is created using a specific file as ground-truth.
+                    See doc to see which files are used by which index.
 
-    finetune    Fine-tune the given model. Parameters will be read from fine_tuning/x/{MODEL}-{VERSION}/.
-                Results will be saved in _data/x/{MODEL}-{VERSION}.
+    finetune        Fine-tune the given model. Parameters will be read from fine_tuning/x/{MODEL}-{VERSION}/.
+                    Results will be saved in _data/x/{MODEL}-{VERSION}.
 
 
 Options:
@@ -28,8 +28,12 @@ Options:
 
 
 Examples:
-    ./gpt.py chunks --chunk-size 500 --chunk-overlap 20 ../../data.gouv/vos-droits-et-demarche/
-    ./gpt.py questions ../../data.gouv/vos-droits-et-demarche/
+    ./gpt.py make_chunks --chunk-size 500 --chunk-overlap 20 _data/data.gouv/vos-droits-et-demarche/
+    ./gpt.py make_chunks _data/data.gouv/vos-droits-et-demarche/ --structured
+    ./gpt.py questions _data/data.gouv/vos-droits-et-demarche/
+    ./gpt.py index experiences  # assumes _data/export-expa-c-riences.json exists
+    ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ exists
+    ./gpt.py index chunks       # assume _data/xmlfiles_as_chunks.json exists
 """
 
 
@@ -40,7 +44,7 @@ if __name__ == "__main__":
     args = docopt(__doc__, version="0")
 
     # Run command
-    if args["chunks"]:
+    if args["make_chunks"]:
         from xml_parsing import make_chunks
 
         make_chunks(
@@ -49,7 +53,7 @@ if __name__ == "__main__":
             chunk_size=int(args["--chunk-size"]),
             chunk_overlap=int(args["--chunk-overlap"]),
         )
-    elif args["questions"]:
+    elif args["make_questions"]:
         from xml_parsing import make_questions
 
         make_questions(args["DIRECTORY"])

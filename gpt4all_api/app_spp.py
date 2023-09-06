@@ -229,7 +229,9 @@ def search(index_name):
     if index_name == "experiences":
         retrieves = ["title", "description", "intitule_typologie_1", "reponse_structure_1"]
     elif index_name == "sheets":
-        retrieves = ["title", "url"]
+        retrieves = ["title", "url", "introduction"]
+    elif index_name == "chunks":
+        retrieves = ["title", "url", "introduction", "text", "context"]
     else:
         raise NotImplementedError
 

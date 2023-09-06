@@ -94,6 +94,7 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
 
                 chunk = data.copy()
                 chunk["chunk_index"] = index
+                chunk["hash"] = h
                 chunk["text"] = fragment
                 if isinstance(natural_chunk, dict) and "context" in natural_chunk:
                     chunk["context"] = natural_chunk["context"]
