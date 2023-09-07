@@ -2,12 +2,12 @@
 
 (work in progress)
 
-**POST /api/fabrique**
+> POST /api/fabrique
 
 Register configuration for "fabrique" text generation.
 
-Content-type: application/x-www-form-urlencoded
-Params:
+Content-type: application/x-www-form-urlencoded  
+Params:  
 ```
 user_text(required): string : the user/civil experience to be answered
 context: string : prompt information (need better doc @pclanglais ?)
@@ -19,19 +19,19 @@ temperature: number between 0 and 1 : the orignalality of the answer (0: determi
 Note: the answer result can then be obtained with `fabrique_stream`
 
 
-**GET /api/fabrique_stream**
+> GET /api/fabrique_stream
 
-Fabrique text answer generation.
-Server-sent stream like content.
+Fabrique text answer generation.  
+Server-sent stream like content.  
 https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
 
 
-**GET /api/fabrique_stop**
+> GET /api/fabrique_stop
 
 Stop a Fabrique text stream generation.
 
 
-**POST /api/search/{index}**
+> POST /api/search/{index}
 
 Search most relevant from a given {index}.
 
@@ -40,13 +40,13 @@ Search most relevant from a given {index}.
 - sheets: search the most relevant sheets from service-public.fr.
 - chunks: search the msot relevant chunks.
 
-Content-type: application/json
-Params:
+Content-type: application/json  
+Params:  
 ```
 q(required): string: search query
 n(default=3): integer: max document to return
 ```
-Returns: A Json list of result object ->
+Returns: A Json list of result object ->  
 
 For index=experiences:
 ```
