@@ -148,7 +148,7 @@ def fabrique_stream():
 
             acc = []
             for t in model.generate(
-                prompt, max_tokens=700, temp=float(user.temperature), streaming=True, callback=StopGen(username).callback
+                prompt, max_tokens=500, temp=float(user.temperature), streaming=True, callback=StopGen(username).callback
             ):
                 # t = t.replace("\n", "<br>") # Better to  use <pre> to format generated text
                 acc.append(t)
