@@ -12,7 +12,7 @@ from gpt4all import GPT4All
 from sqlalchemy import Boolean, Column, Integer, String, Text
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 # CORS(app, origins=['https://127.0.0.1:5173, https://localhost:5173'])
 app.secret_key = "secret4all"
 app.permanent_session_lifetime = timedelta(hours=24)
