@@ -29,7 +29,7 @@ with open("_data/stopwords/fr.txt", "r") as file:
 # for document search.
 #
 
-score = "e5"
+score = "cosine"
 n_best = 3
 question = "qu'est ce que le JOAFE ?"
 
@@ -37,9 +37,16 @@ question = "qu'est ce que le JOAFE ?"
 # --
 # Get documents from chunks
 with open("_data/xmlfiles_as_chunks.json") as f:
-    documents = [x["text"] for x in json.load(f)]
+    docs = json.load(f)
 
+documents = [x["text"] for x in docs][:1000]
 now = time()
+
+print(f'''
+      Question: {question}
+      Similarity: {score}
+    '''
+     )
 
 if score == "bm25":
     # Initialize the TF-IDF vectorizer (do not match number)
@@ -49,8 +56,8 @@ if score == "bm25":
     # Compute the TF-IDF matrix
     X = vectorizer.fit_transform(documents)
     print("Num doc x Size voc: ", X.shape)
-    loading_time = time() - now
-    print("Loading time: %.3f" % loading_time)
+    loading_time = time()
+    print("Loading time:%.3f" % (loading_time - now))
 
     # INFERENCE
     # convert to csc for better column slicing
@@ -77,14 +84,16 @@ elif score == "cosine":
     # Compute the TF-IDF matrix
     X = vectorizer.fit_transform(documents)
     print("Num doc x Size voc: ", X.shape)
-    loading_time = time() - now
-    print("Loading time: %.3f" % loading_time)
+    loading_time = time()
+    print("Loading time:%.3f" % (loading_time - now))
 
     # INFERENCE
     # tfidf similarity
     # faster thant cosine_similarity
+    (q,) = vectorizer.transform([question])
     (scores,) = linear_kernel(q, X)
 elif score == "e5":
+    import torch
     import torch.nn.functional as F
     from sentence_transformers import SentenceTransformer
     from torch import Tensor
@@ -94,22 +103,29 @@ elif score == "e5":
         last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
         return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
 
-    def embed(tokenizer, model, texts, batch_size=10):
+    def embed(tokenizer, model, texts, batch_size=1):
         # Sentence transformers for E5
-        batch_dict = tokenizer(
-            texts,
-            max_length=512,
-            padding=True,
-            truncation=True,
-            return_tensors="pt",
-        )
-        outputs = model(**batch_dict)
+        embeddings = []
+        for i in range(0, len(texts), batch_size):
+            print("batch:", i)
+            batch_dict = tokenizer(
+                texts[i : i + batch_size],
+                max_length=512,
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
+            )
+            outputs = model(**batch_dict)
 
-        embeddings = average_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
-        embeddings = F.normalize(embeddings, p=2, dim=1)
-        # print(type(embeddings)) -> Tensor
-        # print(embeddings.shape) -> (n_doc X size_embedding)
-        return embeddings
+            vectors = average_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
+            vectors = F.normalize(vectors, p=2, dim=1)
+            # print(type(vectors)) -> Tensor
+            # print(vectors.shape) -> (n_doc X size_embedding)
+            embeddings.append(vectors.detach().numpy())
+            #torch.cuda.empty_cache()
+
+        #return torch.cat(embeddings) # burn memory
+        return np.vstack(embeddings)
 
     # sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="e5-multilingual", device = "cuda")
     # model_name = "intfloat/multilingual-e5-large"
@@ -117,20 +133,23 @@ elif score == "e5":
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModel.from_pretrained(model_name)  # -> SentenceTransformer
 
-    loading_time = time() - now
-    print("Loading time: %.3f" % loading_time)
+    loading_time = time()
+    print("Loading time: %.3f" % (loading_time - now))
 
     q_embed = embed(tokenizer, model, [question])
-    docs_embed = embed(tokenizer, model, documents)
+    docs_embed = embed(tokenizer, model, documents[:100])
 
     scores = q_embed @ docs_embed.T
-    print(scores.shape)
+    scores = scores[0]
 
 else:
     raise NotImplementedError("similarity unknown")
 
 
-print(f"Inference time: {time() - loading_time :.5f}")
+print(f"Inference time: {time() - loading_time:.5f}")
 
 for i in np.argsort(scores)[-n_best:][::-1]:
     print(f"doc {i}\n---")
+    print("  Title:", docs[i]["title"])
+    print("  Url:", docs[i]["url"])
+
