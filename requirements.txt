@@ -21,3 +21,5 @@ torch
 transformers
 weaviate-client
 meilisearch
+elasticsearch
+

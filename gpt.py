@@ -5,7 +5,7 @@
 Usage:
     gpt.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
     gpt.py make_questions DIRECTORY
-    gpt.py index (experiences | sheets | chunks)
+    gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE]
     gpt.py finetune (xgen | llama) VERSION
 
 Commands:
@@ -25,6 +25,7 @@ Commands:
 Options:
     --chunk-size N      The maximum size of the chunks (token count...) [default: 1100]
     --chunk-overlap N   The size of the overlap between chunks [default: 200]
+    --index-type INDEX_TYPE     The type of index to create (bm25, bucket, e5) [default: bm25]
 
 
 Examples:
@@ -63,7 +64,7 @@ if __name__ == "__main__":
         indexes = ["experiences", "chunks", "sheets"]
         for name in indexes:
             if name in args and args[name]:
-                create_index(name)
+                create_index(args["--index-type"], name)
     elif args["finetune"]:
         raise NotImplementedError
     else:

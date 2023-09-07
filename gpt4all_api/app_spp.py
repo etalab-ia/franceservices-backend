@@ -217,25 +217,35 @@ def search(index_name):
         error = {"message": "Invalid route: index unknwown."}
         return jsonify(error), 400
 
-    # Text search index
-    client = meilisearch.Client("http://localhost:7700", "masterKey")
-    text_index = client.index(index_name)
-
     data = request.get_json()
-    if "q" not in data:
-        error = {"message": 'Attribute "q" is missing'}
+    limit = int(data.get("n", 3))
+    sim = data.get("similarity", "bucket")
+
+    # Text search index
+    if sim == "bucket":
+        client = meilisearch.Client("http://localhost:7700", "masterKey")
+        text_index = client.index(index_name)
+
+        if "q" not in data:
+            error = {"message": 'Attribute "q" is missing'}
+            return jsonify(error), 400
+
+        if index_name == "experiences":
+            retrieves = ["title", "description", "intitule_typologie_1", "reponse_structure_1"]
+        elif index_name == "sheets":
+            retrieves = ["title", "url", "introduction"]
+        elif index_name == "chunks":
+            retrieves = ["title", "url", "introduction", "text", "context"]
+        else:
+            raise NotImplementedError
+
+        res = text_index.search(data["q"], {"limit": limit, "attributesToRetrieve": retrieves})
+    elif sim == "bm25":
+        pass
+    else:
+        error = {"message": 'Attribute "similarity" unknown'}
         return jsonify(error), 400
 
-    if index_name == "experiences":
-        retrieves = ["title", "description", "intitule_typologie_1", "reponse_structure_1"]
-    elif index_name == "sheets":
-        retrieves = ["title", "url", "introduction"]
-    elif index_name == "chunks":
-        retrieves = ["title", "url", "introduction", "text", "context"]
-    else:
-        raise NotImplementedError
-
-    res = text_index.search(data["q"], {"limit": data.get("n", 3), "attributesToRetrieve": retrieves})
 
     # print("total hit ~ %s" % res["estimatedTotalHits"])
     response = jsonify(res["hits"])

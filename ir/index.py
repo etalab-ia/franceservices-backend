@@ -1,10 +1,19 @@
 import json
 from pprint import pprint
 
-import meilisearch
+
+def create_index(index_type, index_name, add_doc=True):
+    if index_type == "bucket":
+        return create_bucket_index(index_name, add_doc)
+    elif index_type == "bm25":
+        return create_bm25_index(index_name, add_doc)
+    else:
+        raise NotImplementedError
 
 
-def create_index(index_name, add_doc=True):
+def create_bucket_index(index_name, add_doc=True):
+    import meilisearch
+
     client = meilisearch.Client("http://localhost:7700", "masterKey")
 
     if index_name == "experiences":
@@ -107,8 +116,7 @@ def create_index(index_name, add_doc=True):
                 "searchableAttributes": [
                     "title",
                     "context",
-                    "text"
-                    "introduction",
+                    "text" "introduction",
                 ],
                 "displayedAttributes": [
                     "title",
@@ -141,3 +149,60 @@ def create_index(index_name, add_doc=True):
     stats = index.get_stats()
     print("Stats for index '%s':" % index_name)
     print(pprint(dict(stats)))
+
+
+def create_bm25_index(index_name, add_doc=True):
+    from elasticsearch import Elasticsearch
+
+    # Connect to Elasticsearch
+    es = Elasticsearch([{"scheme": "http", "host": "localhost", "port": 9200}])
+
+    # Define index settings and mappings
+    if index_name == "experiences":
+        index_settings = {
+            "settings": {
+                "index": {
+                    "similarity": {"default": {"type": "BM25"}},
+                    "analysis": {
+                        "filter": {
+                            "french_stop": {"type": "stop", "stopwords": "_french_"},
+                            "french_stemmer": {"type": "stemmer", "language": "light_french"},
+                        },
+                        "analyzer": {
+                            "french_analyzer": {
+                                "tokenizer": "standard",
+                                "filter": ["lowercase", "french_stop", "french_stemmer"],
+                            }
+                        },
+                    },
+                }
+            },
+            "mappings": {
+                "properties": {
+                    "title": {"type": "text", "store": True, "analyzer": "french_analyzer"},
+                    "description": {"type": "text", "store": True, "analyzer": "french_analyzer"},
+                    "intitule_typologie_1": {
+                        "type": "text",
+                        "index": False,
+                    },
+                    "reponse_structure_1": {
+                        "type": "text",
+                        "index": False,
+                    },
+                    # "url": {
+                    #    "type": "keyword"
+                    # }
+                }
+            },
+        }
+    elif index_name == "sheets":
+        pass
+    elif index_name == "chunks":
+        pass
+    else:
+        raise NotImplementedError("Index unknown")
+
+    # Create the index
+    res = es.indices.create(index=index_name, body=index_settings, headers={'Content-Type': 'application/json'})
+
+    print(res)
