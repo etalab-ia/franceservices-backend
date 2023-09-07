@@ -20,7 +20,7 @@ from langchain.text_splitter import NLTKTextSplitter
 from nltk import download
 from nltk.tokenize import sent_tokenize
 
-download("punkt", quiet=True)
+download("punkt", quiet=False)
 
 
 def get_token_length_function(

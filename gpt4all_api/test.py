@@ -10,7 +10,7 @@ user_text = "Merci pour le service Service-Public+. Bien à vous."
 # Send POST request with string parameter
 headers = {"Content-Type": "application/x-www-form-urlencoded"}
 data = {"user_text": user_text}
-response = requests.post(url + "/", data=data, headers=headers, verify=False)
+response = requests.post(url + "/api/fabrique", data=data, headers=headers, verify=False)
 
 # Keep cookie for later requests
 cookies = response.cookies
@@ -25,7 +25,7 @@ header: {response.headers}
 )
 
 # Open server-sent-event stream
-response = requests.get(url + "/stream_chat", stream=True, verify=False, cookies=cookies)
+response = requests.get(url + "/api/fabrique_stream", stream=True, verify=False, cookies=cookies)
 
 # Print the streamed response
 print("-> Wainting for the response stream:")

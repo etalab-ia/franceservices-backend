@@ -9,11 +9,11 @@ Usage:
     gpt.py finetune (xgen | llama) VERSION
 
 Commands:
-    make_chunks     Parse les fichiers Xml issue de data.gouv, situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
+    make_chunks     Parse les fichiers XML issue de data.gouv (fiches service publique), situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
                     Chaque élement Json correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
                     Chunks are created under _data/xmlfiles_as_chunks.json.
 
-    make_questions  add_doc corpus of questions from the XML files.
+    make_questions  Create a corpus of questions from the XML SP sheets.
 
     index           Create the given index to search relevant document given a query. Each index is created using a specific file as ground-truth.
                     See doc to see which files are used by which index.
@@ -29,8 +29,8 @@ Options:
 
 Examples:
     ./gpt.py make_chunks --chunk-size 500 --chunk-overlap 20 _data/data.gouv/vos-droits-et-demarche/
-    ./gpt.py make_chunks _data/data.gouv/vos-droits-et-demarche/ --structured
-    ./gpt.py questions _data/data.gouv/vos-droits-et-demarche/
+    ./gpt.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche/
+    ./gpt.py make_questions _data/data.gouv/vos-droits-et-demarche/
     ./gpt.py index experiences  # assumes _data/export-expa-c-riences.json exists
     ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ exists
     ./gpt.py index chunks       # assume _data/xmlfiles_as_chunks.json exists
