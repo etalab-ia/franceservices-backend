@@ -5,22 +5,16 @@ The default LangChain text splitters split either based on sentences (NLTKTextSp
 We would like to base chunk sizes on token count, but never split in the middle of a sentence - a behaviour that TokenTextSplitter does exhibit.
 The HybridSplitter class implements a custom splitter that combines both criteria.
 """
-from typing import (
-    Optional,
-    Union,
-    Literal,
-    AbstractSet,
-    Collection,
-    Any,
-    List,
-    Callable,
-)
+from typing import (AbstractSet, Any, Callable, Collection, List, Literal,
+                    Optional, Union)
 
+import nltk
 from langchain.text_splitter import NLTKTextSplitter
-from nltk import download
-from nltk.tokenize import sent_tokenize
 
-download("punkt", quiet=False)
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
 
 
 def get_token_length_function(
@@ -64,7 +58,7 @@ def split_into_parts(input: str, n_parts: int = 1) -> list[str]:
     """
     Split the input text into n_parts approximately equally-sized parts along sentence borders (will never split in the middle of a sentence).
     """
-    sentences = sent_tokenize(input, language="french")
+    sentences = nltk.sent_tokenize(input, language="french")
     avg_length = len(input) // n_parts
 
     parts = []

@@ -229,7 +229,7 @@ def search(index_name):
 
     # What to retrieves
     if index_name == "experiences":
-        retrieves = ["title", "description", "intitule_typologie_1", "reponse_structure_1"]
+        retrieves = ["titre", "description", "intitule_typologie_1", "reponse_structure_1"]
     elif index_name == "sheets":
         retrieves = ["title", "url", "introduction"]
     elif index_name == "chunks":
@@ -244,9 +244,9 @@ def search(index_name):
     elif sim == "bm25":
         client = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
         query = {"query": {"multi_match": {"query": q, "fuzziness": "AUTO"}}, "size": limit}
-        res = client.search(index_name, body=query)
-        _extract = lambda x: [x[r] for r in retrieves]
-        res = [_extract(x["_source"]) for x in res["hits"]["hits"] if x]
+        res = client.search(index=index_name, body=query)
+        _extract = lambda x: dict((r, x[r]) for r in retrieves)
+        res = [_extract(x.get("_source")) for x in res["hits"]["hits"] if x]
         res = {"hits": res}
     else:
         error = {"message": 'Attribute "similarity" unknown'}
