@@ -4,6 +4,7 @@ import string
 from datetime import timedelta
 
 import meilisearch
+from elasticsearch import Elasticsearch
 from flask import (Flask, Response, jsonify, redirect, render_template,
                    request, session, stream_with_context, url_for)
 from flask_cors import CORS
@@ -78,7 +79,6 @@ class User(db.Model):
     def getUser(username):
         return db.session.get(User, username)
 
-
     @staticmethod
     def getIsStreaming(username):
         user = db.session.get(User, username)
@@ -88,7 +88,6 @@ class User(db.Model):
             return False
 
     def setIsStreaming(self, is_streaming):
-
         self.is_streaming = bool(is_streaming)
 
         if is_streaming:
@@ -124,6 +123,7 @@ class StopGen:
         with app.app_context():
             is_streaming = User.getIsStreaming(self.username)
             return is_streaming
+
 
 #
 # App
@@ -217,35 +217,40 @@ def search(index_name):
         error = {"message": "Invalid route: index unknwown."}
         return jsonify(error), 400
 
+    # Params
     data = request.get_json()
-    limit = int(data.get("n", 3))
-    sim = data.get("similarity", "bucket")
+    if "q" not in data:
+        error = {"message": 'Attribute "q" is missing'}
+        return jsonify(error), 400
 
-    # Text search index
+    q = data["q"]
+    limit = int(data.get("n", 3))
+    sim = data.get("similarity", "bm25")
+
+    # What to retrieves
+    if index_name == "experiences":
+        retrieves = ["title", "description", "intitule_typologie_1", "reponse_structure_1"]
+    elif index_name == "sheets":
+        retrieves = ["title", "url", "introduction"]
+    elif index_name == "chunks":
+        retrieves = ["title", "url", "introduction", "text", "context"]
+    else:
+        raise NotImplementedError
+
+    # Search
     if sim == "bucket":
         client = meilisearch.Client("http://localhost:7700", "masterKey")
-        text_index = client.index(index_name)
-
-        if "q" not in data:
-            error = {"message": 'Attribute "q" is missing'}
-            return jsonify(error), 400
-
-        if index_name == "experiences":
-            retrieves = ["title", "description", "intitule_typologie_1", "reponse_structure_1"]
-        elif index_name == "sheets":
-            retrieves = ["title", "url", "introduction"]
-        elif index_name == "chunks":
-            retrieves = ["title", "url", "introduction", "text", "context"]
-        else:
-            raise NotImplementedError
-
-        res = text_index.search(data["q"], {"limit": limit, "attributesToRetrieve": retrieves})
+        res = client.index(index_name).search(q, {"limit": limit, "attributesToRetrieve": retrieves})
     elif sim == "bm25":
-        pass
+        client = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
+        query = {"query": {"multi_match": {"query": q, "fuzziness": "AUTO"}}, "size": limit}
+        res = client.search(index_name, body=query)
+        _extract = lambda x: [x[r] for r in retrieves]
+        res = [_extract(x["_source"]) for x in res["hits"]["hits"] if x]
+        res = {"hits": res}
     else:
         error = {"message": 'Attribute "similarity" unknown'}
         return jsonify(error), 400
-
 
     # print("total hit ~ %s" % res["estimatedTotalHits"])
     response = jsonify(res["hits"])

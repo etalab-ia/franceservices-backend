@@ -152,57 +152,65 @@ def create_bucket_index(index_name, add_doc=True):
 
 
 def create_bm25_index(index_name, add_doc=True):
-    from elasticsearch import Elasticsearch
+    from elasticsearch import Elasticsearch, helpers
 
     # Connect to Elasticsearch
-    es = Elasticsearch([{"scheme": "http", "host": "localhost", "port": 9200}])
+    client = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
 
     # Define index settings and mappings
     if index_name == "experiences":
-        index_settings = {
-            "settings": {
-                "index": {
-                    "similarity": {"default": {"type": "BM25"}},
-                    "analysis": {
-                        "filter": {
-                            "french_stop": {"type": "stop", "stopwords": "_french_"},
-                            "french_stemmer": {"type": "stemmer", "language": "light_french"},
-                        },
-                        "analyzer": {
-                            "french_analyzer": {
-                                "tokenizer": "standard",
-                                "filter": ["lowercase", "french_stop", "french_stemmer"],
-                            }
-                        },
-                    },
-                }
-            },
-            "mappings": {
-                "properties": {
-                    "title": {"type": "text", "store": True, "analyzer": "french_analyzer"},
-                    "description": {"type": "text", "store": True, "analyzer": "french_analyzer"},
-                    "intitule_typologie_1": {
-                        "type": "text",
-                        "index": False,
-                    },
-                    "reponse_structure_1": {
-                        "type": "text",
-                        "index": False,
-                    },
-                    # "url": {
-                    #    "type": "keyword"
-                    # }
-                }
+        settings = {
+            "similarity": {"default": {"type": "BM25"}},
+            "analysis": {
+                "filter": {
+                    "french_stop": {"type": "stop", "stopwords": "_french_"},
+                    "french_stemmer": {"type": "stemmer", "language": "light_french"},
+                },
+                "analyzer": {
+                    "french_analyzer": {
+                        "tokenizer": "standard",
+                        "filter": ["lowercase", "french_stop", "french_stemmer"],
+                    }
+                },
             },
         }
+        mappings = {
+            "properties": {
+                "title": {"type": "text", "store": True, "analyzer": "french_analyzer"},
+                "description": {"type": "text", "store": True, "analyzer": "french_analyzer"},
+                "intitule_typologie_1": {
+                    "type": "text",
+                    "index": False,
+                },
+                "reponse_structure_1": {
+                    "type": "text",
+                    "index": False,
+                },
+                # "url": {
+                #    "type": "keyword"
+                # }
+            }
+        }
+        # Create the index
+        client.indices.create(index=index_name, mappings=mappings, settings=settings, ignore=400)
+
+        # Test index
+        client.indices.refresh(index=index_name)
+        pprint(client.cat.count(index=index_name, format="json"))
+
+        if add_doc:
+            # Add documents
+            with open("_data/export-expa-c-riences.json") as f:
+                documents = json.load(f)
+
+            for doc in documents:
+                doc["_id"] = doc["id_experience"]
+
+            helpers.bulk(client, documents, index=index_name)
+
     elif index_name == "sheets":
         pass
     elif index_name == "chunks":
         pass
     else:
         raise NotImplementedError("Index unknown")
-
-    # Create the index
-    res = es.indices.create(index=index_name, body=index_settings, headers={'Content-Type': 'application/json'})
-
-    print(res)
