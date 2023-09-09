@@ -48,3 +48,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# Excel
+.~lock*#

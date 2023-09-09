@@ -56,6 +56,7 @@ Params:
 ```
 q(required): string: search query
 n(default=3): integer: max document to return
+similarity(default=bm25) : string : similarity algorithm. Possible values : bm25, bucket, e5.
 ```
 
 Returns: A Json list of result object ->  
