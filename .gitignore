@@ -1,5 +1,19 @@
+#
+# Projet
+#
 _data/
+notebooks/*.json
+notebooks/*.csv
+notebooks/notes/
+notebooks/answers
+
+# api
+gpt4all_api/gptcache.db
 gpt4all_api/model/*
+
+#
+# Default
+#
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -18,10 +32,6 @@ lib64/
 # Jupyter Notebook
 .ipynb_checkpoints
 .virtual_documents/ 
-notebooks/*.json
-notebooks/*.csv
-notebooks/notes/
-notebooks/answers
 
 # Environments
 .DS_Store
@@ -38,5 +48,3 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# api
-gpt4all_api/gptcache.db

@@ -38,17 +38,11 @@ def create_bm25_index(index_name, add_doc=True):
                     "type": "text",
                     "index": False,
                 },
-                # "url": {
-                #    "type": "keyword"
-                # }
+                "id_experiences": {"type": "keyword", "index": False},
             },
         }
         # Create the index
         client.indices.create(index=index_name, mappings=mappings, settings=settings, ignore=400)
-
-        # Test index
-        client.indices.refresh(index=index_name)
-        pprint(client.cat.count(index=index_name, format="json"))
 
         if add_doc:
             # Add documents
@@ -84,14 +78,11 @@ def create_bm25_index(index_name, add_doc=True):
                 "subject": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "introduction": {"type": "text", "index": False},
                 "url": {"type": "keyword", "index": False},
+                "sid": {"type": "keyword", "index": False},
             },
         }
         # Create the index
         client.indices.create(index=index_name, mappings=mappings, settings=settings, ignore=400)
-
-        # Test index
-        client.indices.refresh(index=index_name)
-        pprint(client.cat.count(index=index_name, format="json"))
 
         if add_doc:
             # Add documents
@@ -101,10 +92,12 @@ def create_bm25_index(index_name, add_doc=True):
             documents = [d for d in df.to_dict(orient="records") if d["text"][0]]
 
             for doc in documents:
-                doc["_id"] = doc["url"].split("/")[-1]
+                doc["sid"] = doc["url"].split("/")[-1]
                 doc["text"] = doc["text"][0]
+                doc["_id"] = doc["sid"]
 
             helpers.bulk(client, documents, index=index_name)
+
     elif index_name == "chunks":
         settings = {
             "similarity": {"default": {"type": "BM25"}},
@@ -129,14 +122,11 @@ def create_bm25_index(index_name, add_doc=True):
                 "context": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "introduction": {"type": "text", "analyzer": "french_analyzer"},
                 "url": {"type": "keyword", "index": False},
+                "hash": {"type": "keyword", "index": False},
             },
         }
         # Create the index
         client.indices.create(index=index_name, mappings=mappings, settings=settings, ignore=400)
-
-        # Test index
-        # client.indices.refresh(index=index_name)
-        pprint(client.cat.count(index=index_name, format="json"))
 
         if add_doc:
             # Add documents
@@ -149,5 +139,10 @@ def create_bm25_index(index_name, add_doc=True):
                     doc["context"] = " > ".join(doc["context"])
 
             helpers.bulk(client, documents, index=index_name)
+
     else:
         raise NotImplementedError("Index unknown")
+
+    # Test index
+    # client.indices.refresh(index=index_name)
+    pprint(client.cat.count(index=index_name, format="json"))

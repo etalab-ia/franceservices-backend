@@ -39,3 +39,26 @@ build_llama.cpp:
 convert_model_for_cpu:
 	python llama.cpp/convert.py <model> -outfile <outfile>
 	python llama.cpp/quantize <outfile> <outquantfile> q4_K
+
+build_all_indexes: # not embeddings
+	# elasticsearch
+	python3 gpt.py index experiences --index-type bm25
+	python3 gpt.py index sheets --index-type bm25
+	python3 gpt.py index chunks --index-type bm25
+	# melisearch
+	python3 gpt.py index experiences --index-type bucket
+	sleep 3 # debug @async..
+	python3 gpt.py index sheets --index-type bucket
+	sleep 3
+	python3 gpt.py index chunks --index-type bucket
+
+clean_all_indexex: # not embeddings
+	# elasticsearch
+	curl -XDELETE http://localhost:9202/experiences
+	curl -XDELETE http://localhost:9202/sheets
+	curl -XDELETE http://localhost:9202/chunks
+	# meillisearch
+	curl -X DELETE http://localhost:7700/indexes/experiences
+	curl -X DELETE http://localhost:7700/indexes/sheets
+	curl -X DELETE http://localhost:7700/indexes/chunks
+

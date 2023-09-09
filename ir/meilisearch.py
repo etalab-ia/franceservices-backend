@@ -62,7 +62,7 @@ def create_bucket_index(index_name, add_doc=True):
                 stopwords.append(line.strip())
 
         # Create index
-        client.create_index(index_name, {"primaryKey": "id"})
+        client.create_index(index_name, {"primaryKey": "sid"})
         client.index(index_name).update_settings(
             {
                 "searchableAttributes": ["title", "text", "subject"],
@@ -88,7 +88,7 @@ def create_bucket_index(index_name, add_doc=True):
 
             for doc in documents:
                 # one chunks for unstructured parsing.
-                doc["id"] = doc["url"].split("/")[-1]
+                doc["sid"] = doc["url"].split("/")[-1]
                 doc["text"] = doc["text"][0]
 
             index.update_documents_in_batches(documents)

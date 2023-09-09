@@ -293,11 +293,11 @@ def search(index_name):
 
     # What to retrieves
     if index_name == "experiences":
-        retrieves = ["titre", "description", "intitule_typologie_1", "reponse_structure_1"]
-    elif index_name == "sheets":
-        retrieves = ["title", "url", "introduction"]
-    elif index_name == "chunks":
-        retrieves = ["title", "url", "introduction", "text", "context"]
+        retrieves = ["id_experience", "titre", "description", "intitule_typologie_1", "reponse_structure_1"]
+    elif index_name == "sheets" and sim not in ["e5"]:
+        retrieves = ["sid", "title", "url", "introduction"]
+    elif index_name == "chunks" or (sim in ["e5"] and index_name == "sheets"):
+        retrieves = ["hash", "title", "url", "introduction", "text", "context"]
     else:
         raise NotImplementedError
 
@@ -314,12 +314,34 @@ def search(index_name):
         hits = [_extract(x.get("_source")) for x in res["hits"]["hits"] if x]
         res = {"hits": hits}
     elif sim == "e5":
+        do_unique_sheets = False
+        if index_name == "sheets":
+            index_name = "chunks"
+            limit = limit * 5
+            do_unique_sheets = True
+
         embedding = embed(q)
         client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
         res = client.search(collection_name=index_name, query_vector=embedding, limit=limit)
 
         es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
-        hits = [_extract(es.get(index=index_name, id=x.id)["_source"]) for x in res if x]
+        # @Debug : qdrant doesnt accept the hash id as string..
+        if index_name == "chunks":
+            _uid = lambda x : bytes.fromhex(x.replace("-", "")).decode("utf8")
+        else:
+            _uid = lambda x : x
+        hits = [_extract(es.get(index=index_name, id=_uid(x.id))["_source"]) for x in res if x]
+        if do_unique_sheets:
+            keep_idx = []
+            seen_sheets = []
+            for i, d in enumerate(hits):
+                if d["url"] in seen_sheets:
+                    continue
+                keep_idx.append(i)
+                seen_sheets.append(d["url"])
+
+            hits = [hits[i] for i in keep_idx][:limit//5]
+
         res = {"hits": hits}
     else:
         error = {"message": 'Attribute "similarity" unknown'}
