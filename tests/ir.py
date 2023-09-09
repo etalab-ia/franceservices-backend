@@ -99,6 +99,14 @@ elif score == "e5":
     from torch import Tensor
     from transformers import AutoModel, AutoTokenizer
 
+
+    with_gpu = False
+    device_map = None
+    if torch.cuda.is_available():
+        with_gpu = True
+        device_map = "cuda:0"
+
+
     def average_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
         last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
         return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
@@ -115,13 +123,19 @@ elif score == "e5":
                 truncation=True,
                 return_tensors="pt",
             )
+            if with_gpu:
+                batch_dict.to("cuda")
+
             outputs = model(**batch_dict)
 
             vectors = average_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
             vectors = F.normalize(vectors, p=2, dim=1)
             # print(type(vectors)) -> Tensor
             # print(vectors.shape) -> (n_doc X size_embedding)
-            embeddings.append(vectors.detach().numpy())
+            if with_gpu:
+                embeddings.append(vectors.detach().cpu().numpy())
+            else:
+                embeddings.append(vectors.detach().numpy())
             #torch.cuda.empty_cache()
 
         #return torch.cat(embeddings) # burn memory
@@ -131,7 +145,7 @@ elif score == "e5":
     # model_name = "intfloat/multilingual-e5-large"
     model_name = "intfloat/multilingual-e5-small"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModel.from_pretrained(model_name)  # -> SentenceTransformer
+    model = AutoModel.from_pretrained(model_name, device_map=device_map)  # -> SentenceTransformer
 
     loading_time = time()
     print("Loading time: %.3f" % (loading_time - now))

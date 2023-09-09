@@ -10,6 +10,7 @@ from flask import (Flask, Response, jsonify, redirect, render_template,
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from gpt4all import GPT4All
+from qdrant_client import QdrantClient
 from sqlalchemy import Boolean, Column, Integer, String, Text
 
 app = Flask(__name__)
@@ -126,6 +127,69 @@ class StopGen:
 
 
 #
+# @TODO: Move this to the GPU API
+#
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+from sentence_transformers import SentenceTransformer
+from torch import Tensor
+from transformers import AutoModel, AutoTokenizer
+
+with_gpu = False
+device_map = None
+if torch.cuda.is_available():
+    with_gpu = True
+    device_map = "cuda:0"
+
+
+def average_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
+    last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
+    return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
+
+
+def _embed(tokenizer, model, texts, batch_size=1):
+    # Sentence transformers for E5 like model
+    embeddings = []
+    for i in range(0, len(texts), batch_size):
+        batch_dict = tokenizer(
+            texts[i : i + batch_size],
+            max_length=512,
+            padding=True,
+            truncation=True,
+            return_tensors="pt",
+        )
+        if with_gpu:
+            batch_dict.to("cuda")
+
+        outputs = model(**batch_dict)
+
+        vectors = average_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
+        vectors = F.normalize(vectors, p=2, dim=1)
+        # print(type(vectors)) -> Tensor
+        # print(vectors.shape) -> (n_doc X size_embedding)
+        if with_gpu:
+            embeddings.append(vectors.detach().cpu().numpy())
+        else:
+            embeddings.append(vectors.detach().numpy())
+        # torch.cuda.empty_cache()
+
+    # return torch.cat(embeddings) # burn memory
+    return np.vstack(embeddings)
+
+
+# Load E5 Model
+model_name_ebd = "intfloat/multilingual-e5-base"
+tokenizer_ebd = AutoTokenizer.from_pretrained(model_name_ebd)
+model_ebd = AutoModel.from_pretrained(model_name_ebd, device_map=device_map)
+
+
+def embed(query):
+    return _embed(tokenizer_ebd, model_ebd, query)[0]
+
+
+#
 # App
 #
 
@@ -237,6 +301,8 @@ def search(index_name):
     else:
         raise NotImplementedError
 
+    _extract = lambda x: dict((r, x[r]) for r in retrieves)
+
     # Search
     if sim == "bucket":
         client = meilisearch.Client("http://localhost:7700", "masterKey")
@@ -245,9 +311,16 @@ def search(index_name):
         client = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
         query = {"query": {"multi_match": {"query": q, "fuzziness": "AUTO"}}, "size": limit}
         res = client.search(index=index_name, body=query)
-        _extract = lambda x: dict((r, x[r]) for r in retrieves)
-        res = [_extract(x.get("_source")) for x in res["hits"]["hits"] if x]
-        res = {"hits": res}
+        hits = [_extract(x.get("_source")) for x in res["hits"]["hits"] if x]
+        res = {"hits": hits}
+    elif sim == "e5":
+        embedding = embed(q)
+        client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
+        res = client.search(collection_name=index_name, query_vector=embedding, limit=limit)
+
+        es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
+        hits = [_extract(es.get(index=index_name, id=x.id)["_source"]) for x in res if x]
+        res = {"hits": hits}
     else:
         error = {"message": 'Attribute "similarity" unknown'}
         return jsonify(error), 400

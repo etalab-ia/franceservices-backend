@@ -22,4 +22,5 @@ transformers
 weaviate-client
 meilisearch
 elasticsearch
+qdrant-client
 
