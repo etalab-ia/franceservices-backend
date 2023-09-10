@@ -327,9 +327,9 @@ def search(index_name):
         es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
         # @Debug : qdrant doesnt accept the hash id as string..
         if index_name == "chunks":
-            _uid = lambda x : bytes.fromhex(x.replace("-", "")).decode("utf8")
+            _uid = lambda x: bytes.fromhex(x.replace("-", "")).decode("utf8")
         else:
-            _uid = lambda x : x
+            _uid = lambda x: x
         hits = [_extract(es.get(index=index_name, id=_uid(x.id))["_source"]) for x in res if x]
         if do_unique_sheets:
             keep_idx = []
@@ -340,7 +340,7 @@ def search(index_name):
                 keep_idx.append(i)
                 seen_sheets.append(d["url"])
 
-            hits = [hits[i] for i in keep_idx][:limit//5]
+            hits = [hits[i] for i in keep_idx][: limit // 5]
 
         res = {"hits": hits}
     else:
@@ -351,6 +351,18 @@ def search(index_name):
     response = jsonify(res["hits"])
     response.headers["Content-Type"] = "application/json; charset=utf-8"
     return response
+
+
+@app.route("/api/embedding", methods=["POST"])
+def embedding():
+    data = request.get_json()
+    if "text" not in data:
+        error = {"message": 'Attribute "q" is missing'}
+        return jsonify(error), 400
+
+    text = data["text"]
+    embedding = embed(text)
+    return jsonify(embedding.tolist())
 
 
 @app.route("/", methods=["GET", "POST"])

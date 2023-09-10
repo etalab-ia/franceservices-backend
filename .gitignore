@@ -4,6 +4,7 @@
 _data/
 notebooks/*.json
 notebooks/*.csv
+notebooks/*.xlsx
 notebooks/notes/
 notebooks/answers
 

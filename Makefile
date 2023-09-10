@@ -62,3 +62,11 @@ clean_all_indexex: # not embeddings
 	curl -X DELETE http://localhost:7700/indexes/sheets
 	curl -X DELETE http://localhost:7700/indexes/chunks
 
+list_indexes:
+	# elasticsearch
+	curl -X GET "http://localhost:9202/_cat/indices?v"
+	# meilisearch
+	curl -X GET "http://localhost:7700/indexes" | jq
+	# qdrant
+	curl -X GET "http://localhost:6333/collections" | jq 
+
