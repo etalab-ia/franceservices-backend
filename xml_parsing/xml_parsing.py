@@ -14,221 +14,21 @@ from bs4.element import NavigableString, Tag
 from retrieving.text_spliter import HybridSplitter
 
 
-def make_questions(directory: str) -> None:
-    # Parses service-public XML
-    basedir = "_data/"
-    df = parse_questions(directory)
-    df.drop_duplicates(subset=["question"], inplace=True)
-    q_fn = os.path.join(basedir, "questions.json")
-    # df.to_json(q_fn, orient="records", indent=2, force_ascii=False)
-    with open(q_fn, "w", encoding="utf-8") as f:
-        json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=4)
-    print("Questions created in", q_fn)
-
-
-def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap=200) -> None:
-    # Parses service-public XML
-    df = parse_xml(directory, structured)
-
-    if structured:
-        chunk_overlap = 20
-
-    # Chunkify and save to a Json file
-    basedir = "_data/"
-    data_columns = ["file", "url", "surtitre", "theme", "title", "subject", "introduction", "text", "context"]
-    chunks = []
-    text_splitter = HybridSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-    hashes = []  # checks for duplicate chunks
-    info = defaultdict(lambda: defaultdict(list))
-    for sheet in df.to_dict(orient="records"):
-        data = {}
-        for key in data_columns:
-            if key in sheet:
-                data[key] = sheet[key]
-
-        if not data["text"]:
-            continue
-        if data["surtitre"] in ["Dossier", "Recherche guidée"]:
-            # @TODO: can be used for cross-reference...
-            # see also <LienInterne>...
-            continue
-
-        # print(
-        #    f"""
-        #     \rFile: {sheet["file"]}
-        #     \rTitle: {sheet["title"]}
-        #     \rSurtitre: {sheet["surtitre"]}
-        #     \rAudience: {sheet["audience"]}
-        #     \rDescription: {sheet["introduction"]}
-        #     \rOther content: {sheet["other_content"]}
-        #     \r{len(data["text"])}
-
-        #    """
-        # )
-        if structured:
-            info[sheet["surtitre"]]["len"].append(len(" ".join([x["text"] for x in data["text"]]).split()))
-        else:
-            info[sheet["surtitre"]]["len"].append(len(" ".join(data["text"]).split()))
-
-        index = 0
-        for natural_chunk in data["text"]:
-            # Natural splitting
-            if isinstance(natural_chunk, dict):
-                natural_text_chunk = natural_chunk["text"]
-            else:
-                natural_text_chunk = natural_chunk
-
-            #for fragment in [natural_text_chunk]:
-            for fragment in text_splitter.split_text(natural_text_chunk):
-                if not fragment:
-                    print("Warning: empty fragment")
-                    continue
-
-                h = hashlib.blake2b(fragment.encode(), digest_size=8).hexdigest()
-                if h in hashes:
-                    continue
-                else:
-                    hashes.append(h)
-
-                info[sheet["surtitre"]]["chunk_len"].append(len(fragment.split()))
-
-                chunk = data.copy()
-                chunk["chunk_index"] = index
-                chunk["hash"] = h
-                chunk["text"] = fragment
-                if isinstance(natural_chunk, dict) and "context" in natural_chunk:
-                    chunk["context"] = natural_chunk["context"]
-                chunks.append(chunk)
-                index += 1
-
-    json_file_target = os.path.join(basedir, "xmlfiles_as_chunks.json")
-    with open(json_file_target, "w", encoding="utf-8") as f:
-        json.dump(chunks, f, ensure_ascii=False, indent=4)
-
-    info_summary = ""
-    for k, v in info.items():
-        info_summary += f"### {k}\n"
-        info_summary += f"total doc: {len(v['len'])}\n"
-        info_summary += f"mean length: {np.mean(v['len']):.0f} ± {np.std(v['len']):.0f}    max:{np.max(v['len'])} min:{np.min(v['len'])}\n"
-        info_summary += f"total chunk: {len(v['chunk_len'])}\n"
-        info_summary += f"mean chunks length: {np.mean(v['chunk_len']):.0f} ± {np.std(v['chunk_len']):.0f}    max:{np.max(v['chunk_len'])} min:{np.min(v['chunk_len'])}\n"
-        info_summary += "\n"
-
-    chunks_fn = os.path.join(basedir, "chunks.info")
-    with open(chunks_fn, "w", encoding="utf-8") as f:
-        f.write(info_summary)
-
-    print("Chunks created in", json_file_target)
-    print("Chunks info created in", chunks_fn)
-
-
-def parse_xml(xml_3_folders_path: str = "_data/xml", structured: bool = False) -> pd.DataFrame:
-    xml_files = []
-
-    if os.path.isfile(xml_3_folders_path):
-        # Use to test result on a particular file
-        xml_files = [xml_3_folders_path]
-    else:
-        for root, _, files in os.walk(xml_3_folders_path):
-            for file in files:
-                fullpath = os.path.join(root, file)
-                if file.endswith(".xml"):
-                    xml_files.append(fullpath)
-
-    docs = []
-    current_percentage = 0
-    for xml_index, xml_file in enumerate(xml_files):
-        # Print the percentage of total time
-        if (100 * xml_index) // (len(xml_files)) > current_percentage:
-            current_percentage = (100 * xml_index) // (len(xml_files))
-            print(f"Processing sheet: {current_percentage}%\r", end="")
-
-        if not (xml_file.split("/")[-1].startswith("N") or xml_file.split("/")[-1].startswith("F")):
-            # Permet de garder uniquement les fiches pratiques,
-            # fiches questions-réponses, fiches thème, fiches dossier.
-            continue
-
-        doc = parse_xml_sheet(xml_file, structured)
-        if not doc:
-            continue
-
-        doc["file"] = xml_file
-        docs.append(doc)
-
-    return pd.DataFrame(docs)
-
-
-def parse_questions(xml_3_folders_path: str = "_data/xml") -> pd.DataFrame:
-    xml_files = []
-
-    if os.path.isfile(xml_3_folders_path):
-        # Use to test result on a particular file
-        xml_files = [xml_3_folders_path]
-    else:
-        for root, _, files in os.walk(xml_3_folders_path):
-            for file in files:
-                fullpath = os.path.join(root, file)
-                if file.endswith(".xml"):
-                    xml_files.append(fullpath)
-
-    docs = []
-    current_percentage = 0
-    for xml_index, xml_file in enumerate(xml_files):
-        # Print the percentage of total time
-        if (100 * xml_index) // (len(xml_files)) > current_percentage:
-            current_percentage = (100 * xml_index) // (len(xml_files))
-            print(f"Processing sheet: {current_percentage}%\r", end="")
-
-        if not (xml_file.split("/")[-1].startswith("N") or xml_file.split("/")[-1].startswith("F")):
-            # Permet de garder uniquement les fiches pratiques,
-            # fiches questions-réponses, fiches thème, fiches dossier.
-            continue
-
-        with open(xml_file, "r", encoding="utf-8") as f:
-            soup = BeautifulSoup(f, "xml")
-
-        # doc = get_metadata(soup)
-        # doc["file"] = xml_file
-
-        # Extract questions
-        for x in soup.find_all("QuestionReponse"):
-            doc = {}
-            question = get_text(x)
-            audience = x["audience"].lower()
-            ID = x["ID"]
-            url = f"https://www.service-public.fr/{audience}/vosdroits/{ID}"
-            doc = {
-                "question": question,
-                "file": xml_file,
-                "url": url,
-                "tag": "QuestionReponse",
-            }
-            docs.append(doc)
-
-        for x in soup.find_all("CommentFaireSi"):
-            doc = {}
-            question = "Comment faire si " + get_text(x) + " ?"
-            audience = x["audience"].lower()
-            ID = x["ID"]
-            url = f"https://www.service-public.fr/{audience}/vosdroits/{ID}"
-            doc = {
-                "question": question,
-                "file": xml_file,
-                "url": url,
-                "tag": "CommentFaireSi",
-            }
-            docs.append(doc)
-
-    return pd.DataFrame(docs)
-
-
-#
-# Utils functions
-#
+# *********
+# * Utils *
+# *********
 
 
 def normalize(text: str) -> str:
     return unicodedata.normalize("NFKC", text)
+
+
+def get_text(obj):
+    if isinstance(obj, NavigableString):
+        t = obj.string.strip()
+    else:
+        t = obj.get_text(" ", strip=True)
+    return normalize(t)
 
 
 def extract(soup: Tag, tag: str, pop=True, recursive=True) -> str:
@@ -255,247 +55,212 @@ def extract_all(soup: Tag, tag: str, pop=True) -> List[str]:
     return elts
 
 
-def get_text(obj):
-    if isinstance(obj, NavigableString):
-        text = normalize(obj.string.strip())
+# ***************
+# * XML parsing *
+# ***************
+
+
+def _get_xml_files(path):
+    xml_files = []
+
+    if os.path.isfile(path):
+        # Use to test result on a particular file
+        xml_files = [path]
     else:
-        text = normalize(obj.get_text(" ", strip=True))
+        for root, _, files in os.walk(path):
+            for file in files:
+                if file.endswith(".xml") and file.startswith(("N", "F")):
+                    # Keep only "fiches pratiques", "fiches questions-réponses",
+                    # "fiches thème", "fiches dossier".
+                    fullpath = os.path.join(root, file)
+                    xml_files.append(fullpath)
+    return xml_files
 
-    return text
 
-
-#
-# XML metier parsing
-#
-
-
-def get_metadata(soup):
-    doc = {}
-    doc["url"] = ""
+def _get_metadata(soup):
+    url = ""
     if soup.find("Publication") is not None:
         if "spUrl" in soup.find("Publication").attrs:
-            doc["url"] = soup.find("Publication")["spUrl"]
-    # --
-    doc["audience"] = ", ".join(extract_all(soup, "Audience"))
-    doc["theme"] = ", ".join(extract_all(soup, "Theme"))
-    # --
-    doc["surtitre"] = extract(soup, "SurTitre")  # == dc:type
-    doc["subject"] = extract(soup, "dc:subject")
-    doc["title"] = extract(soup, "dc:title")
-    doc["description"] = extract(soup, "dc:description")
-    doc["introduction"] = extract(soup, "Introduction")
+            url = soup.find("Publication")["spUrl"]
+
+    doc = {
+        "url": url,
+        "audience": ", ".join(extract_all(soup, "Audience")),
+        "theme": ", ".join(extract_all(soup, "Theme")),
+        "surtitre": extract(soup, "SurTitre"),
+        "subject": extract(soup, "dc:subject"),
+        "title": extract(soup, "dc:title"),
+        "description": extract(soup, "dc:description"),
+        "introduction": extract(soup, "Introduction"),
+    }
     if not doc["introduction"]:
         doc["introduction"] = doc["description"]
 
     return doc
 
 
-def parse_xml_sheet(xml_file: str, structured: bool = False) -> dict:
+def _table_to_md(soup):
+    # FIXME: multi-column header are lost
+    #        e.g.: https://entreprendre.service-public.fr/vosdroits/F3094
+    md_table = ""
+
+    # Headers
+    for row in soup.find_all("Rangée", {"type": "header"}):
+        md_table += "| "
+        for cell in row.find_all("Cellule"):
+            md_table += get_text(cell) + " | "
+        md_table += "\n"
+
+        # Separator
+        md_table += "| "
+        for _ in row.find_all("Cellule"):
+            md_table += "- | "
+        md_table += "\n"
+
+    # Rows
+    for row in soup.find_all("Rangée", {"type": "normal"}):
+        md_table += "| "
+        for cell in row.find_all("Cellule"):
+            md_table += get_text(cell) + " | "
+        md_table += "\n"
+
+    return md_table
+
+
+def _not_punctuation(s):
+    return s.strip()[-1:] not in string.punctuation
+
+
+def _parse_xml_text_structured(
+    current: List[str], context: List[str], soups: List[Tag], recurse=True, depth=0
+) -> List[dict]:
     """
-    On utilise cette fonction pour créer un csv pour les fichiers qui commencent par N ou F.
-    Ils correspondent soit à des fiches pratiques,
-    soit à des questions réponses, soit à des fiches dossiers...
+    Separate text on Situation and Chapitre.
+    Keep the contexts (the history of titles) while iterating.
+
+    Args:
+        current: the current text of the cursor, that will be joined to a string
+        context: the current history of title (Titre)
+        soups: the tree cursor
+        recurse: continue to split chunks
+
+    Returns: a list of {text, context}
     """
-    with open(xml_file, "r", encoding="utf-8") as f:
-        soup = BeautifulSoup(f, "xml")
-
-    doc = get_metadata(soup)
-
-    # Content
-
-    if structured:
-        # Clean document
-        # remove <OuSadresser>, <ServiceEnLigne>, <Image> (information noise + non contextual information) -> could be used to improved the chat with media information (links images, etc)
-        # remove <RefActualite> (file in subfolder actualites/)
-        extract_all(soup, "ServiceEnLigne")
-        extract_all(soup, "OuSAdresser")
-        extract_all(soup, "RefActualite")
-
-        # Add introduction into the first chunk
-        current = [doc["introduction"]]
-
-        # Save sections for later (de-duplicate keeping order)
-        sections = list(dict.fromkeys([get_text(a.Titre) for a in soup.find_all("Chapitre") if a.Titre and not a.find_parent("Chapitre")]))
-
-        context = []
-        top_list = []
-        for x in soup.find_all("Publication"):
-            for obj in x.children:
-                if obj.name == "Texte":
-                    top_list.append(obj)
-                elif obj.name == "ListeSituations":
-                    top_list.append(obj)
-        texts = parse_structured(current, context, top_list)
-
-        if texts:
-            # Add all sections title into the first chunk
-            sections = "\n".join("- " + item for item in sections)
-            if sections:
-                sections = "\n\nVoici une liste de différents cas possibles:\n" + sections
-                texts[0]["text"] += sections
-
-        doc["text"] = texts
-    else:
-        text = [doc["introduction"]]
-        if soup.find("ListeSituations") is not None:
-            text.append("Liste des situations :")
-            for i, situation in enumerate(soup.find("ListeSituations").find_all("Situation")):
-                situation_title = situation.find("Titre").get_text(" ", strip=True)
-                situation_texte = situation.find("Texte").get_text(" ", strip=True)
-                situation_title = unicodedata.normalize("NFKC", situation_title)
-                situation_texte = unicodedata.normalize("NFKC", situation_texte)
-                text.append("Cas n°" + str(i + 1) + " : " + situation_title + " : " + situation_texte)
-
-        if soup.find("Publication") is not None:
-            if soup.find("Publication").find("Texte", recursive=False) is not None:
-                text.append(normalize(soup.find("Publication").find("Texte", recursive=False).get_text(" ", strip=True)))
-
-        doc["text"] = [" ".join(text)]
-
-    return doc
-
-
-def parse_structured(current: List[str], context: List[str], soups: List[Tag], recurse=True, depth=0) -> List[dict]:
-    # Separate text on Situation and Chapitre.
-    # Keep the contexts (the history of titles) while iterating.
-    #
-    # Args:
-    #  current: the current text of the cursor, that will be join to a string.
-    #  context: the cyrrent history of title (Titre).
-    #  soups: the tree cursor.
-    #  recurse: continue to split chunks.
-    #
-    # Returns: a list of {text, context}
-    #
-    # @Improvments:
-    # - could probably be optimized by not extracting tag, just reading it (see extract())
-    # - <TitreAlternatif> can be present next to title...
-    # - extraire texte et loi de référence (legifrance.fr): see <Reference>
-    # -
+    # TODO:
+    #  - could probably be optimized by not extracting tag, just reading it; see extract()
+    #  - <TitreAlternatif> can be present next to title
+    #  - extract text and reference law (legifrance.fr); see <Reference>
     state = []
 
-    for i, part in enumerate(soups):
+    for part in soups:
         if isinstance(part, NavigableString):
             current.append(get_text(part))
+            # New chunk
+            state.append({"text": current, "context": context})
+            current = []
+            continue
 
-        else:
-            for j, child in enumerate(part.children):
-                # Purge current
-                current = [c for c in current if c]
+        for child in part.children:
+            # Purge current
+            current = [c for c in current if c]
 
-                if isinstance(child, NavigableString):
-                    current.append(get_text(child))
-                    continue
+            if isinstance(child, NavigableString):
+                current.append(get_text(child))
+                continue
 
-                if child.name == "Situation" and recurse:
-                    # New chunk
-                    if current:
-                        state.append({"text": current, "context": context})
-                        current = []
+            if child.name in ("Situation", "Chapitre", "SousChapitre") and recurse:
+                if child.name in ("Situation", "Chapitre"):
+                    new_recurse = True
+                else:  # "SousChapitre"
+                    new_recurse = False
 
-                    if child.find("Titre", recursive=False):
-                        new_context = context + [extract(child, "Titre", recursive=False)]
-                    else:
-                        new_context = context
+                # New chunk
+                if current:
+                    state.append({"text": current, "context": context})
+                    current = []
 
-                    state.extend(parse_structured([], new_context, [child], recurse=True, depth=depth + 1))
-                elif child.name == "Chapitre" and recurse:
-                    # New chunk
-                    if current:
-                        state.append({"text": current, "context": context})
-                        current = []
+                title = extract(child, "Titre", recursive=False)
+                if title:
+                    new_context = context + [title]
+                else:
+                    new_context = context
 
-                    if child.find("Titre", recursive=False):
-                        new_context = context + [extract(child, "Titre", recursive=False)]
-                    else:
-                        new_context = context
+                s = _parse_xml_text_structured(
+                    [], new_context, [child], recurse=new_recurse, depth=depth + 1
+                )
+                state.extend(s)
 
-                    state.extend(parse_structured([], new_context, [child], recurse=True, depth=depth + 1))
-                elif child.name == "SousChapitre" and recurse:
-                    # New chunk
-                    if current:
-                        state.append({"text": current, "context": context})
-                        current = []
+            elif child.name in ("BlocCas", "Liste"):
+                scn = "Cas" if child.name == "BlocCas" else "Item"
+                blocs = "\n"
+                for subchild in child.children:
+                    if subchild.name != scn:
+                        if subchild.string.strip():
+                            print(f"XML warning: {child.name} has orphan text")
+                        continue
 
-                    if child.find("Titre", recursive=False):
-                        new_context = context + [extract(child, "Titre", recursive=False)]
-                    else:
-                        new_context = context
-
-                    state.extend(parse_structured([], new_context, [child], recurse=False, depth=depth + 1))
-
-                elif child.name == "BlocCas":
-                    blocs = "\n"
-                    for subchild in child.children:
-                        if subchild.name != "Cas":
-                            if subchild.string.strip():
-                                print("XML warning: BloCas has orphan text")
-                            continue
-
+                    if child.name == "BlocCas":
                         title = extract(subchild, "Titre", recursive=False)
-                        s = parse_structured([], context, [subchild], recurse=False, depth=depth + 1)
-                        content = " ".join([" ".join(x["text"]) for x in s]).strip()
+                    s = _parse_xml_text_structured(
+                        [], context, [subchild], recurse=False, depth=depth + 1
+                    )
+                    content = " ".join([" ".join(x["text"]) for x in s]).strip()
+
+                    if child.name == "BlocCas":
                         blocs += f"Cas {title}: {content}\n"
-
-                    current.append(blocs)
-                elif child.name == "Liste":
-                    blocs = "\n"
-                    for subchild in child.children:
-                        if subchild.name != "Item":
-                            if subchild.string.strip():
-                                print("XML warning: Item has orphan text")
-                            continue
-
-                        s = parse_structured([], context, [subchild], recurse=False, depth=depth + 1)
-                        content = " ".join([" ".join(x["text"]) for x in s]).strip()
+                    else:  # Liste
                         blocs += f"- {content}\n"
 
-                    current.append(blocs)
-                elif child.name == "Tableau":
-                    title = extract(child, "Titre", recursive=False)
-                    sep = ""
-                    if not title.strip()[-1:] in string.punctuation:
-                        sep = ":"
-                    table = table_to_md(child)
-                    table = f"\n{title}{sep}\n{table}"
-                    current.append(table)
-                elif child.name in ["ANoter", "ASavoir", "Attention", "Rappel"]:
-                    if child.find("Titre", recursive=False):
-                        current.append("({0}: {1})\n".format(extract(child, "Titre", recursive=False), get_text(child)))
+                current.append(blocs)
+
+            elif child.name == "Tableau":
+                title = extract(child, "Titre", recursive=False)
+                sep = ":" if _not_punctuation(title) else ""
+                table = _table_to_md(child)
+                table = f"\n{title}{sep}\n{table}"
+                current.append(table)
+
+            elif child.name in ("ANoter", "ASavoir", "Attention", "Rappel"):
+                title = extract(child, "Titre", recursive=False)
+                sep = ": " if title else ""
+                current.append(f"({title}{sep}{get_text(child)})\n")
+
+            elif child.name == "Titre":
+                # Format title inside chunks (sub-sub sections etc)
+                title = get_text(child)
+                sep = ":" if _not_punctuation(title) else ""
+                current.append(f"{title}{sep}")
+
+            else:
+                # Space joins
+                s = _parse_xml_text_structured(
+                    current, context, [child], recurse=recurse, depth=depth + 1
+                )
+                current = []
+                sub_state = []
+                for x in s:
+                    if len(x["context"]) == len(context):
+                        # Same context
+                        if child.name in ("Chapitre", "SousChapitre", "Cas", "Situation"):
+                            # Add a separator
+                            x["text"][-1] += "\n"
+                        elif (
+                            child.name in ("Paragraphe",)
+                            and child.parent.name not in ("Item", "Cellule")
+                            and _not_punctuation(x["text"][-1])
+                        ):
+                            # Title !
+                            x["text"][-1] += ":"
+
+                        current.extend(x["text"])
                     else:
-                        current.append("({0})\n".format(get_text(child)))
+                        # New chunk
+                        sub_state.append(x)
 
-                elif child.name == "Titre":
-                    # Format title inside chunks (sub-sub sections etc)
-                    title = get_text(child)
-                    sep = ""
-                    if not title.strip()[-1:] in string.punctuation:
-                        sep = ":"
-                    current.append(f"{title}{sep}")
-                else:
-                    # Space joins
-                    s = parse_structured(current, context, [child], recurse=recurse, depth=depth + 1)
+                if sub_state:
+                    state.append({"text": current, "context": context})
                     current = []
-                    sub_state = []
-                    for x in s:
-                        if len(x["context"]) == len(context):
-                            # Same context
-                            if child.name in ["Chapitre", "SousChapitre", "Cas", "Situation"]:
-                                # add a separator
-                                x["text"][-1] += "\n"
-                            elif child.name in ["Paragraphe"] and child.parent.name not in ["Item", "Cellule"] and not x["text"][-1].strip()[-1:] in string.punctuation:
-                                # title !
-                                x["text"][-1] += ":"
-
-                            current.extend(x["text"])
-                        else:
-                            # new chunk
-                            sub_state.append(x)
-
-                    if sub_state:
-                        state.append({"text": current, "context": context})
-                        current = []
-                        state.extend(sub_state)
+                    state.extend(sub_state)
 
         # New chunk
         if current:
@@ -526,29 +291,217 @@ def parse_structured(current: List[str], context: List[str], soups: List[Tag], r
     return state
 
 
-def table_to_md(soup):
-    # @DEBUG: multi-column header are lost. See for example https://entreprendre.service-public.fr/vosdroits/F3094
+def _parse_xml_text(xml_file, structured=False):
+    with open(xml_file, mode="r", encoding="utf-8") as f:
+        soup = BeautifulSoup(f, "xml")
 
-    md_table = ""
+    doc = _get_metadata(soup)
 
-    # Headers
-    for row in soup.find_all("Rangée", {"type": "header"}):
-        md_table += "| "
-        for cell in row.find_all("Cellule"):
-            md_table += get_text(cell) + " | "
-        md_table += "\n"
+    # Clean document
+    # Remove <ServiceEnLigne>, <OuSadresser> (noise + non contextual information)
+    # -> could be used to improve the chat with media information (links, images, etc)
+    extract_all(soup, "ServiceEnLigne")
+    extract_all(soup, "OuSAdresser")
+    # Remove <RefActualite> (file in subfolder actualites/)
+    extract_all(soup, "RefActualite")
 
-        # Separator
-        md_table += "| "
-        for _ in row.find_all("Cellule"):
-            md_table += "- | "
-        md_table += "\n"
+    # Introduction
+    current = [doc["introduction"]]
 
-    # Rows
-    for row in soup.find_all("Rangée", {"type": "normal"}):
-        md_table += "| "
-        for cell in row.find_all("Cellule"):
-            md_table += get_text(cell) + " | "
-        md_table += "\n"
+    # Get all textual content
+    if structured:
+        # Save sections for later (de-duplicate keeping order)
+        sections = [
+            get_text(a.Titre)
+            for a in soup.find_all("Chapitre")
+            if a.Titre and not a.find_parent("Chapitre")
+        ]
+        sections = list(dict.fromkeys(sections))
 
-    return md_table
+        context = []
+        top_list = []
+        for x in soup.find_all("Publication"):
+            for obj in x.children:
+                if obj.name in ("Texte", "ListeSituations"):
+                    top_list.append(obj)
+        texts = _parse_xml_text_structured(current, context, top_list)
+
+        if texts and sections:
+            # Add all sections title at the end of the introduction
+            sections = "\n".join(f"- {section}" for section in sections)
+            sections = "\n\nVoici une liste de différents cas possibles:\n" + sections
+            texts[0]["text"] += sections
+
+    else:
+        if soup.find("ListeSituations") is not None:
+            current.append("Liste des situations :")
+            for i, situation in enumerate(soup.find("ListeSituations").find_all("Situation")):
+                situation_title = normalize(situation.find("Titre").get_text(" ", strip=True))
+                situation_texte = normalize(situation.find("Texte").get_text(" ", strip=True))
+                current.append(f"Cas n°{i+1} : {situation_title} : {situation_texte}")
+
+        if soup.find("Publication") is not None:
+            t = soup.find("Publication").find("Texte", recursive=False)
+            if t is not None:
+                current.append(normalize(t.get_text(" ", strip=True)))
+
+        texts = [" ".join(current)]
+
+    doc["text"] = texts
+    doc["file"] = xml_file
+    return doc
+
+
+def _parse_xml_questions(xml_file):
+    with open(xml_file, mode="r", encoding="utf-8") as f:
+        soup = BeautifulSoup(f, "xml")
+
+    docs = []
+    tags = (
+        ("QuestionReponse", lambda x: get_text(x)),
+        ("CommentFaireSi", lambda x: f"Comment faire si {get_text(x)} ?"),
+    )
+    for tag, f in tags:
+        for t in soup.find_all(tag):
+            audience = t["audience"].lower()
+            doc = {
+                "question": f(t),
+                "file": xml_file,
+                "url": f"https://www.service-public.fr/{audience}/vosdroits/{t['ID']}",
+                "tag": tag,
+            }
+            docs.append(doc)
+
+    return docs
+
+
+def _parse_xml(path: str, parse_type: str, structured: bool = False) -> pd.DataFrame:
+    if parse_type not in ("text", "questions"):
+        raise ValueError()
+
+    xml_files = _get_xml_files(path)
+
+    docs = []
+    current_pct = 0
+    n = len(xml_files)
+    for i, xml_file in enumerate(xml_files):
+        pct = (100 * i) // n
+        if pct > current_pct:
+            current_pct = pct
+            print(f"Processing sheet: {current_pct}%\r", end="")
+
+        if parse_type == "text":
+            doc = _parse_xml_text(xml_file, structured=structured)
+            if doc:
+                docs.append(doc)
+        elif parse_type == "questions":
+            _docs = _parse_xml_questions(xml_file)
+            docs.extend(_docs)
+
+    return pd.DataFrame(docs)
+
+
+def parse_xml(xml_3_folders_path: str = "_data/xml", structured: bool = False) -> pd.DataFrame:
+    return _parse_xml(xml_3_folders_path, "text", structured=structured)
+
+
+def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap=200) -> None:
+    if structured:
+        chunk_overlap = 20
+
+    df = parse_xml(directory, structured=structured)
+
+    # Chunkify and save to a JSON file
+    basedir = "_data/"
+    cols = ("file", "url", "surtitre", "theme", "title", "subject", "introduction", "text", "context")
+    chunks = []
+    text_splitter = HybridSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    hashes = []
+    info = defaultdict(lambda: defaultdict(list))
+    for sheet in df.to_dict(orient="records"):
+        data = {}
+        for col in cols:
+            if col in sheet:
+                data[col] = sheet[col]
+        texts = data["text"]
+        surtitre = data["surtitre"]
+
+        if not texts:
+            continue
+        if surtitre in ("Dossier", "Recherche guidée"):
+            # TODO: can be used for cross-reference, see also <LienInterne>
+            continue
+
+        if structured:
+            s = [x["text"] for x in texts]
+        else:
+            s = texts
+        info[surtitre]["len"].append(len(" ".join(s).split()))
+
+        index = 0
+        for natural_chunk in texts:
+            if isinstance(natural_chunk, dict):
+                natural_text_chunk = natural_chunk["text"]
+            else:
+                natural_text_chunk = natural_chunk
+
+            for fragment in text_splitter.split_text(natural_text_chunk):
+                if not fragment:
+                    print("Warning: empty fragment")
+                    continue
+
+                h = hashlib.blake2b(fragment.encode(), digest_size=8).hexdigest()
+                if h in hashes:
+                    print("Warning: duplicate chunk")
+                    continue
+                hashes.append(h)
+
+                info[surtitre]["chunk_len"].append(len(fragment.split()))
+
+                chunk = {
+                    **data,
+                    "chunk_index": index,
+                    "hash": h,
+                    "text": fragment,  # overwrite previous value
+                }
+                if isinstance(natural_chunk, dict) and "context" in natural_chunk:
+                    chunk["context"] = natural_chunk["context"]
+                chunks.append(chunk)
+                index += 1
+
+    json_file_target = os.path.join(basedir, "xmlfiles_as_chunks.json")
+    with open(json_file_target, mode="w", encoding="utf-8") as f:
+        json.dump(chunks, f, ensure_ascii=False, indent=4)
+
+    info_summary = ""
+    for k, v in info.items():
+        v_len = v["len"]
+        v_chunk_len = v["chunk_len"]
+        template = "{}: {:.0f} ± {:.0f}    max:{} min:{}\n"
+        info_summary += f"### {k}\n"
+        info_summary += f"total doc: {len(v_len)}\n"
+        info_summary += template.format(
+            "mean length", np.mean(v_len), np.std(v_len), np.max(v_len), np.min(v_len)
+        )
+        info_summary += f"total chunk: {len(v_chunk_len)}\n"
+        info_summary += template.format(
+            "mean chunks length", np.mean(v_chunk_len), np.std(v_chunk_len), np.max(v_chunk_len), np.min(v_chunk_len)
+        )
+        info_summary += "\n"
+
+    chunks_fn = os.path.join(basedir, "chunks.info")
+    with open(chunks_fn, mode="w", encoding="utf-8") as f:
+        f.write(info_summary)
+
+    print("Chunks created in", json_file_target)
+    print("Chunks info created in", chunks_fn)
+
+
+def make_questions(directory: str) -> None:
+    basedir = "_data/"
+    df = _parse_xml(directory, "questions")
+    df = df.drop_duplicates(subset=["question"])
+    q_fn = os.path.join(basedir, "questions.json")
+    with open(q_fn, mode="w", encoding="utf-8") as f:
+        json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=4)
+    print("Questions created in", q_fn)
