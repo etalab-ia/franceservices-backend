@@ -9,8 +9,8 @@ notebooks/notes/
 notebooks/answers
 
 # api
-gpt4all_api/gptcache.db
-gpt4all_api/model/*
+api/gptcache.db
+api/model/*
 
 #
 # Default
