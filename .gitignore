@@ -36,6 +36,7 @@ lib64/
 
 # Environments
 .DS_Store
+.idea/
 .vscode/
 _env
 .env
