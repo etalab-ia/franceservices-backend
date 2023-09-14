@@ -144,6 +144,13 @@ if torch.cuda.is_available():
     device_map = "cuda:0"
 
 
+# @PERF: The following embedding/encoding function seems to give slighly different results than SentenceTransformer.embed()
+# (probably negligible) AND then batching of sentenceTransformer seems i) fastrer and ii) consume way less memory.
+# see SentenceTransformer code:
+# - https://www.sbert.net/docs/package_reference/SentenceTransformer.html
+# - https://github.com/UKPLab/sentence-transformers/blob/master/sentence_transformers/SentenceTransformer.py
+
+
 def average_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
     last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
     return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
@@ -181,12 +188,21 @@ def _embed(tokenizer, model, texts, batch_size=1):
 
 # Load E5 Model
 model_name_ebd = "intfloat/multilingual-e5-base"
+
+# Model with SentenceTransformer approach
+# model = SentenceTransformer(model_name_ebd, device="cuda" if with_gpu else "cpu")
+# --
+# Model with manual encoding approch
 tokenizer_ebd = AutoTokenizer.from_pretrained(model_name_ebd)
 model_ebd = AutoModel.from_pretrained(model_name_ebd, device_map=device_map)
 
 
 def embed(query):
-    return _embed(tokenizer_ebd, model_ebd, query)[0]
+    # SentenceTransformer
+    # return model.encode([query], normalize_embeddings=True, batch_size=32)[0]
+    # --
+    # Manual encoding
+    return _embed(tokenizer_ebd, model_ebd, [query])[0]
 
 
 #
