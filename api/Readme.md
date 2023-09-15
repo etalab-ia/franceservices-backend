@@ -18,14 +18,14 @@ You must be registered with huggingface-cli to download private models:
 
 Download a model
 
-    python -c "from vllm import LLM; LLM(model="etalab-ia/fabrique-miaou")"
+    python -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-miaou')"
 
 
 # Deploy
 
 If GPU is available, the vllm API is ran separately with:
 
-    python3 vllm_api.py --model etalab-ia/fabrique-miaou  --tensor-parallel-size 1 --gpu-memory-utilization 0.4 --port 8000
+    python vllm_api.py --model etalab-ia/fabrique-miaou  --tensor-parallel-size 1 --gpu-memory-utilization 0.4 --port 8000
 
 
 Run the public API:
