@@ -3,7 +3,7 @@
     pip install -r requirements.txt
 
 
-### GPT4all quantized model (for CPUs)
+### GPT4all quantized model (for CPUs)
 
 To run the quantized model, the model "{model-name}.bin" needs to be imported/copied in `api/model`
 
@@ -33,7 +33,7 @@ Run the public API:
     gunicorn -w 2 -b 127.0.0.1:4000 app_spp:app --timeout 120
 
 
-# Launching search engine services
+# Launching search engine services
 
 > En se placant à la racine du projet.
 
@@ -45,7 +45,7 @@ Run the public API:
     docker-compose -f docker/qdrant/docker-compose.yml up
 
 
-# Build the indexes
+# Build the indexes
 
 > En se placant à la racine du projet.
 
