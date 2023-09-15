@@ -52,39 +52,39 @@ Run the public API:
 1. Download the set of user experiences:
 
 ```
-    wget https://opendata.plus.transformation.gouv.fr/api/explore/v2.1/catalog/datasets/export-expa-c-riences/exports/json -O _data/export-expa-c-riences.json
+wget https://opendata.plus.transformation.gouv.fr/api/explore/v2.1/catalog/datasets/export-expa-c-riences/exports/json -O _data/export-expa-c-riences.json
 ```
 
 
 2. Download the sheets from service-public.fr
 
 ```
-    mkdir -p _data/data.gouv
-    wget https://lecomarquage.service-public.fr/vdd/3.3/part/zip/vosdroits-latest.zip -O _data/data.gouv/vosdroits-latest.zip
-    cd _data/data.gouv
-    unzip vosdroits-latest.zip -d vos-droits-et-demarche
+mkdir -p _data/data.gouv
+wget https://lecomarquage.service-public.fr/vdd/3.3/part/zip/vosdroits-latest.zip -O _data/data.gouv/vosdroits-latest.zip
+cd _data/data.gouv
+unzip vosdroits-latest.zip -d vos-droits-et-demarche
 ```
 
 
 3. Build the chunks (can be ignored if `_data/xmlfiles_as_chunks.json` already exists)
 
 ```
-    ./gpt.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche
+./gpt.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche
 ```
 
 4. Build the indexes
 
 ```
-    # Elasticsearch indexes
-    ./gpt.py index experiences --index-type bm25
-    ./gpt.py index sheets --index-type bm25
-    ./gpt.py index chunks --index-type bm25
+# Elasticsearch indexes
+./gpt.py index experiences --index-type bm25
+./gpt.py index sheets --index-type bm25
+./gpt.py index chunks --index-type bm25
 
-    # Embeddings indexes (aka collections)
-    # @WARNING: requires the file _data/embeddings_e5_experiences.npy and _data/embeddings_e5_chunks.npy which is built outside for now (in a colab notebook). 
-    # see notebooks/bootstrap_embeddings.ipynb 
-    ./gpt.py index experiences --index-type e5
-    ./gpt.py index chunks --index-type e5
+# Embeddings indexes (aka collections)
+# @WARNING: requires the file _data/embeddings_e5_experiences.npy and _data/embeddings_e5_chunks.npy which is built outside for now (in a colab notebook). 
+# see notebooks/bootstrap_embeddings.ipynb 
+./gpt.py index experiences --index-type e5
+./gpt.py index chunks --index-type e5
 ```
 
 
