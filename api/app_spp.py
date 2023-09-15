@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import string
@@ -9,7 +10,6 @@ from flask import (Flask, Response, jsonify, redirect, render_template,
                    request, session, stream_with_context, url_for)
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from gpt4all import GPT4All
 from qdrant_client import QdrantClient
 from sqlalchemy import Boolean, Column, Integer, String, Text
 
@@ -20,12 +20,6 @@ app.secret_key = "secret4all"
 app.permanent_session_lifetime = timedelta(hours=24)
 cache_db_name = "gptcache.db"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(os.getcwd(), cache_db_name)
-
-
-# Default model
-N_THREADS = 4
-model = GPT4All("ggml-model-fabrique-q4_K.bin", model_path="model", n_threads=N_THREADS)
-
 
 #
 # Database
@@ -46,15 +40,15 @@ class User(db.Model):
     # --
     user_text = Column(
         Text,
-        default="Le service chat a été très facile à utiliser et la policière était très gentille, elle a répondu à toutes mes questions et es très patiente merci de son aide et de l'aide du système.  ri le 02/07/2023 à 59130 Lambersart  Posté par La personne concernée",
+        default="",
     )
     context = Column(
         Text,
-        default="La plateforme ma Sécurité permet de mettre en relation les citoyens avec des policières et ds policiers 24h sur 24",
+        default="",
     )
-    institution = Column(Text, default="moncommissariat.fr")
-    links = Column(Text, default="https://www.masecurite.interieur.gouv.fr/fr")
-    temperature = Column(String(5), default="0.5")
+    institution = Column(Text, default="")
+    links = Column(Text, default="")
+    temperature = Column(String(5), default="0.2")
 
     def __init__(self, username):
         self.username = username
@@ -210,6 +204,35 @@ def embed(query):
 #
 
 
+# Default model
+if with_gpu:
+    import requests
+
+    # @IMPROVE: We assumes that th vllm api run on the same machine than this app
+    # but it could run on cpu server and query an remote gpu server.
+    # Thus the usage of {with_gpu} is not long term consistent...
+    def vllm_generate(prompt, max_tokens=32, temp=0.5, streaming=True):
+        url = "http://localhost:8000"
+        data = {"prompt": prompt, "stream": streaming, "max_tokens": max_tokens, "temperature": temp}
+        response = requests.post(url + "/generate", json=data, stream=True, verify=False)
+        prev_len = 0
+        for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
+            if not chunk:
+                continue
+
+            data = json.loads(chunk.decode("utf-8"))
+            output = data["text"][0]
+            yield output[prev_len:]
+            prev_len = len(output)
+
+else:
+    from gpt4all import GPT4All
+
+    N_THREADS = 4
+    model = GPT4All("ggml-model-fabrique-q4_K.bin", model_path="model", n_threads=N_THREADS)
+    gpt4all_generate = model.generate
+
+
 @app.route("/api/fabrique_stream")
 def fabrique_stream():
     if "username" in session:
@@ -222,24 +245,34 @@ def fabrique_stream():
     # Route that stream the generation results
     def generate():
         try:
-            prompt = f"""Question soumise au service {user.institution} : {user.user_text}
-                \rPrompt : {user.context} {user.links}
-                \r---Réponse : """
+            # Buid prompt (warning, its extra sensitive + avoid cariage return)
+            institution = user.institution + " " if user.institution else ""
+            prompt = f"Question soumise au service {institution}: {user.user_text}\n"
+            if user.context or user.links:
+                # Context
+                prompt += f"Prompt : {user.context} {user.links}\n"
+            prompt += "---Réponse : "
+
+            if with_gpu:
+                generator = vllm_generate(prompt, max_tokens=500, temp=float(user.temperature), streaming=True)
+            else:
+                generator = gpt4all_generate(
+                    prompt, max_tokens=500, temp=float(user.temperature), streaming=True, callback=StopGen(username).callback
+                )
 
             acc = []
-            for t in model.generate(
-                prompt, max_tokens=500, temp=float(user.temperature), streaming=True, callback=StopGen(username).callback
-            ):
+            for t in generator:
                 # t = t.replace("\n", "<br>") # Better to  use <pre> to format generated text
                 acc.append(t)
                 if t.endswith((" ", "\n")) or t.startswith((" ", "\n")):
-                    yield "data: " + "".join(acc) + "\n\n"
+                    yield "data: " + json.dumps("".join(acc)) + "\n\n"
                     acc = []
 
             if len(acc) > 0:
-                yield "data: " + "".join(acc) + "\n\n"
+                yield "data: " + json.dumps("".join(acc)) + "\n\n"
 
-            yield "data: [DONE]\n\n"
+            eos_code = json.dumps("[DONE]")
+            yield f"data: {eos_code}\n\n"
         finally:
             session["is_streaming"] = False
             user.setIsStreaming(False)

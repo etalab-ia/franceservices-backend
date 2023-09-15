@@ -1,9 +1,11 @@
 #!/bin/python
 
+import json
+
 import requests
 
-url = "http://localhost:5000"
 url = "https://gpt.datascience.etalab.studio"
+url = "http://localhost:4000"
 
 user_text = "Merci pour le service Service-Public+. Bien à vous."
 
@@ -21,7 +23,7 @@ print(
 code: {response.status_code}
 header: {response.headers}
 """
-#content: {response.text[:100] if response.text else ""}
+    # content: {response.text[:100] if response.text else ""}
 )
 
 # Open server-sent-event stream
@@ -33,7 +35,9 @@ for line in response.iter_lines():
     if not line:
         continue
     _, _, data = line.decode("utf-8").partition("data: ")
-    if data == "[DONE]":
-        break
 
-    print(data, end="", flush=True)
+    text = json.loads(data)
+    if text == "[DONE]":
+        break
+    print(text, end="", flush=True)
+

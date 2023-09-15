@@ -5,3 +5,4 @@ gevent
 gunicorn
 gpt4all
 watchdog
+vllm

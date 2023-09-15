@@ -5,7 +5,7 @@ format_code:
 
 reorder_json_chunks:
 	@# Reorder and clean the json database.
-	# Usefull t compare different version of this file.
+	# Usefull to compare different version of this file.
 	cat ~/Downloads/files_as_chunks.json | jq 'sort_by(.url) | map(del(.file))' > tmp.json
 
 info:
@@ -27,6 +27,9 @@ download_servicepublic_sheets:
 
 sync_etalab_repo:
 	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@datascience-01.infra.data.gouv.fr:~/
+
+sync_etalab_repo_outscale:
+	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@142.44.51.104:~/
 
 build_llama.cpp:
 	git clone https://github.com/ggerganov/llama.cpp
