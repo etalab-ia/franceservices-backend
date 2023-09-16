@@ -39,7 +39,7 @@
           </h2>
 
           {% if is_streaming %}
-            <div id="result" class="result">
+            <div id="result" class="result" style="white-space: pre-wrap;">
             </div>
 
             <script>
@@ -50,11 +50,12 @@
               $loader.style.display = 'inline-block';
 
               stream_chat.onmessage = function (e) {
-                if (e.data == "[DONE]") {
+                text = JSON.parse(e.data);
+                if (text == "[DONE]") {
                     stream_chat.close();
                     $loader.style.display = 'none';
                 } else {
-                  target_output.innerHTML += e.data;
+                  target_output.innerHTML += text;
                 }
               };
 
