@@ -1,5 +1,4 @@
 import json
-import os
 import random
 import string
 from datetime import timedelta
@@ -18,8 +17,7 @@ CORS(app, supports_credentials=True)
 # CORS(app, origins=['https://127.0.0.1:5173, https://localhost:5173'])
 app.secret_key = "secret4all"
 app.permanent_session_lifetime = timedelta(hours=24)
-cache_db_name = "gptcache.db"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(os.getcwd(), cache_db_name)
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////var/lib/sqlite3/gptcache.db"
 
 #
 # Database
@@ -212,7 +210,7 @@ if with_gpu:
     # but it could run on cpu server and query an remote gpu server.
     # Thus the usage of {with_gpu} is not long term consistent...
     def vllm_generate(prompt, max_tokens=32, temp=0.5, streaming=True):
-        url = "http://localhost:8000"
+        url = "http://localhost:8081"
         data = {"prompt": prompt, "stream": streaming, "max_tokens": max_tokens, "temperature": temp}
         response = requests.post(url + "/generate", json=data, stream=True, verify=False)
         prev_len = 0
@@ -452,6 +450,11 @@ def institutions():
 @app.route("/", methods=["GET", "POST"])
 def index():
     return redirect(url_for("fabrique"))
+
+
+@app.route("/healthcheck", methods=["GET"])
+def healthcheck():
+    return "OK"
 
 
 # @app.teardown_appcontext

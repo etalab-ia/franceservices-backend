@@ -1,8 +1,15 @@
+accelerate==0.22.0
+elasticsearch==8.9.0
 flask==2.3.3
 flask-sqlalchemy==3.1.1
 flask_cors==4.0.0
 gevent==23.9.1
-gunicorn==21.2.0
 gpt4all==1.0.11
-watchdog==3.0.0
+gunicorn==21.2.0
+meilisearch==0.28.2
+numpy==1.26.0
+qdrant-client==1.5.4
+requests==2.31.0
+sentence_transformers==2.2.2
 vllm==0.1.7
+watchdog==3.0.0
