@@ -118,6 +118,6 @@ def make_embeddings():
 
     texts = [" ".join([x["title"], x["introduction"], x["text"], x.get("context", "")]) for x in documents]
     embeddings = embed(tokenizer, model, texts, batch_size=4)
-    np.save('embeddings_e5_chunks.npy', embeddings)
+    np.save('_data/embeddings_e5_chunks.npy', embeddings)
 
     return
