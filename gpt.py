@@ -5,6 +5,7 @@
 Usage:
     gpt.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
     gpt.py make_questions DIRECTORY
+    gpt.py make_embeddings
     gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE]
     gpt.py finetune (xgen | llama) VERSION
 
@@ -14,6 +15,8 @@ Commands:
                     Chunks are created under _data/xmlfiles_as_chunks.json.
 
     make_questions  Create a corpus of questions from the XML SP sheets.
+
+    make_embeddings Build the embeddings matrix to be used with e5 index.
 
     index           Create the given index to search relevant document given a query. Each index is created using a specific file as ground-truth.
                     See doc to see which files are used by which index.
@@ -58,6 +61,10 @@ if __name__ == "__main__":
         from xml_parsing import make_questions
 
         make_questions(args["DIRECTORY"])
+    elif args["make_embeddings"]:
+        from ir import make_embeddings
+
+        make_embeddings()
     elif args["index"]:
         from ir import create_index
 

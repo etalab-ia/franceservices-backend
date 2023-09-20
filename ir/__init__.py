@@ -1,1 +1,1 @@
-from .index import create_index
+from .index import create_index, make_embeddings
