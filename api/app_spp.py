@@ -413,6 +413,13 @@ def embedding():
     embedding = embed(text)
     return jsonify(embedding.tolist())
 
+@app.route("/api/institutions", methods=["GET"])
+def institutions():
+    with open("../_data/institutions.json") as f:
+        insts = json.load(f)
+
+    return jsonify(insts)
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():

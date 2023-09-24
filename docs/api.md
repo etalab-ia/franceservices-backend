@@ -90,3 +90,11 @@ For index=chunks
     "context" : "The context of the chunk (successive chapter/sub-chapter/situation titles if any)"
 }
 ```
+
+### Misc
+
+> **GET /api/institutions*
+
+Get a list of known insitutions.
+
+Returns: A Json list of string.

@@ -81,11 +81,13 @@ unzip vosdroits-latest.zip -d vos-droits-et-demarche
 ./gpt.py index chunks --index-type bm25
 
 # Embeddings indexes (aka collections)
-# @WARNING: requires the file _data/embeddings_e5_experiences.npy and _data/embeddings_e5_chunks.npy which is built outside for now (in a colab notebook). 
-# see notebooks/bootstrap_embeddings.ipynb 
+# @WARNING: requires the file _data/embeddings_e5_experiences.npy and _data/embeddings_e5_chunks.npy which is built outside for now as its convenient to run it in a GPU (in a colab notebook). 
+# see notebooks/bootstrap_embeddings.ipynb or run: ./gpt.py make_embeddings
 ./gpt.py index experiences --index-type e5
 ./gpt.py index chunks --index-type e5
 ```
+
+5. The route "/api/insitutions" load a institutions.json file located in ../_data (see `make institutions` to generate it.) 
 
 
 # Reverse proxy

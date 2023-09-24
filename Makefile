@@ -25,6 +25,9 @@ download_servicepublic_sheets:
 	# https://www.data.gouv.fr/fr/datasets/service-public-fr-guide-vos-droits-et-demarches-entreprendre/
 	# https://www.data.gouv.fr/fr/datasets/service-public-fr-guide-vos-droits-et-demarches-associations/
 
+institutions:
+	cat _data/export-expa-c-riences.json  | jq  'map(.intitule_typologie_1) | unique | map(select(. != null))' > _data/institutions.json
+
 sync_etalab_repo:
 	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@datascience-01.infra.data.gouv.fr:~/
 
