@@ -7,7 +7,8 @@ Usage:
     gpt.py make_questions DIRECTORY
     gpt.py make_embeddings
     gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE]
-    gpt.py finetune (xgen | llama) VERSION
+    gpt.py finetune MODEL VERSION
+    gpt.py evaluate MODEL VERSION
 
 Commands:
     make_chunks     Parse les fichiers XML issue de data.gouv (fiches service publique), situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
@@ -21,7 +22,10 @@ Commands:
     index           Create the given index to search relevant document given a query. Each index is created using a specific file as ground-truth.
                     See doc to see which files are used by which index.
 
-    finetune        Fine-tune the given model. Parameters will be read from fine_tuning/x/{MODEL}-{VERSION}/.
+    finetune        (NOT IMPLEMENTED) Fine-tune the given model. Parameters will be read from fine_tuning/x/{MODEL}-{VERSION}/.
+                    Results will be saved in _data/x/{MODEL}-{VERSION}.
+
+    evaluate        Run evaluation for the given llm model.
                     Results will be saved in _data/x/{MODEL}-{VERSION}.
 
 
@@ -37,7 +41,7 @@ Examples:
     ./gpt.py make_questions _data/data.gouv/vos-droits-et-demarche/
     ./gpt.py index experiences  # assumes _data/export-expa-c-riences.json exists
     ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ exists
-    ./gpt.py index chunks       # assume _data/xmlfiles_as_chunks.json exists
+    ./gpt.py index chunks       # assumes _data/xmlfiles_as_chunks.json exists
 """
 
 
@@ -73,6 +77,8 @@ if __name__ == "__main__":
             if name in args and args[name]:
                 create_index(args["--index-type"], name)
     elif args["finetune"]:
+        raise NotImplementedError
+    elif args["evaluate"]:
         raise NotImplementedError
     else:
         raise NotImplementedError

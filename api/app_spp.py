@@ -5,12 +5,12 @@ import string
 from datetime import timedelta
 
 import meilisearch
+from qdrant_client import QdrantClient, models as QdrantModels
 from elasticsearch import Elasticsearch
 from flask import (Flask, Response, jsonify, redirect, render_template,
                    request, session, stream_with_context, url_for)
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from qdrant_client import QdrantClient
 from sqlalchemy import Boolean, Column, Integer, String, Text
 
 app = Flask(__name__)
@@ -339,6 +339,7 @@ def search(index_name):
     q = data["q"]
     limit = int(data.get("n", 3))
     sim = data.get("similarity", "bm25")
+    inst = data.get("institution")
 
     # What to retrieves
     if index_name == "experiences":
@@ -358,7 +359,19 @@ def search(index_name):
         res = client.index(index_name).search(q, {"limit": limit, "attributesToRetrieve": retrieves})
     elif sim == "bm25":
         client = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
-        query = {"query": {"multi_match": {"query": q, "fuzziness": "AUTO"}}, "size": limit}
+        query_filter = []
+        if inst:
+            query_filter.append({"term": {"intitule_typologie_1": inst}})
+
+        query = {
+            "query": {
+                "bool": {
+                    "must": [{"multi_match": {"query": q, "fuzziness": "AUTO"}}],
+                    "filter": query_filter,
+                }
+            },
+            "size": limit,
+        }
         res = client.search(index=index_name, body=query)
         hits = [_extract(x.get("_source")) for x in res["hits"]["hits"] if x]
         res = {"hits": hits}
@@ -371,7 +384,21 @@ def search(index_name):
 
         embedding = embed(q)
         client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
-        res = client.search(collection_name=index_name, query_vector=embedding, limit=limit)
+        # Eventually set filters
+        query_filter = None
+        if inst:
+            query_filter = QdrantModels.Filter(
+                must=[
+                    QdrantModels.FieldCondition(
+                        key="intitule_typologie_1",
+                        match=QdrantModels.MatchValue(
+                            value=inst,
+                        ),
+                    )
+                ]
+            )
+
+        res = client.search(collection_name=index_name, query_vector=embedding, query_filter=query_filter, limit=limit)
 
         es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
         # @Debug : qdrant doesnt accept the hash id as string..
@@ -412,6 +439,7 @@ def embedding():
     text = data["text"]
     embedding = embed(text)
     return jsonify(embedding.tolist())
+
 
 @app.route("/api/institutions", methods=["GET"])
 def institutions():

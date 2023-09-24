@@ -31,8 +31,7 @@ def create_bm25_index(index_name, add_doc=True):
                 "titre": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "description": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "intitule_typologie_1": {
-                    "type": "text",
-                    "index": False,
+                    "type": "keyword",
                 },
                 "reponse_structure_1": {
                     "type": "text",

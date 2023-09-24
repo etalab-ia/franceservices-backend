@@ -57,6 +57,7 @@ Params:
 q(required): string: search query
 n(default=3): integer: max document to return
 similarity(default=bm25) : string : similarity algorithm. Possible values : bm25, bucket, e5.
+institution: string : Filter the search with the given institution (correspond to the field `intitule_typologie_1`) 
 ```
 
 Returns: A Json list of result object ->  

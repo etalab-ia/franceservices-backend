@@ -1,12 +1,20 @@
+import hashlib
 import json
 
 import numpy as np
 from qdrant_client import QdrantClient, models
 
 
+def get_unique_color(string):
+    if not string:
+        return None
+    color = hashlib.sha256(string.encode()).hexdigest()[:6]
+    return "#" + color
+
+
 def create_vector_index(index_name, add_doc=True):
     # For quick testing/prototyping
-    #client = QdrantClient(":memory:")  # or QdrantClient(path="path/to/db")
+    # client = QdrantClient(":memory:")  # or QdrantClient(path="path/to/db")
     client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
 
     if index_name == "experiences":
@@ -29,7 +37,10 @@ def create_vector_index(index_name, add_doc=True):
                 models.PointStruct(
                     id=documents[i]["id_experience"],
                     vector=vector.tolist(),
-                    # payload={"color": "red", "rand_number": idx % 10}
+                    payload={
+                        "intitule_typologie_1": documents[i]["intitule_typologie_1"],
+                        "feeling": documents[i]["ressenti_usager"],
+                    },
                 )
                 for i, vector in enumerate(embeddings)
             ],
@@ -51,7 +62,7 @@ def create_vector_index(index_name, add_doc=True):
             print(doc["titre"])
             print(doc["description"])
 
-    #elif index_name == "sheets":
+    # elif index_name == "sheets":
     elif index_name == "chunks":
         # Load data
         embeddings = np.load("_data/embeddings_e5_chunks.npy")
