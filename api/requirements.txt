@@ -1,8 +1,8 @@
-flask
-flask-sqlalchemy
-flask_cors
-gevent
-gunicorn
-gpt4all
-watchdog
-vllm
+flask==2.3.3
+flask-sqlalchemy==3.1.1
+flask_cors==4.0.0
+gevent==23.9.1
+gunicorn==21.2.0
+gpt4all==1.0.11
+watchdog==3.0.0
+vllm==0.1.7

@@ -9,7 +9,7 @@
        - 9202:9200
        - 9302:9300
      volumes:
-       - ./_data/elasticsearch_data:/usr/share/elasticsearch/data
+       - ./_data/elasticsearch_data:/var/lib/elasticsearch/data
      environment:
        - discovery.type=single-node
        - xpack.security.enabled=false
