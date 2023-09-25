@@ -1,6 +1,20 @@
-_env
-.DS_Store
-.vscode/
+#
+# Projet
+#
+_data/
+notebooks/*.json
+notebooks/*.csv
+notebooks/*.xlsx
+notebooks/notes/
+notebooks/answers
+
+# api
+api/gptcache.db
+api/model/*
+
+#
+# Default
+#
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -16,12 +30,15 @@ eggs/
 lib/
 lib64/
 
-
-
 # Jupyter Notebook
 .ipynb_checkpoints
+.virtual_documents/ 
 
 # Environments
+.DS_Store
+.idea/
+.vscode/
+_env
 .env
 .venv
 env/
@@ -33,3 +50,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# Excel
+.~lock*#

@@ -9,15 +9,9 @@ from evaluation import calculate_tfidf, crucial_words_tfidf_textcollection
 from fine_tuning import fine_tune_model
 from retrieving.bm25_retriever import BM25Retriever
 from retrieving.vectordb import WeaviateRetriever
-from xml_parsing import complete_parsing
 
 COMMANDS_PARSER = argparse.ArgumentParser(
     description="Run commands for the project",
-)
-COMMANDS_PARSER.add_argument(
-    "--parse_xml",
-    help="This command will parse the xml files, " "cut them into chunks of 1000 tokens and save them in a json file",
-    action="store_true",
 )
 
 COMMANDS_PARSER.add_argument(
@@ -68,10 +62,6 @@ def execute_commands(**commands):
         fine_tune_model()
         return
 
-    if commands.get("parse_xml"):
-        complete_parsing()
-        return
-
     if commands.get("evaluate_dataset_quality"):
         crucial_words_tfidf_textcollection()
         return
@@ -82,7 +72,7 @@ def execute_commands(**commands):
 
     if commands.get("run_weaviate_migration"):
         context_retriever = WeaviateRetriever()
-        with open("json_database.json", "r", encoding="utf-8") as json_file:
+        with open("_data/xmlfiles_as_chunks.json", "r", encoding="utf-8") as json_file:
             xml_files_to_vectorize = json.load(json_file)
         context_retriever.run_weaviate_migration(xml_files_to_vectorize)
 
@@ -106,6 +96,7 @@ def execute_commands(**commands):
         )
         generate_questions(question_generator, reformu_generator)
         return
+
     if commands.get("gpt"):
         checkpoint = "gpt-3.5-turbo"
 
@@ -135,11 +126,13 @@ def execute_commands(**commands):
             max_new_tokens=100,
             repetition_penalty=1.2,
         )
+
     corpus_generator = CorpusGenerator(
         prompt_generator,
         llm_generator,
-        context_retriever,
+        context_retriever
     )
+
     corpus_generator.generate_corpus(
         questions_path="./questions-test.csv",
         corpus_path="corpus-results.csv",

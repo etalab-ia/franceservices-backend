@@ -5,22 +5,16 @@ The default LangChain text splitters split either based on sentences (NLTKTextSp
 We would like to base chunk sizes on token count, but never split in the middle of a sentence - a behaviour that TokenTextSplitter does exhibit.
 The HybridSplitter class implements a custom splitter that combines both criteria.
 """
-from typing import (
-    Optional,
-    Union,
-    Literal,
-    AbstractSet,
-    Collection,
-    Any,
-    List,
-    Callable,
-)
+from typing import (AbstractSet, Any, Callable, Collection, List, Literal,
+                    Optional, Union)
 
+import nltk
 from langchain.text_splitter import NLTKTextSplitter
-from nltk import download
-from nltk.tokenize import sent_tokenize
 
-download("punkt", quiet=True)
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
 
 
 def get_token_length_function(
@@ -64,7 +58,7 @@ def split_into_parts(input: str, n_parts: int = 1) -> list[str]:
     """
     Split the input text into n_parts approximately equally-sized parts along sentence borders (will never split in the middle of a sentence).
     """
-    sentences = sent_tokenize(input, language="french")
+    sentences = nltk.sent_tokenize(input, language="french")
     avg_length = len(input) // n_parts
 
     parts = []
@@ -132,7 +126,8 @@ def split_along_md_or_parts(text: str, max_splitting_depth: int = 1, n_parts: in
 class HybridSplitter(NLTKTextSplitter):
     """
     Custom splitter that combines an NLTKTextSplitter and a token encoder (like TokenTextSplitter or the result of TextSplitter.from_tiktoken_encoder).
-    Returns splits with a length based on token count rather than character count: returned splits will have less tokens than the specified chunk_size - as long as no one sentence exceeds the chunk_size - and will chunk_overlap based on tokens.
+    Returns splits with a length based on token count rather than character count: returned splits will have less tokens than the specified chunk_size
+    - as long as no one sentence exceeds the chunk_size - and will chunk_overlap based on tokens.
     However, the splits may be signficantly shorter than the requested size, in order to ensure we never split in the middle of a sentence.
     """
 
@@ -164,7 +159,8 @@ class HybridSplitter(NLTKTextSplitter):
         )  # super().__init__() call to the parent NLTKTextSplitter class
 
     def split_text(self, text: str) -> List[str]:
-        # When looking at the code for NTLKTextSplitter.split_text(), notice that self._tokenizer splits into individual sentences, then re-merges them into chunks.
+        # When looking at the code for NTLKTextSplitter.split_text(), notice that self._tokenizer splits into individual sentences,
+        # then re-merges them into chunks.
 
         sentences = (sentence + ("" if sentence[-1] == " " else " ") for sentence in self._tokenizer(text))
         # Add a space to the end of every sentence so that we don't transform 'Sen1. Sen2' into 'Sen1.Sen2' when merging

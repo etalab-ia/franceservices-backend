@@ -1,1 +1,1 @@
-from ._main import complete_parsing
+from .xml_parsing import make_chunks, make_questions, parse_xml

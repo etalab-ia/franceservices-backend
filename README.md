@@ -30,10 +30,10 @@ Le projet est structuré de la manière suivante :
 
 - `main.py` : fichier principal qui lance les commandes
 - `commands.py` : fichier qui définit les commandes disponibles
-- `_data` : dossier qui contient les données
+- `_data/` : dossier qui contient les données
 
   - `xml_files` : dossier qui contient les fichiers xml
-  - `json_database` : dossier qui contient les chunks de fiches sous format json
+  - `xmlfiles_as_chunks.json` : dossier qui contient les chunks de fiches sous format json
 
 Chaque fonctionnalité du projet est organisé dans un dossier qui contient les fichiers suivants :
 
@@ -42,7 +42,7 @@ Chaque fonctionnalité du projet est organisé dans un dossier qui contient les 
 
 Les fonctionnalités sont les suivantes :
 
-- `xml_parsing` : contient la logique pour parser les fichiers xml et les transformer en fiches sous format JSON. Chaque élement JSON correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
+
 - `corpus_generation` : contient la logique pour générer des questions à partir des fiches sous format JSON et à répondre à ces questions via openai ou autres llm.
 - `fine_tuning` : permet d'entraîner un modèle XGEN de Salesforce via le Trainer d'HuggingFace. Le modèle est entraîné sur un corpus de questions / réponses générées par openai à partir des JSON.
 
@@ -100,3 +100,20 @@ python main.py --run_weaviate_migration
 ```
 
 Et ensuite, changer la variable `context_retriever` dans [commands.py](./commands.py) par la classe `WeaviateRetriver` défini dans [retrieving/vector_db/retriever.py](./retrieving/vector_db/retriever.py)
+
+## API
+
+Une API de test, utilisant gpt4all permettant de faire tourner des modèle quantizé sur CPU, et ainsi faciliter les test et le développement d'interface, si situe dans le répertoire `api/`.
+Lancer l'API pour Service public + (fabrique de text) : 
+
+    cd api/
+    python api/app_spp.py
+
+
+## Ressources
+
+Xgen
+- article: https://blog.salesforceairesearch.com/xgen/
+- huggingface: https://huggingface.co/Salesforce/xgen-7b-4k-base
+
+LLama: see https://github.com/etalab-ia/legal-information-assistant/issues/2

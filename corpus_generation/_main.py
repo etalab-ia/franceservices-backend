@@ -25,13 +25,13 @@ def generate_questions(question_generator: QuestionGenerator, reformu_generator:
         file.close()
 
     while progres != chunks_nb - 1:
-        url_fiche = data[progres]["metadata"]["xml_url"]
+        url_fiche = data[progres]["url"]
         contexts = []
 
         while (
-            progres != chunks_nb - 1 and len(contexts) < 10 and data[progres]["metadata"]["xml_url"] == url_fiche
+            progres != chunks_nb - 1 and len(contexts) < 10 and data[progres]["url"] == url_fiche
         ):  # on génère les questions par rappport à une seule fiche. La taille maximale de chunks est de 10, observée en testant à la main.
-            contexts.append(data[progres]["data"])
+            contexts.append(data[progres]["text"])
             progres += 1
 
         raw_questions = question_generator.get_question(contexts, QUESTION_NB)

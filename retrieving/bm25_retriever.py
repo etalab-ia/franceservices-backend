@@ -13,7 +13,6 @@ class SearchResult(TypedDict):
     doc_id: int
     score: float
     text: str
-    filename: str
     url: str
     title: str
 
@@ -24,7 +23,7 @@ def bm25_retrieval(question: str, json_file: str, top_k: Union[int, None] = 3, m
         law_documents = json.load(data_file)
 
     # Preprocess documents
-    documents = [doc["data"].split() for doc in law_documents]
+    documents = [doc["text"].split() for doc in law_documents]
 
     # Create BM25 model
     bm25 = model(documents)
@@ -45,10 +44,9 @@ def bm25_retrieval(question: str, json_file: str, top_k: Union[int, None] = 3, m
         result: SearchResult = {
             "doc_id": doc_index,
             "score": score,
-            "text": document["data"],
-            "filename": document["metadata"]["file"],
-            "url": document["metadata"]["xml_url"],
-            "title": document["metadata"]["title"],
+            "title": document["title"],
+            "text": document["text"],
+            "url": document["url"],
         }
         results.append(result)
 
