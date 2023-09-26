@@ -1,43 +1,36 @@
-#!/bin/python
-
 import json
 
 import requests
 
-url = "https://gpt.datascience.etalab.studio"
-url = "http://localhost:4000"
+from app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
-user_text = "Merci pour le service Service-Public+. Bien à vous."
+url = "http://127.0.0.1:8000"
 
-# Send POST request with string parameter
-headers = {"Content-Type": "application/x-www-form-urlencoded"}
-data = {"user_text": user_text}
-response = requests.post(url + "/api/fabrique", data=data, headers=headers, verify=False)
-
-# Keep cookie for later requests
-cookies = response.cookies
-
-print("Request Header:", response.request.headers)
-print(
-    f"""Response
-code: {response.status_code}
-header: {response.headers}
-"""
-    # content: {response.text[:100] if response.text else ""}
+# Sign In:
+response = requests.post(
+    f"{url}/sign_in", json={"email": FIRST_ADMIN_EMAIL, "password": FIRST_ADMIN_PASSWORD}
 )
+token = response.json()["token"]
+headers = {
+    "Authorization": f"Bearer {token}",
+}
 
-# Open server-sent-event stream
-response = requests.get(url + "/api/fabrique_stream", stream=True, verify=False, cookies=cookies)
+# Create Stream:
+data = {
+    "user_text": "Merci pour le service Service-Public+. Bien à vous.",
+}
+response = requests.post(f"{url}/stream", json=data, headers=headers)
+stream_id = response.json()["id"]
 
-# Print the streamed response
-print("-> Wainting for the response stream:")
+# Start Stream:
+data = {"stream_id": stream_id}
+response = requests.get(f"{url}/stream/{stream_id}/start", json=data, headers=headers, stream=True)
+print("-> Waiting for the response stream:")
 for line in response.iter_lines():
     if not line:
         continue
     _, _, data = line.decode("utf-8").partition("data: ")
-
     text = json.loads(data)
     if text == "[DONE]":
         break
     print(text, end="", flush=True)
-
