@@ -13,7 +13,6 @@ from bs4.element import NavigableString, Tag
 
 from retrieving.text_spliter import HybridSplitter
 
-
 # *********
 # * Utils *
 # *********
@@ -413,7 +412,17 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
 
     # Chunkify and save to a JSON file
     basedir = "_data/"
-    cols = ("file", "url", "surtitre", "theme", "title", "subject", "introduction", "text", "context")
+    cols = (
+        "file",
+        "url",
+        "surtitre",
+        "theme",
+        "title",
+        "subject",
+        "introduction",
+        "text",
+        "context",
+    )
     chunks = []
     text_splitter = HybridSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     hashes = []
@@ -485,7 +494,11 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
         )
         info_summary += f"total chunk: {len(v_chunk_len)}\n"
         info_summary += template.format(
-            "mean chunks length", np.mean(v_chunk_len), np.std(v_chunk_len), np.max(v_chunk_len), np.min(v_chunk_len)
+            "mean chunks length",
+            np.mean(v_chunk_len),
+            np.std(v_chunk_len),
+            np.max(v_chunk_len),
+            np.min(v_chunk_len),
         )
         info_summary += "\n"
 
