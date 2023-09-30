@@ -1,0 +1,20 @@
+#!/bin/python
+
+import sys
+from pprint import pprint
+
+sys.path.append(".")
+from evaluation import extract
+
+answer = """ Bonjour.
+
+Merci d'avoir partagé votre expérience sur SERVICES PUBLICS +. Votre témoignage nous aide à améliorer la qualité de nos services et des réponses affichées sur notre site.
+
+Nous sommes navrés d'apprendre que vous n'avez pas reçu de réponse à votre demande. Sachez que nous transmettons votre témoignage à nos équipes pour vous répondre comme nous le faisons quotidiennement pour plus de 40 000 témoignages.
+
+Concernant votre demande, nous vous invitons www.test.de e http://www.frfze.de à contacter dede@de.De votre CAF par téléphone au 32 30 ou par courriel afin qu'ils puissent vous répondre précisément 0727272727 ou 09 09 23 23 23. ou +33 7 23 22 23 33.
+
+Nous vous souhaitons une belle journée. 10 févrieR .  décembre 1999 d. novembre. 10 20  2$ ou 2% 1 10h12"""
+
+data_x = extract(answer)
+pprint(data_x)

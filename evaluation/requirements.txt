@@ -1,0 +1,3 @@
+lexicalrichness==0.5.1
+pandas==2.1.0
+nltk==3.8.1

@@ -8,6 +8,7 @@ einops==0.6.1
 langchain==0.0.288
 lxml==4.9.3
 nltk==3.8.1
+numpy==1.25.2
 openai==0.28.0
 pandas==2.1.0
 pandas-stubs==2.0.3.230814
