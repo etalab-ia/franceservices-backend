@@ -225,6 +225,9 @@ class EVAL(object):
                     "emails": len(data_x["emails"]),
                     "urls": len(data_x["urls"]),
                     "phones": len(data_x["phones"]),
+                    "dates": len(data_x["dates"]),
+                    "hours": len(data_x["hours"]),
+                    "prices_": len(data_x["prices_"]),
                 }
             )
 
