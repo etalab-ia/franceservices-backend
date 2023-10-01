@@ -18,21 +18,49 @@ def embed(text: str) -> list:
 
 
 class EVAL(object):
-    ROUTES = {
-        "miaou": {"url": "http://localhost:8081", "prompt_maker": "_make_prompt"},
-        "reference": {"url": "http://localhost:8001", "prompt_maker": "_make_prompt_2"},
+    SPEC = {
+        "miaou": {
+            "url": "http://localhost:8081",
+            "prompt_maker": "_make_prompt",
+            "temperature": 0.2,
+            "max_tokens": 500,
+        },
+        "reference-simple": {
+            "url": "http://localhost:8001",
+            "prompt_maker": "_make_prompt_2",
+            "mode": "simple",
+            "temperature": 0.2,
+            "max_tokens": 500,
+        },
+        "reference-experience": {
+            "url": "http://localhost:8001",
+            "prompt_maker": "_make_prompt_2",
+            "mode": "experience",
+            "temperature": 0.2,
+            "max_tokens": 4096,
+        },
+        "reference-expert": {
+            "url": "http://localhost:8001",
+            "prompt_maker": "_make_prompt_2",
+            "mode": "expert",
+            "temperature": 0.2,
+            "max_tokens": 4096,
+        },
     }
 
     def __init__(self, model, version, limit=None, yes=False, n_async=70):
+        if model not in self.SPEC:
+            print("Model unknwon: %s" % model)
+            exit()
+
         self.model = model
         self.version = version
         self.outdir = f"_data/x/{model}-{version}/"
         self.N = limit  # number of generation
         self.n_async = n_async
         self.settings_vllm = {
-            "max_tokens": 500,
-            "temperature": 0.2,
-            "stream": False,
+            "max_tokens": self.SPEC[model]["max_tokens"],
+            "temperature": self.SPEC[model]["temperature"],
         }
         self.yes = yes
 
@@ -56,7 +84,7 @@ class EVAL(object):
             prompt = "\n\n".join(prompt)
         elif mode == "experience":
             prompt.append("Mode expérience")
-            prompt.append(f"Question soumise au service {institution} : {text}")
+            prompt.append(f"Question soumise au service {institution}: {text}")
 
             # Rag
             retrieves = ["id_experience", "description"]
@@ -97,7 +125,7 @@ class EVAL(object):
             prompt.append("Mode expert")
             prompt.append(f"Expérience : {text}")
             # Get reponse...
-            rep1 = generate(EVAL.ROUTES["miaou"], {"max_tokens": 500, "temperature": 0.2}, text)
+            rep1 = generate(EVAL.SPEC["miaou"]["url"], {"max_tokens": 500, "temperature": 0.2}, text)
             rep1 = "".join(rep1)
             prompt.append(f"Réponse :\n\n {rep1}")
 
@@ -134,10 +162,6 @@ class EVAL(object):
     def run(self):
         # Input validation
         # --
-        if self.model not in EVAL.ROUTES:
-            print("Model unknwon: %s" % self.model)
-            exit()
-
         if self.has_data():
             if not self.yes:
                 user_input = input(
@@ -214,12 +238,12 @@ def eval_one(args: dict):
     settings_vllm = args["settings_vllm"]
     doc = args["exp"]
     outdir = args["outdir"]
-    route = EVAL.ROUTES[model]
+    route = EVAL.SPEC[model]
     url = route["url"]
 
     # Make prompt
     make_prompt = getattr(EVAL, route["prompt_maker"])
-    prompt = make_prompt(doc)
+    prompt = make_prompt(doc, mode=route.get("mode"))
 
     # Generate answer
     answer = generate(url, settings_vllm, prompt)
@@ -241,7 +265,7 @@ def evaluate(
 
     if not eva.has_data() or not to_:
         # Re-run if no data or if --csv is not passed (overwrite)
-        np.random.seed(2) # @warning: this does not control the LLM seed (remote API)
+        np.random.seed(2)  # @warning: this does not control the LLM seed (remote API)
         eva.run()
 
     if to_:

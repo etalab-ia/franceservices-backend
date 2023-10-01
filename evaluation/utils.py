@@ -6,7 +6,7 @@ import requests
 def get_embedding_e5(text: str) -> list:
     """OpenAI-like embedding API"""
     host = "localhost:8080"
-    url = f"https://{host}/api/embedding"
+    url = f"http://{host}/api/embedding"
     headers = {"Content-Type": "application/json"}
     query = {"text": text}
     res = requests.post(url, headers=headers, data=json.dumps(query), verify=False).json()
