@@ -43,7 +43,7 @@ def extract_data(text: str) -> (str, dict):
         text = _purge(text, matches)
 
     # Prices and ratios
-    p_pattern = [r"\b(?<!\d|[,.])\d{1,3}(?:\s?\d{3})*(?:[,.]\d+)?(?:\s?[$€%£])"]
+    p_pattern = [r"\b(?<!\d|[,\.])\d{1,3}(?:\s?\d{3})*(?:[,\.]\d+)?(?:\s?[$€%£])"]
     for pattern in p_pattern:
         matches = re.findall(pattern, text, re.IGNORECASE)
         data_x["prices_"].extend(matches)
@@ -54,7 +54,7 @@ def extract_data(text: str) -> (str, dict):
     #
 
     # Email
-    email_pattern = [r"(?:[\w+-]+@[\w-]+\.[\w]+)"]
+    email_pattern = [r"(?:[\w\+\-\.]+@[\w-]+\.[\w\-\.]+)(?<![\.,])"]
     for pattern in email_pattern:
         matches = re.findall(pattern, text, re.IGNORECASE)
         data_x["emails"].extend(matches)
@@ -62,8 +62,8 @@ def extract_data(text: str) -> (str, dict):
 
     # Url
     url_pattern = [
-        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+",
-        r"\b[\w-]+\.\w{2,3}\b",
+        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+(?<![\.,])",
+        r"\b[\w\-\.]+\.\w{2,3}(?<![\.,])\b",
     ]
     for pattern in url_pattern:
         matches = re.findall(pattern, text, re.IGNORECASE)
@@ -72,8 +72,8 @@ def extract_data(text: str) -> (str, dict):
 
     # Phone number
     phone_pattern = [
-        r"\b(?:\+?33|0)\s*\d(?:[\s.-]*\d{2}){4}(?<![\.,])\b",
-        r"\b(?<!\S)(?:[\s.-]*\d{2}){2}(?<![\.,])\b",
+        r"\b(?:\+?33|0)\s*\d(?:[\s\.\-]*\d{2}){4}(?<![\.,])\b",
+        r"\b(?<!\S)(?:[\s\.\-]*\d{2}){2}(?<![\.,])\b",
     ]
     for pattern in phone_pattern:
         matches = re.findall(pattern, text, re.IGNORECASE)
@@ -85,7 +85,7 @@ def extract_data(text: str) -> (str, dict):
     #
 
     # Hours
-    hours_pattern = [r"\b\d{1,2}h(?:\d{1,2})?\b"]
+    hours_pattern = [r"\b\d{1,2}[h:](?:\d{1,2})?\b"]
     for pattern in hours_pattern:
         matches = re.findall(pattern, text, re.IGNORECASE)
         data_x["hours"].extend(matches)

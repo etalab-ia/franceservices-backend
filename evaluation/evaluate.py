@@ -66,8 +66,9 @@ class EVAL(object):
 
     @staticmethod
     def _make_prompt(exp: dict, **kwargs) -> str:
-        prompt = f"""Question soumise au service {exp["intitule_typologie_1"]}: {exp["description"]}
-    ---Réponse : """
+        institution = exp["intitule_typologie_1"]
+        institution = institution + " " if institution else ""
+        prompt = f'Question soumise au service {institution}: {exp["description"]}\n---Réponse : '
         return prompt
 
     @staticmethod
