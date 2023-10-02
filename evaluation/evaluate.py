@@ -55,7 +55,8 @@ class EVAL(object):
 
         self.model = model
         self.version = version
-        self.outdir = f"_data/x/{model}-{version}/"
+        self.outdir_p = f"_data/p/{model}-{version}/"
+        self.outdir_x = f"_data/x/{model}-{version}/"
         self.N = limit  # number of generation
         self.n_async = n_async
         self.settings_vllm = {
@@ -67,25 +68,25 @@ class EVAL(object):
     @staticmethod
     def _make_prompt(exp: dict, **kwargs) -> str:
         institution = exp["intitule_typologie_1"]
-        institution = institution + " " if institution else ""
-        prompt = f'Question soumise au service {institution}: {exp["description"]}\n---Réponse : '
+        institution_ = institution + " " if institution else ""
+        prompt = f'Question soumise au service {institution_}: {exp["description"]}\n---Réponse : '
         return prompt
 
     @staticmethod
     def _make_prompt_2(exp: dict, mode="simple", **kwargs) -> str:
         institution = exp["intitule_typologie_1"]
-        institution = institution + " " if institution else ""
+        institution_ = institution + " " if institution else ""
         text = exp["description"]
 
         prompt = []
         if mode == "simple":
             prompt.append("Mode simple")
-            prompt.append(f"Question soumise au service {institution}: {text}")
+            prompt.append(f"Question soumise au service {institution_}: {text}")
             prompt.append("###Réponse : \n")
             prompt = "\n\n".join(prompt)
         elif mode == "experience":
             prompt.append("Mode expérience")
-            prompt.append(f"Question soumise au service {institution}: {text}")
+            prompt.append(f"Question soumise au service {institution_}: {text}")
 
             # Rag
             retrieves = ["id_experience", "description"]
@@ -114,11 +115,11 @@ class EVAL(object):
             )
             es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
             # @Debug : qdrant doesnt accept the hash id as string..
-            _uid = lambda x: bytes.fromhex(x.replace("-", "")).decode("utf8")
+            _uid = lambda x: x
             hits = [_extract(es.get(index=index_name, id=_uid(x.id))["_source"]) for x in res if x]
             chunks = [f'{x["id_experience"]} : {x["description"]}' for x in hits]
             chunks = "\n\n".join(chunks)
-            prompt.append(f"Expériences :\n\n {chunks}")
+            prompt.append(f"Expériences :\n\n{chunks}")
 
             prompt.append("###Réponse : \n")
             prompt = "\n\n".join(prompt)
@@ -127,10 +128,10 @@ class EVAL(object):
             prompt.append(f"Expérience : {text}")
             # Get reponse...
             rep1 = generate(
-                EVAL.SPEC["miaou"]["url"], {"max_tokens": 500, "temperature": 0.2}, text
+                EVAL.SPEC["miaou"]["url"], {"max_tokens": 500, "temperature": 0.2}, EVAL._make_prompt(exp)
             )
             rep1 = "".join(rep1)
-            prompt.append(f"Réponse :\n\n {rep1}")
+            prompt.append(f"Réponse :\n\n{rep1}")
 
             # Rag
             retrieves = ["title", "url", "text", "context"]
@@ -150,7 +151,7 @@ class EVAL(object):
                 for x in hits
             ]
             chunks = "\n\n".join(chunks)
-            prompt.append(f"Fiches :\n\n {chunks}")
+            prompt.append(f"Fiches :\n\n{chunks}")
 
             prompt.append("###Réponse : \n")
             prompt = "\n\n".join(prompt)
@@ -160,7 +161,7 @@ class EVAL(object):
         return prompt
 
     def has_data(self):
-        return os.path.exists(self.outdir)
+        return os.path.exists(self.outdir_x)
 
     def run(self):
         """Generate ansers in parallel (see self.n_asynx) for evaluation purpose."""
@@ -169,12 +170,13 @@ class EVAL(object):
         if self.has_data():
             if not self.yes:
                 user_input = input(
-                    f"Path {self.outdir} already exists. Evaluation data will be overwritten.\nDo you want to continue? (Y/n): "
+                    f"Path {self.outdir_x} already exists. Evaluation data will be overwritten.\nDo you want to continue? (Y/n): "
                 )
                 if user_input.lower() in ["n", "q", "c", "x", "no"]:
                     exit()
         else:
-            os.makedirs(self.outdir)
+            os.makedirs(self.outdir_x)
+            os.makedirs(self.outdir_p)
 
         # Inference
         # --
@@ -197,7 +199,8 @@ class EVAL(object):
                 "model": self.model,
                 "settings_vllm": self.settings_vllm,
                 "exp": documents[experience_ids[i]],
-                "outdir": self.outdir,
+                "outdir_p": self.outdir_p,
+                "outdir_x": self.outdir_x,
             }
             for i in hazard
         ]
@@ -207,12 +210,12 @@ class EVAL(object):
     def to_csv(self):
         """Save evaluation result to a csv file"""
         rows = []
-        for filename in os.listdir(self.outdir):
+        for filename in os.listdir(self.outdir_x):
             if not filename.endswith(".txt"):
                 continue
 
             expid = filename.split(".")[0]
-            with open(self.outdir + f"{filename}", "r") as f:
+            with open(self.outdir_x + f"{filename}", "r") as f:
                 answer = f.read()
 
             try:
@@ -238,7 +241,7 @@ class EVAL(object):
             )
 
         df = pd.DataFrame(rows)
-        df.to_csv(self.outdir + "res.csv", index=False)
+        df.to_csv(self.outdir_x + "res.csv", index=False)
 
 
 # async
@@ -247,7 +250,8 @@ def eval_one(args: dict):
     model = args["model"]
     settings_vllm = args["settings_vllm"]
     doc = args["exp"]
-    outdir = args["outdir"]
+    outdir_p = args["outdir_p"]
+    outdir_x = args["outdir_x"]
     route = EVAL.SPEC[model]
     url = route["url"]
 
@@ -255,11 +259,16 @@ def eval_one(args: dict):
     make_prompt = getattr(EVAL, route["prompt_maker"])
     prompt = make_prompt(doc, mode=route.get("mode"))
 
+    # Save prompt
+    with open(f'{outdir_p}/{doc["id_experience"]}.txt', "w", encoding="utf-8") as f:
+        f.write(prompt)
+
     # Generate answer
-    answer = generate(url, settings_vllm, prompt)
+    #answer = generate(url, settings_vllm, prompt)
+    answer = prompt
 
     # Save answer
-    with open(f'{outdir}/{doc["id_experience"]}.txt', "w", encoding="utf-8") as f:
+    with open(f'{outdir_x}/{doc["id_experience"]}.txt', "w", encoding="utf-8") as f:
         f.write(answer)
 
 

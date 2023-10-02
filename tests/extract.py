@@ -14,14 +14,15 @@ Nous sommes navrés d'apprendre que vous n'avez pas reçu de réponse à votre d
 
 Concernant votre demande, nous vous invitons www.test.de e http://www.frf.frrr.ze.de à contacter dede@de.De votre CAF par téléphone au 32 30 ou par courriel afin qu'ils puissent vous répondre précisément 0727272727 ou 09 09 23 23 23. ou +33 7 23 22 23 33.
 
-test@gouv.fr
+test@gouv.fr da
 test@data.gouv.fr.
-
 site.fr
 site.gouv.fr
+test 10:30 test
+23 règles.
+vingt-trois règles.
 
-10:30
-
+$
 
 Nous vous 10$ souhaitons une belle journée. 10 févrieR .  décembre 1999 d. novembre. 10 20  2$ ou 2% 1 10h12"""
 

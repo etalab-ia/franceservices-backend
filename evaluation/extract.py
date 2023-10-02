@@ -99,6 +99,7 @@ def extract_data(text: str) -> (str, dict):
         # orphan number
         r"\b\d+(?:\.\d+)?(?<![\.,])\b",
     ]
+    data_x["numbers_"] = []
     for pattern in number_pattern:
         matches = re.findall(pattern, text, re.IGNORECASE)
         if matches:
