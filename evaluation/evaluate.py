@@ -162,6 +162,7 @@ class EVAL(object):
         return os.path.exists(self.outdir)
 
     def run(self):
+        """Generate ansers in parallel (see self.n_asynx) for evaluation purpose."""
         # Input validation
         # --
         if self.has_data():
@@ -203,6 +204,7 @@ class EVAL(object):
         _ = pool.map(eval_one, eval_args)
 
     def to_csv(self):
+        """Save evaluation result to a csv file"""
         rows = []
         for filename in os.listdir(self.outdir):
             if not filename.endswith(".txt"):
@@ -240,6 +242,7 @@ class EVAL(object):
 
 # async
 def eval_one(args: dict):
+    # Settings
     model = args["model"]
     settings_vllm = args["settings_vllm"]
     doc = args["exp"]
@@ -263,9 +266,6 @@ def evaluate(
     model: str, version: str, limit: int = None, yes: bool = False, to_: str = None
 ) -> None:
     """Model evaluation"""
-
-    # Settings
-    # --
 
     eva = EVAL(model, version, limit, yes)
 
