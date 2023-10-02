@@ -4,12 +4,13 @@ import string
 from datetime import timedelta
 
 import meilisearch
-from qdrant_client import QdrantClient, models as QdrantModels
 from elasticsearch import Elasticsearch
 from flask import (Flask, Response, jsonify, redirect, render_template,
                    request, session, stream_with_context, url_for)
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from qdrant_client import QdrantClient
+from qdrant_client import models as QdrantModels
 from sqlalchemy import Boolean, Column, Integer, String, Text
 
 app = Flask(__name__)
@@ -211,7 +212,12 @@ if with_gpu:
     # Thus the usage of {with_gpu} is not long term consistent...
     def vllm_generate(prompt, max_tokens=32, temp=0.5, streaming=True):
         url = "http://localhost:8081"
-        data = {"prompt": prompt, "stream": streaming, "max_tokens": max_tokens, "temperature": temp}
+        data = {
+            "prompt": prompt,
+            "stream": streaming,
+            "max_tokens": max_tokens,
+            "temperature": temp,
+        }
         response = requests.post(url + "/generate", json=data, stream=True, verify=False)
         prev_len = 0
         for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
@@ -252,10 +258,16 @@ def fabrique_stream():
             prompt += "---Réponse : "
 
             if with_gpu:
-                generator = vllm_generate(prompt, max_tokens=500, temp=float(user.temperature), streaming=True)
+                generator = vllm_generate(
+                    prompt, max_tokens=500, temp=float(user.temperature), streaming=True
+                )
             else:
                 generator = gpt4all_generate(
-                    prompt, max_tokens=500, temp=float(user.temperature), streaming=True, callback=StopGen(username).callback
+                    prompt,
+                    max_tokens=500,
+                    temp=float(user.temperature),
+                    streaming=True,
+                    callback=StopGen(username).callback,
                 )
 
             acc = []
@@ -341,7 +353,13 @@ def search(index_name):
 
     # What to retrieves
     if index_name == "experiences":
-        retrieves = ["id_experience", "titre", "description", "intitule_typologie_1", "reponse_structure_1"]
+        retrieves = [
+            "id_experience",
+            "titre",
+            "description",
+            "intitule_typologie_1",
+            "reponse_structure_1",
+        ]
     elif index_name == "sheets" and sim not in ["e5"]:
         retrieves = ["sid", "title", "url", "introduction"]
     elif index_name == "chunks" or (sim in ["e5"] and index_name == "sheets"):
@@ -354,7 +372,9 @@ def search(index_name):
     # Search
     if sim == "bucket":
         client = meilisearch.Client("http://localhost:7700", "masterKey")
-        res = client.index(index_name).search(q, {"limit": limit, "attributesToRetrieve": retrieves})
+        res = client.index(index_name).search(
+            q, {"limit": limit, "attributesToRetrieve": retrieves}
+        )
     elif sim == "bm25":
         client = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
         query_filter = []
@@ -396,7 +416,12 @@ def search(index_name):
                 ]
             )
 
-        res = client.search(collection_name=index_name, query_vector=embedding, query_filter=query_filter, limit=limit)
+        res = client.search(
+            collection_name=index_name,
+            query_vector=embedding,
+            query_filter=query_filter,
+            limit=limit,
+        )
 
         es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
         # @Debug : qdrant doesnt accept the hash id as string..

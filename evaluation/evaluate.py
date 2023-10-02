@@ -125,7 +125,9 @@ class EVAL(object):
             prompt.append("Mode expert")
             prompt.append(f"Expérience : {text}")
             # Get reponse...
-            rep1 = generate(EVAL.SPEC["miaou"]["url"], {"max_tokens": 500, "temperature": 0.2}, text)
+            rep1 = generate(
+                EVAL.SPEC["miaou"]["url"], {"max_tokens": 500, "temperature": 0.2}, text
+            )
             rep1 = "".join(rep1)
             prompt.append(f"Réponse :\n\n {rep1}")
 
@@ -221,13 +223,14 @@ class EVAL(object):
                     "id": expid,
                     "words": data_x["words"],
                     "ttr": data_x["ttr"],
-                    "artefacts": len(data_x["artefacts"]),
                     "emails": len(data_x["emails"]),
                     "urls": len(data_x["urls"]),
                     "phones": len(data_x["phones"]),
                     "dates": len(data_x["dates"]),
                     "hours": len(data_x["hours"]),
                     "prices_": len(data_x["prices_"]),
+                    "number_artefacts": len(data_x["numbers_"]),
+                    "prompt_artefacts": len(data_x["artefacts"]),
                 }
             )
 
