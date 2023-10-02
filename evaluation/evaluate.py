@@ -128,7 +128,9 @@ class EVAL(object):
             prompt.append(f"Expérience : {text}")
             # Get reponse...
             rep1 = generate(
-                EVAL.SPEC["miaou"]["url"], {"max_tokens": 500, "temperature": 0.2}, EVAL._make_prompt(exp)
+                EVAL.SPEC["miaou"]["url"],
+                {"max_tokens": 500, "temperature": 0.2},
+                EVAL._make_prompt(exp),
             )
             rep1 = "".join(rep1)
             prompt.append(f"Réponse :\n\n{rep1}")
@@ -255,6 +257,10 @@ def eval_one(args: dict):
     route = EVAL.SPEC[model]
     url = route["url"]
 
+    # Add an options to only run --missing exp
+    # if os.path.exists(f'{outdir_x}/{doc["id_experience"]}.txt'):
+    #    return
+
     # Make prompt
     make_prompt = getattr(EVAL, route["prompt_maker"])
     prompt = make_prompt(doc, mode=route.get("mode"))
@@ -264,8 +270,7 @@ def eval_one(args: dict):
         f.write(prompt)
 
     # Generate answer
-    #answer = generate(url, settings_vllm, prompt)
-    answer = prompt
+    answer = generate(url, settings_vllm, prompt)
 
     # Save answer
     with open(f'{outdir_x}/{doc["id_experience"]}.txt', "w", encoding="utf-8") as f:
