@@ -8,7 +8,7 @@ einops==0.6.1
 langchain==0.0.288
 lxml==4.9.3
 nltk==3.8.1
-numpy==1.25.2
+numpy==1.26.0
 openai==0.28.0
 pandas==2.1.0
 pandas-stubs==2.0.3.230814
@@ -24,4 +24,5 @@ weaviate-client==3.24.1
 meilisearch==0.28.2
 elasticsearch==8.9.0
 qdrant-client==1.5.4
-
+lexicalrichness==0.5.1
+requests==2.31.0

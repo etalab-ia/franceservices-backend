@@ -1,7 +1,0 @@
-lexicalrichness==0.5.1
-pandas==2.1.0
-nltk==3.8.1
-requests==2.31.0
-qdrant-client==1.5.4
-elasticsearch==8.9.0
-numpy==1.26.0

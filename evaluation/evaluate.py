@@ -166,7 +166,7 @@ class EVAL(object):
         return os.path.exists(self.outdir_x)
 
     def run(self):
-        """Generate ansers in parallel (see self.n_asynx) for evaluation purpose."""
+        """Generate answers in parallel (see self.n_async) for evaluation purpose."""
         # Input validation
         # --
         if self.has_data():
