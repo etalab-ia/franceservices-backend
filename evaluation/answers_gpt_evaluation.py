@@ -1,6 +1,5 @@
 import csv
 import json
-import nltk
 
 from .words_extraction import (
     ner_fr,
@@ -16,8 +15,6 @@ from .params import (
     TFIDF_FEATURE_NAMES_FILE,
     KEYWORD_FREQUENCY,
 )
-
-nltk.download("stopwords", quiet=True)
 
 
 def calculate_tfidf(csv_file_gpt=CSV_FILE_GPT) -> None:

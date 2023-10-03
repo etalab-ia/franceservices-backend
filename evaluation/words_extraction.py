@@ -1,20 +1,19 @@
+import pickle
 import re
 
-import pickle
+import nltk
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from transformers import (AutoModelForTokenClassification, AutoTokenizer,
+                          pipeline)
 
-from transformers import AutoTokenizer, AutoModelForTokenClassification
-from transformers import pipeline
-
-### Remove the # from the following lines if "stopwords" is not installed in nltk.
-# import nltk
-# nltk.download("stopwords")
-
+try:
+    nltk.data.find("corpora/stopwords")
+except LookupError:
+    nltk.download("stopwords")
 from nltk.corpus import stopwords
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-
-from .params import TFIDF_FEATURE_NAMES_FILE, TFIDF_MATRIX_FILE, MOD2
+from .params import MOD2, TFIDF_FEATURE_NAMES_FILE, TFIDF_MATRIX_FILE
 
 
 def ner_fr(texte, model_name=MOD2):
@@ -60,7 +59,9 @@ def extract_numerical_data(texte):
         - Numbers followed by nouns we keep 5 from "5 salariés"
     Ex : only_numbers = ["12 mars 2023", "janvier 1999", "9h30", "12.99", "1 000,99", "50", "5", "49"]
     """
-    current_text = texte  # we create this var to remove numerical_data already found from the text to analyze
+    current_text = (
+        texte  # we create this var to remove numerical_data already found from the text to analyze
+    )
     complete_numerical_data = []
     only_numbers = []
 
@@ -73,9 +74,7 @@ def extract_numerical_data(texte):
         current_text = current_text.replace(date_complete, "")
 
     ### Partial Dates
-    pattern_monthyear = (
-        r"\b(?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+\d{4}\b"
-    )
+    pattern_monthyear = r"\b(?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+\d{4}\b"
     monthyear = re.findall(pattern_monthyear, current_text, re.IGNORECASE)
     complete_numerical_data += monthyear
     only_numbers += monthyear
@@ -110,7 +109,7 @@ def extract_numerical_data(texte):
     numbernouns = re.findall(pattern_numbernoun, current_text, re.IGNORECASE)
 
     # Avoid stopwords
-    stop_words = stopwords.words("french") + ["est"]
+    stop_words = stopwords.words("french")
     i = 0
     while i < len(numbernouns):
         if numbernouns[i][1] in stop_words:
