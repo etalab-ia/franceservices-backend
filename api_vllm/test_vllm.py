@@ -12,9 +12,9 @@ user_text = """Question soumise au service: Merci pour le service Service-Public
 headers = {"Content-Type": "application/json"}
 data = {
     "prompt": user_text,
-    "stream": True,
     "max_tokens": 500,
     "temperature": 0.2,
+    "stream": True,
 }
 # response = requests.post(url + "/api/fabrique", data=data, headers=headers, verify=False)
 

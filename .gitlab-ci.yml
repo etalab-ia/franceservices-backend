@@ -12,9 +12,10 @@ publish-api:
   services:
     - docker:dind
   script:
-    - cd api && docker build -t $CI_REGISTRY_IMAGE/api:latest .
+    - cp $ENV_FILE api/app/.env
+    - cd api && docker build -t $CI_REGISTRY_IMAGE/api-v2:latest .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE/api:latest
+    - docker push $CI_REGISTRY_IMAGE/api-v2:latest
 
 publish-api-vllm:
   rules:
@@ -43,9 +44,9 @@ deploy-api:
     - chmod og= $ID_RSA
     - apk update && apk add openssh-client
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker pull $CI_REGISTRY_IMAGE/api:latest"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker container rm -f miaou-api || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run --gpus all --network="host" -d -p 8080:8080 --name miaou-api --mount source=miaou-api-vol,target=/var/lib/sqlite3 $CI_REGISTRY_IMAGE/api:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker pull $CI_REGISTRY_IMAGE/api-v2:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker container rm -f miaou-api-v2 || true"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
 
 deploy-api-vllm:
   rules:
@@ -62,4 +63,4 @@ deploy-api-vllm:
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker pull $CI_REGISTRY_IMAGE/api_vllm:latest"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker container rm -f miaou-api-vllm || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run --gpus all --network="host" -d -p 8081:8081 --name miaou-api-vllm --mount source=miaou-api-vllm-vol,target=/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run --gpus all --network="host" -d -p 8081:8081 --name miaou-api-vllm -v /var/lib/huggingface:/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm:latest"

@@ -8,7 +8,7 @@ Usage:
     gpt.py make_embeddings
     gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE]
     gpt.py finetune MODEL VERSION
-    gpt.py evaluate MODEL VERSION
+    gpt.py evaluate MODEL VERSION [-n N] [-y] [--csv]
 
 Commands:
     make_chunks     Parse les fichiers XML issue de data.gouv (fiches service publique), situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
@@ -30,9 +30,12 @@ Commands:
 
 
 Options:
-    --chunk-size N      The maximum size of the chunks (token count...) [default: 1100]
-    --chunk-overlap N   The size of the overlap between chunks [default: 200]
-    --index-type INDEX_TYPE     The type of index to create (bm25, bucket, e5) [default: bm25]
+    --chunk-size N           The maximum size of the chunks (token count...) [default: 1100]
+    --chunk-overlap N        The size of the overlap between chunks [default: 200]
+    --index-type INDEX_TYPE  The type of index to create (bm25, bucket, e5) [default: bm25]
+    --size N, -n N           Limit the number of generations/inferences.
+    --yes, -y                assumes yes for every user input question.
+    --csv                    Make a csv table
 
 
 Examples:
@@ -42,6 +45,8 @@ Examples:
     ./gpt.py index experiences  # assumes _data/export-expa-c-riences.json exists
     ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ exists
     ./gpt.py index chunks       # assumes _data/xmlfiles_as_chunks.json exists
+    ./gpt.py evaluate miaou v0  # Run the inference
+    ./gpt.py evaluate miaou v0 --csv  # make an result table with inference file found in data/x/{model}-{version}
 """
 
 
@@ -79,6 +84,7 @@ if __name__ == "__main__":
     elif args["finetune"]:
         raise NotImplementedError
     elif args["evaluate"]:
-        raise NotImplementedError
+        from evaluation import evaluate
+        evaluate(args["MODEL"], args["VERSION"], limit=args["--size"], yes=args["--yes"], to_=args["--csv"])
     else:
         raise NotImplementedError
