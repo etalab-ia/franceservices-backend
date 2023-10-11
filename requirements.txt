@@ -26,3 +26,4 @@ elasticsearch==8.9.0
 qdrant-client==1.5.4
 lexicalrichness==0.5.1
 requests==2.31.0
+wget==3.2
