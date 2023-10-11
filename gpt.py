@@ -9,6 +9,7 @@ Usage:
     gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE]
     gpt.py finetune MODEL VERSION
     gpt.py evaluate MODEL VERSION [-n N] [-y] [--csv]
+    gpt.py download_directory PATH
 
 Commands:
     make_chunks     Parse les fichiers XML issue de data.gouv (fiches service publique), situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
@@ -74,6 +75,12 @@ if __name__ == "__main__":
         from ir import make_embeddings
 
         make_embeddings()
+
+    elif args["download_directory"]:
+        from evaluation.download_directory import download_directory, create_whitelist
+        download_directory(args["PATH"])
+        create_whitelist(args["PATH"])
+
     elif args["index"]:
         from ir import create_index
 
