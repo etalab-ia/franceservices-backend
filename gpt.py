@@ -3,15 +3,16 @@
 """ Manage the legal information assistant.
 
 Usage:
+    gpt.py download_directory
     gpt.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
     gpt.py make_questions DIRECTORY
     gpt.py make_embeddings
     gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE]
     gpt.py finetune MODEL VERSION
     gpt.py evaluate MODEL VERSION [-n N] [-y] [--csv]
-    gpt.py download_directory PATH
 
 Commands:
+    download_directory  Download official directorier to build whitelists. Files are stored under _data/directory/.
     make_chunks     Parse les fichiers XML issue de data.gouv (fiches service publique), situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
                     Chaque élement Json correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
                     Chunks are created under _data/xmlfiles_as_chunks.json.
@@ -40,6 +41,7 @@ Options:
 
 
 Examples:
+    ./gpt.py download_directory
     ./gpt.py make_chunks --chunk-size 500 --chunk-overlap 20 _data/data.gouv/vos-droits-et-demarche/
     ./gpt.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche/
     ./gpt.py make_questions _data/data.gouv/vos-droits-et-demarche/
@@ -78,8 +80,8 @@ if __name__ == "__main__":
 
     elif args["download_directory"]:
         from evaluation.download_directory import download_directory, create_whitelist
-        download_directory(args["PATH"])
-        create_whitelist(args["PATH"])
+        download_directory()
+        create_whitelist()
 
     elif args["index"]:
         from ir import create_index

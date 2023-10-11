@@ -1,11 +1,12 @@
-import wget
-import os
-import shutil
 import json
+import os
 import re
+import shutil
+
+import wget
 
 
-def download_directory(PATH: str="_data/directory"):
+def download_directory(PATH: str = "_data/directory"):
     """
     A download public local and national directory in path
     Steps:
@@ -36,38 +37,22 @@ def download_directory(PATH: str="_data/directory"):
         )
         os.remove(f"{PATH}/local_data_directory.json")
         os.remove(f"{PATH}/national_data_directory.json")
-        wget.download(
-            url_directory_local_data, f"{PATH}/local_data_directory.tar.bz2"
-        )
-        wget.download(
-            url_directory_national_data, f"{PATH}/national_data_directory.zip"
-        )
+        wget.download(url_directory_local_data, f"{PATH}/local_data_directory.tar.bz2")
+        wget.download(url_directory_national_data, f"{PATH}/national_data_directory.zip")
         print("\nUnpacking files...\n")
-        shutil.unpack_archive(
-            f"{PATH}/local_data_directory.tar.bz2", f"{PATH}"
-        )
-        shutil.unpack_archive(
-            f"{PATH}/national_data_directory.zip", f"{PATH}"
-        )
+        shutil.unpack_archive(f"{PATH}/local_data_directory.tar.bz2", f"{PATH}")
+        shutil.unpack_archive(f"{PATH}/national_data_directory.zip", f"{PATH}")
 
     else:
         print(
             "\nlocal_data_directory and national_data_directory don't exist.\nDownloading files...\n"
         )
-        wget.download(
-            url_directory_local_data, f"{PATH}/local_data_directory.tar.bz2"
-        )
-        wget.download(
-            url_directory_national_data, f"{PATH}/national_data_directory.zip"
-        )
+        wget.download(url_directory_local_data, f"{PATH}/local_data_directory.tar.bz2")
+        wget.download(url_directory_national_data, f"{PATH}/national_data_directory.zip")
 
         print("\nUnpacking files...\n")
-        shutil.unpack_archive(
-            f"{PATH}/local_data_directory.tar.bz2", f"{PATH}"
-        )
-        shutil.unpack_archive(
-            f"{PATH}/national_data_directory.zip", f"{PATH}"
-        )
+        shutil.unpack_archive(f"{PATH}/local_data_directory.tar.bz2", f"{PATH}")
+        shutil.unpack_archive(f"{PATH}/national_data_directory.zip", f"{PATH}")
         print("\nFiles unpacked")
 
     for f in os.listdir(f"{PATH}"):
@@ -87,14 +72,14 @@ def download_directory(PATH: str="_data/directory"):
     print("\nFiles successfuly downloaded")
 
 
-def create_whitelist(PATH: str="_data/directory"):
+def create_whitelist(PATH: str = "_data/directory"):
     """
     Creating a .json whitelist file which contains:
     - All phone numbers
     - All mail
     - All domain URL
     Extracted from local and national directory
-    
+
     Args:
         PATH (str): path where to download the directory
     """
@@ -142,9 +127,7 @@ def create_whitelist(PATH: str="_data/directory"):
             and local_data_directory[k]["telephone"][0]["valeur"] != ""
         ):
             for pat in pattern:
-                matches = re.findall(
-                    pat, local_data_directory[k]["telephone"][0]["valeur"]
-                )
+                matches = re.findall(pat, local_data_directory[k]["telephone"][0]["valeur"])
                 phone_list.extend(matches)
 
     for k in range(len(national_data_directory)):
@@ -153,9 +136,7 @@ def create_whitelist(PATH: str="_data/directory"):
             and national_data_directory[k]["telephone"][0]["valeur"] != ""
         ):
             for pat in pattern:
-                matches = re.findall(
-                    pat, national_data_directory[k]["telephone"][0]["valeur"]
-                )
+                matches = re.findall(pat, national_data_directory[k]["telephone"][0]["valeur"])
                 phone_list.extend(matches)
 
     ### Creating mail whitelist
