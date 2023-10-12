@@ -4,6 +4,7 @@ from qdrant_client import models as QdrantModels
 
 from commons import get_embedding_e5
 from commons.prompt_base import Prompter
+from commons.search_engine import semantic_search
 
 
 def embed(text: str) -> list:
@@ -50,18 +51,18 @@ class FabriqueReferencePrompter(Prompter):
         else:
             raise ValueError("prompt mode unknown: %s" % self.mode)
 
-    def make_prompt(self, experience=None, institution=None, context=None, links=None, limit=3):
+    def make_prompt(self, **kwargs):
         if self.mode == "simple":
-            return self._make_prompt_simple(experience, institution, context, links)
+            return self._make_prompt_simple(**kwargs)
         elif self.mode == "experience":
-            return self._make_prompt_experience(experience, institution, context, links, limit)
+            return self._make_prompt_experience(**kwargs)
         elif self.mode == "expert":
-            return self._make_prompt_expert(experience, institution, context, links, limit)
+            return self._make_prompt_expert(**kwargs)
         else:
             raise ValueError("prompt mode unknown: %s" % self.mode)
 
     @staticmethod
-    def _make_prompt_simple(experience=None, institution=None, context=None, links=None):
+    def _make_prompt_simple(experience=None, institution=None, context=None, links=None, **kwargs):
         institution_ = institution + " " if institution else ""
         prompt = []
         prompt.append("Mode simple")
@@ -79,42 +80,28 @@ class FabriqueReferencePrompter(Prompter):
 
     @staticmethod
     def _make_prompt_experience(
-        experience=None, institution=None, context=None, links=None, limit=3
+        experience=None, institution=None, context=None, links=None, limit=1, skip_first=False, **kwargs
     ):
         institution_ = institution + " " if institution else ""
         prompt = []
         prompt.append("Mode expérience")
         prompt.append(f"Question soumise au service {institution_} : {experience}")
 
-        # Rag
-        retrieves = ["id_experience", "description"]
-        _extract = lambda x: dict((r, x[r]) for r in retrieves)
-        embedding = embed(experience)
-        client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
-        index_name = "experiences"
-        # Filter on institution
-        query_filter = None
+        # Rag / similar experiences
+        if skip_first:
+            limit += 1
+        must_filters = None
         if institution:
-            query_filter = QdrantModels.Filter(
-                must=[
-                    QdrantModels.FieldCondition(
-                        key="intitule_typologie_1",
-                        match=QdrantModels.MatchValue(
-                            value=institution,
-                        ),
-                    )
-                ]
-            )
-        res = client.search(
-            collection_name=index_name,
-            query_vector=embedding,
-            query_filter=query_filter,
+            must_filters = {"intitule_typologie_1": institution}
+        hits = semantic_search(
+            "experiences",
+            embed(experience),
+            retrives=["id_experience", "description"],
+            must_filters=must_filters,
             limit=limit,
         )
-        es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
-        # @Debug : qdrant doesnt accept the hash id as string..
-        _uid = lambda x: bytes.fromhex(x.replace("-", "")).decode("utf8")
-        hits = [_extract(es.get(index=index_name, id=_uid(x.id))["_source"]) for x in res if x]
+        if skip_first:
+            hits = hits[1:]
         chunks = [f'{x["id_experience"]} : {x["description"]}' for x in hits]
         chunks = "\n\n".join(chunks)
         prompt.append(f"Expériences :\n\n {chunks}")
@@ -124,30 +111,49 @@ class FabriqueReferencePrompter(Prompter):
         return prompt
 
     @staticmethod
-    def _make_prompt_expert(experience=None, institution=None, context=None, links=None, limit=3):
+    def _make_prompt_expert(
+        experience=None, institution=None, context=None, links=None, limit=3, skip_first=False, **kwargs
+    ):
         prompt = []
         prompt.append("Mode expert")
-        prompt.append(f"Question : {experience}")
-        # Get reponse...
-        # rep1 = vllm_generate(prompt, max_tokens=500, temp=float(user.temperature), streaming=False)
-        # rep1 = "".join(rep1)
-        # prompt.append(f"Réponse :\n\n {rep1}")
+        prompt.append(f"Experience : {experience}")
 
-        # Rag
-        retrieves = ["title", "url", "text", "context"]
-        _extract = lambda x: dict((r, x[r]) for r in retrieves)
-        embedding = embed(experience)
-        client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
-        index_name = "chunks"
-        res = client.search(
-            collection_name=index_name, query_vector=embedding, query_filter=None, limit=limit
+        vector = embed(experience)
+        # Get a reponse...
+        # --
+        # Using LLM
+        # rep1 = vllm_generate(prompt, streaming=False,  max_tokens=500, **FabriquePrompter.SAMPLING_PARAMS)
+        # rep1 = "".join(rep1)
+        # Using similar experience
+        n_exp = 1
+        if skip_first:
+            n_exp = 2
+        must_filters = None
+        if institution:
+            must_filters = {"intitule_typologie_1": institution}
+        hits = semantic_search(
+            "experiences",
+            vector,
+            retrives=["id_experience", "description"],
+            must_filters=must_filters,
+            limit=n_exp,
         )
-        es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
-        # @Debug : qdrant doesnt accept the hash id as string..
-        _uid = lambda x: bytes.fromhex(x.replace("-", "")).decode("utf8")
-        hits = [_extract(es.get(index=index_name, id=_uid(x.id))["_source"]) for x in res if x]
+        if skip_first:
+            hits = hits[1:]
+        rep1 = hits[0]["description"]
+        # --
+        prompt.append(f"Réponse :\n\n {rep1}")
+
+        # Rag / relevant sheets
+        hits = semantic_search(
+            "chunks",
+            vector,
+            retrives=["title", "url", "text", "context"],
+            must_filters=None,
+            limit=limit,
+        )
         chunks = [
-            f'{x["url"]} : {x["title"] + (" > "+x["context"]) if x["context"] else ""}\n{x["text"]}'
+            f'{x["url"]} : {x["title"] + (x["context"]) if x["context"] else ""}\n{x["text"]}'
             for x in hits
         ]
         chunks = "\n\n".join(chunks)

@@ -89,7 +89,7 @@ def start_stream(
                 v = v * 100 if k == "temperature" else v
                 sampling_params.update({k: v})
 
-        # Get the right stream genrator
+        # Get the right stream generator
         if WITH_GPU:
             api_vllm_client = ApiVllmClient()
             generator = api_vllm_client.generate(prompt, **sampling_params)

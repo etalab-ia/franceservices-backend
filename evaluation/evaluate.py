@@ -5,9 +5,6 @@ from pprint import pprint
 
 import numpy as np
 import pandas as pd
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
 
 from commons import generate, get_prompter
 
@@ -71,7 +68,7 @@ class EVAL(object):
     @staticmethod
     def _make_prompt_2(exp: dict, mode="simple", **kwargs) -> str:
         return get_prompter("fabrique-reference", mode=mode).make_prompt(
-            experience=exp["description"], institution=exp["intitule_typologie_1"]
+            experience=exp["description"], institution=exp["intitule_typologie_1"], skip_first=True
         )
 
     def has_data(self):
