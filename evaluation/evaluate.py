@@ -9,12 +9,9 @@ from elasticsearch import Elasticsearch
 from qdrant_client import QdrantClient
 from qdrant_client import models as QdrantModels
 
+from commons import generate, get_prompter
+
 from .extract import extract
-from .utils import generate, get_embedding_e5
-
-
-def embed(text: str) -> list:
-    return get_embedding_e5(text)
 
 
 class EVAL(object):
@@ -67,100 +64,15 @@ class EVAL(object):
 
     @staticmethod
     def _make_prompt(exp: dict, **kwargs) -> str:
-        institution = exp["intitule_typologie_1"]
-        institution_ = institution + " " if institution else ""
-        prompt = f'Question soumise au service {institution_}: {exp["description"]}\n---Réponse : '
-        return prompt
+        return get_prompter("fabrique-miaou").make_prompt(
+            experience=exp["description"], institution=exp["intitule_typologie_1"]
+        )
 
     @staticmethod
     def _make_prompt_2(exp: dict, mode="simple", **kwargs) -> str:
-        institution = exp["intitule_typologie_1"]
-        institution_ = institution + " " if institution else ""
-        text = exp["description"]
-
-        prompt = []
-        if mode == "simple":
-            prompt.append("Mode simple")
-            prompt.append(f"Question soumise au service {institution_}: {text}")
-            prompt.append("###Réponse : \n")
-            prompt = "\n\n".join(prompt)
-        elif mode == "experience":
-            prompt.append("Mode expérience")
-            prompt.append(f"Question soumise au service {institution_}: {text}")
-
-            # Rag
-            retrieves = ["id_experience", "description"]
-            _extract = lambda x: dict((r, x[r]) for r in retrieves)
-            embedding = embed(text)
-            client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
-            index_name = "experiences"
-            # Filter on institution
-            query_filter = None
-            if institution:
-                query_filter = QdrantModels.Filter(
-                    must=[
-                        QdrantModels.FieldCondition(
-                            key="intitule_typologie_1",
-                            match=QdrantModels.MatchValue(
-                                value=institution,
-                            ),
-                        )
-                    ]
-                )
-            res = client.search(
-                collection_name=index_name,
-                query_vector=embedding,
-                query_filter=query_filter,
-                limit=3,
-            )
-            es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
-            # @Debug : qdrant doesnt accept the hash id as string..
-            _uid = lambda x: x
-            hits = [_extract(es.get(index=index_name, id=_uid(x.id))["_source"]) for x in res if x]
-            chunks = [f'{x["id_experience"]} : {x["description"]}' for x in hits]
-            chunks = "\n\n".join(chunks)
-            prompt.append(f"Expériences :\n\n{chunks}")
-
-            prompt.append("###Réponse : \n")
-            prompt = "\n\n".join(prompt)
-        elif mode == "expert":
-            prompt.append("Mode expert")
-            prompt.append(f"Expérience : {text}")
-            # Get reponse...
-            rep1 = generate(
-                EVAL.SPEC["miaou"]["url"],
-                {"max_tokens": 500, "temperature": 0.2},
-                EVAL._make_prompt(exp),
-            )
-            rep1 = "".join(rep1)
-            prompt.append(f"Réponse :\n\n{rep1}")
-
-            # Rag
-            retrieves = ["title", "url", "text", "context"]
-            _extract = lambda x: dict((r, x[r]) for r in retrieves)
-            embedding = embed(text)
-            client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
-            index_name = "chunks"
-            res = client.search(
-                collection_name=index_name, query_vector=embedding, query_filter=None, limit=3
-            )
-            es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
-            # @Debug : qdrant doesnt accept the hash id as string..
-            _uid = lambda x: bytes.fromhex(x.replace("-", "")).decode("utf8")
-            hits = [_extract(es.get(index=index_name, id=_uid(x.id))["_source"]) for x in res if x]
-            chunks = [
-                f'{x["url"]} : {x["title"] + (" > "+x["context"]) if x["context"] else ""}\n{x["text"]}'
-                for x in hits
-            ]
-            chunks = "\n\n".join(chunks)
-            prompt.append(f"Fiches :\n\n{chunks}")
-
-            prompt.append("###Réponse : \n")
-            prompt = "\n\n".join(prompt)
-        else:
-            raise NotImplementedError(mode)
-
-        return prompt
+        return get_prompter("fabrique-reference", mode=mode).make_prompt(
+            experience=exp["description"], institution=exp["intitule_typologie_1"]
+        )
 
     def has_data(self):
         return os.path.exists(self.outdir_x)

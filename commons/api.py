@@ -5,12 +5,20 @@ import requests
 
 def get_embedding_e5(text: str) -> list:
     """OpenAI-like embedding API"""
-    host = "localhost:8080"
-    url = f"http://{host}/api/embedding"
-    headers = {"Content-Type": "application/json"}
+    #host = "localhost:8080"
+    host = "142.44.40.218"
+    url = f"http://{host}/api/v2/embeddings"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTY2MDkzMDIsImlhdCI6MTY5NjYwNTcwMiwic3ViIjoiMiJ9.N0yTGKv2anYw8clJI837DBWny8fad4S6mNPZDneyCQc"
+    }
     query = {"text": text}
-    res = requests.post(url, headers=headers, data=json.dumps(query), verify=False).json()
-    return res
+    res = requests.post(url, headers=headers, data=json.dumps(query), verify=False)
+    try:
+        return res.json()
+    except Exception as e:
+        print("Failed embedding request:", str(e))
+        return []
 
 
 def generate(url, conf, text):
