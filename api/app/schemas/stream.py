@@ -7,6 +7,8 @@ if TYPE_CHECKING:
 
 
 class StreamBase(BaseModel):
+    model_name: str
+    mode: str = ""  # None instead ?
     user_text: str
     context: str = ""
     institution: str = ""

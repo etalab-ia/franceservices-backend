@@ -11,6 +11,8 @@ class Stream(Base):
     id = Column(Integer, primary_key=True, index=True)
     is_streaming = Column(Boolean)
     user_id = Column(Integer, ForeignKey("users.id"))
+    model_name = Column(Text)
+    mode = Column(Text)
     user_text = Column(Text)
     context = Column(Text)
     institution = Column(Text)

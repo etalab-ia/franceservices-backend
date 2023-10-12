@@ -3,13 +3,20 @@ from qdrant_client import QdrantClient
 from qdrant_client import models as QdrantModels
 
 from commons import get_embedding_e5
+from commons.prompt_base import Prompter
 
 
 def embed(text: str) -> list:
     return get_embedding_e5(text)
 
 
-class FabriquePrompter:
+class FabriquePrompter(Prompter):
+    URL = "http://127.0.0.1:8081"
+    SAMPLING_PARAMS = {
+        "max_tokens": 500,
+        "temperature": 0.2,
+    }
+
     @staticmethod
     def make_prompt(experience=None, institution=None, context=None, links=None):
         institution_ = institution + " " if institution else ""
@@ -23,9 +30,25 @@ class FabriquePrompter:
         return prompt
 
 
-class FabriqueReferencePrompter:
+class FabriqueReferencePrompter(Prompter):
+    URL = "http://127.0.0.1:8082"
+    # SAMPLING_PARAMS depends of  {mode} here...
+
     def __init__(self, mode="simple"):
         self.mode = mode
+        if self.mode == "simple":
+            self.sampling_params = {
+                "max_tokens": 500,
+                "temperature": 0.2,
+            }
+        elif self.mode in ["experience", "expert"]:
+            self.sampling_params = {
+                "max_tokens": 4096,
+                "temperature": 0.2,
+                "top_p": 0.95,
+            }
+        else:
+            raise ValueError("prompt mode unknown: %s" % self.mode)
 
     def make_prompt(self, experience=None, institution=None, context=None, links=None, limit=3):
         if self.mode == "simple":
@@ -55,7 +78,9 @@ class FabriqueReferencePrompter:
         return prompt
 
     @staticmethod
-    def _make_prompt_experience(experience=None, institution=None, context=None, links=None, limit=3):
+    def _make_prompt_experience(
+        experience=None, institution=None, context=None, links=None, limit=3
+    ):
         institution_ = institution + " " if institution else ""
         prompt = []
         prompt.append("Mode expérience")
@@ -81,7 +106,10 @@ class FabriqueReferencePrompter:
                 ]
             )
         res = client.search(
-            collection_name=index_name, query_vector=embedding, query_filter=query_filter, limit=limit
+            collection_name=index_name,
+            query_vector=embedding,
+            query_filter=query_filter,
+            limit=limit,
         )
         es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
         # @Debug : qdrant doesnt accept the hash id as string..

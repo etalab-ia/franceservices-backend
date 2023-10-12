@@ -12,6 +12,7 @@ def read_streams(client: TestClient, token):
 def create_stream(
     client: TestClient,
     token,
+    model_name,
     user_text,
     context="",
     institution="",
@@ -22,6 +23,7 @@ def create_stream(
         "/stream",
         headers={"Authorization": f"Bearer {token}"},
         json={
+            "model_name": model_name,
             "user_text": user_text,
             "context": context,
             "institution": institution,
