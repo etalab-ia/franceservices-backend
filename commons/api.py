@@ -5,12 +5,12 @@ import requests
 
 def get_embedding_e5(text: str) -> list:
     """OpenAI-like embedding API"""
-    #host = "localhost:8080"
+    # host = "localhost:8080"
     host = "142.44.40.218"
     url = f"http://{host}/api/v2/embeddings"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTY2MDkzMDIsImlhdCI6MTY5NjYwNTcwMiwic3ViIjoiMiJ9.N0yTGKv2anYw8clJI837DBWny8fad4S6mNPZDneyCQc"
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTcyNzg4OTgsImlhdCI6MTY5NzE5MjQ5OCwic3ViIjoiMyJ9.qbU5M0lB5iG4WzC3RQd7wLsvSwUWLkl6ZzK--1bdsXI",
     }
     query = {"text": text}
     res = requests.post(url, headers=headers, data=json.dumps(query), verify=False)

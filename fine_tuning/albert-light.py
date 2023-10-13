@@ -1,95 +1,71 @@
 import os
+import shutil
+
 import torch
 from datasets import load_dataset
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    BitsAndBytesConfig,
-    HfArgumentParser,
-    TrainingArguments,
-    pipeline,
-    logging,
-    LlamaTokenizerFast
-)
-from peft import LoraConfig, PeftModel, get_peft_model
+from peft import (AutoPeftModelForCausalLM, LoraConfig, PeftModel,
+                  get_peft_model)
+from transformers import (AutoModelForCausalLM, AutoTokenizer,
+                          BitsAndBytesConfig, HfArgumentParser,
+                          LlamaTokenizerFast, TrainingArguments, logging,
+                          pipeline)
 from trl import SFTTrainer
 
-# Le modèle que nous allons utiliser dans le Hugging Face hub
-model_name = "/home/planglais/llama/llama-2-13b-hf"
+# @EXPLORE techniques to make training better, stronger, faster :
+# - FlashAttention: https://arxiv.org/abs/2307.08691
+# - DeepSpeed: https://github.com/microsoft/DeepSpeed
+# - Self-chat ? : https://arxiv.org/abs/2304.01196
+# -> Mentioned in this **Vigogne**: https://github.com/bofenghuang/vigogne
 
-torch.cuda.empty_cache()
+#
+# 1. Parametrization
+#
 
-#project_directory = "~/finetuning/sigmund-spplus"
+model_name = "NousResearch/Llama-2-13b-chat-hf"  # Base model
+new_model_name = "albert-light-v0"  # new model name
+output_dir = f"_data/models/{new_model_name}"  # The output directory where the model predictions and checkpoints will be written
+tb_log_dir = f"{output_dir}/logs"  # Tensorboard logs
 
-# Le nom du nouveau modèle
-new_model_name = "llama-2-13b-fab-v2"
-
-# The output directory where the model predictions and checkpoints will be written
-output_dir = "./llama-2-13b-fab-v2"
-
-# Tensorboard logs
-tb_log_dir = "./llama-2-13b-fab-v2/logs"
-
-# Nombre de steps : à ajuster selon la taille du corpus et le nombre d'epochs à faire tourner.
-max_steps = 4001
-
-
-# Les paramètres importants !!
-per_device_train_batch_size = 3 #Nombre d'exemples envoyés par batch. En mettre plus pour aller plus vite.
-learning_rate = 2e-4 #De préférence un taux d'apprentissage élevé pour un texte en français.
-max_seq_length = 4096 #C'est la fenêtre contextuelle. Elle peut être portée jusqu'à 4096 tokens (mais attention à la mémoire disponible !)
-save_steps = 200 # Sauvegarde des steps (permet de faire redémarrer l'entraînement si le fine-tuning ne fonctionne pas)
-# Learning rate schedule (constant a bit better than cosine, and has advantage for analysis)
-lr_scheduler_type = "constant"
-
-
-#Les autres paramètres
-local_rank = -1
-per_device_eval_batch_size = 1
+# Training parameters !
+per_device_train_batch_size = (
+    12  # Nombre d'exemples envoyés par batch. En mettre plus pour aller plus vite.
+)
+learning_rate = 2e-4  # De préférence un taux d'apprentissage élevé pour un texte en français.
+max_seq_length = 2028  # C'est la fenêtre contextuelle. Elle peut être portée jusqu'à 4096 tokens (mais attention à la mémoire disponible !)
+save_steps = 200  # Sauvegarde des steps (permet de faire redémarrer l'entraînement si le fine-tuning ne fonctionne pas)
+lr_scheduler_type = "constant"  # Learning rate schedule (constant a bit better than cosine, and has advantage for analysis)
 gradient_accumulation_steps = 4
 max_grad_norm = 0.3
-weight_decay = 0.001
+lora_r = 64
 lora_alpha = 16
 lora_dropout = 0.1
-lora_r = 64
-# Group sequences into batches with same length (saves memory and speeds up training considerably)
-group_by_length = True
+group_by_length = True  # Group sequences into batches with same length (saves memory and speeds up training considerably)
+warmup_ratio = 0.03  # Fraction of steps to do a warmup for
+optim = "paged_adamw_32bit"  # Optimizer to use, original is paged_adamw_32bit
+logging_steps = 10  # Log every X updates steps
 
-# Activate 4-bit precision base model loading
-use_4bit = True
+# To adjust given the traning size and epoch number
+max_steps = 4001
 
-# Activate nested quantization for 4-bit base models
-use_nested_quant = False
-
-# Compute dtype for 4-bit base models
-bnb_4bit_compute_dtype = "float16"
-
-# Quantization type (fp4 or nf4=
-bnb_4bit_quant_type = "nf4"
-
-# Number of training epochs
+# Unused ?
+local_rank = -1
+per_device_eval_batch_size = 1
+weight_decay = 0.001
 num_train_epochs = 1
+gradient_checkpointing = True  # Enable gradient checkpointing
 
-# Enable fp16 training
-fp16 = True
+# Quantization
+use_4bit = True  # Activate 4-bit precision base model loading
+use_nested_quant = False  # Activate nested quantization for 4-bit base models
+bnb_4bit_compute_dtype = "float16"  # Compute dtype for 4-bit base models
+bnb_4bit_quant_type = "nf4"  # Quantization type (fp4 or nf4)
+compute_dtype = getattr(torch, bnb_4bit_compute_dtype)
 
-# Enable bf16 training
-bf16 = False
+fp16 = True  # Enable fp16 training
+bf16 = False  # Enable bf16 training
 
 # Use packing dataset creating
 packing = False
-
-# Enable gradient checkpointing
-gradient_checkpointing = True
-
-# Optimizer to use, original is paged_adamw_32bit
-optim = "paged_adamw_32bit"
-
-# Fraction of steps to do a warmup for
-warmup_ratio = 0.03
-
-# Log every X updates steps
-logging_steps = 1
 
 # Load the entire model on the GPU 0
 device_map = {"": 0}
@@ -97,22 +73,11 @@ device_map = {"": 0}
 # Visualize training
 report_to = "tensorboard"
 
+#
+# 2. Load training data
+#
 
-#2. Import du tokenizer.
-peft_config = LoraConfig(
-    lora_alpha=lora_alpha,
-    lora_dropout=lora_dropout,
-    r=lora_r,
-    inference_mode=False,
-    task_type="CAUSAL_LM",
-)
-
-tokenizer = LlamaTokenizerFast.from_pretrained(model_name, add_eos_token=True, from_slow=True)
-
-# This is the fix for fp16 training
-tokenizer.padding_side = "right"
-
-#3. Préparation de la base de données
+# Préparation de la base de données
 def format_alpaca(sample):
     instruction = f"<s>{sample['instruction']}\n\n###Réponse : \n"
     context = None
@@ -121,32 +86,28 @@ def format_alpaca(sample):
     prompt = "".join([i for i in [instruction, context, response] if i is not None])
     return prompt
 
+
 # template dataset to add prompt to each sample
 def template_dataset(sample):
     sample["text"] = f"{format_alpaca(sample)}{tokenizer.eos_token}"
     return sample
 
+
 # Chargement du dataset.
-#dataset = load_dataset("databricks/databricks-dolly-15k", split="train")
+# dataset = load_dataset("databricks/databricks-dolly-15k", split="train")
 data_files = {"train": "services_publics_instruction.json"}
 dataset = load_dataset("json", data_files=data_files, split="train")
-
-# Shuffle the dataset
-dataset_shuffled = dataset.shuffle(seed=42)
-
-# Select the first 250 rows from the shuffled dataset, comment if you want 15k
-#dataset = dataset_shuffled.select(range(512))
-
-#Transformation du dataset pour utiliser le format guanaco
+dataset_shuffled = dataset.shuffle(seed=42) # Shuffle the dataset
 dataset = dataset.map(template_dataset, remove_columns=list(dataset.features))
 
-print(dataset[40])
+#
+# 3. Load model and tokenizer
+#
 
-#4. Import du modèle
+tokenizer = LlamaTokenizerFast.from_pretrained(model_name, add_eos_token=True, from_slow=True)
+tokenizer.padding_side = "right"  # This is the fix for fp16 training
 
 # Load tokenizer and model with QLoRA configuration
-compute_dtype = getattr(torch, bnb_4bit_compute_dtype)
-
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=use_4bit,
     bnb_4bit_quant_type=bnb_4bit_quant_type,
@@ -162,17 +123,15 @@ if compute_dtype == torch.float16 and use_4bit:
         print("=" * 80)
 
 model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    device_map=device_map,
-    quantization_config=bnb_config
+    model_name, device_map=device_map, quantization_config=bnb_config
 )
 
 model.config.use_cache = False
 model.config.pretraining_tp = 1
 
-#5. Fine-tuning
-
-torch.cuda.empty_cache()
+#
+# 4. Fine-tuning
+#
 
 training_arguments = TrainingArguments(
     output_dir=output_dir,
@@ -189,7 +148,15 @@ training_arguments = TrainingArguments(
     warmup_ratio=warmup_ratio,
     group_by_length=group_by_length,
     lr_scheduler_type=lr_scheduler_type,
-    report_to="tensorboard"
+    report_to=report_to,
+)
+
+peft_config = LoraConfig(
+    lora_alpha=lora_alpha,
+    lora_dropout=lora_dropout,
+    r=lora_r,
+    inference_mode=False,
+    task_type="CAUSAL_LM",
 )
 
 trainer = SFTTrainer(
@@ -200,29 +167,46 @@ trainer = SFTTrainer(
     max_seq_length=max_seq_length,
     tokenizer=tokenizer,
     args=training_arguments,
-    packing=packing
+    packing=packing,
 )
 
-#trainer.train()
 trainer.train(resume_from_checkpoint=True)
 
-#6. Sauvegarde
+#
+# 5. Sauvegarde
+#
 
-model_to_save = trainer.model.module if hasattr(trainer.model, 'module') else trainer.model  # Take care of distributed/parallel training
+model_to_save = (
+    trainer.model.module if hasattr(trainer.model, "module") else trainer.model
+)  # Take care of distributed/parallel training
 model_to_save.save_pretrained(new_model_name)
 
+
+#
+# 6. Merged...
+#
 torch.cuda.empty_cache()
 
-from peft import AutoPeftModelForCausalLM
-
-model = AutoPeftModelForCausalLM.from_pretrained(new_model_name, device_map="auto", torch_dtype=torch.bfloat16)
+model = AutoPeftModelForCausalLM.from_pretrained(
+    new_model_name, device_map="auto", torch_dtype=torch.bfloat16
+)
 model = model.merge_and_unload()
 
 output_merged_dir = os.path.join(new_model_name, new_model_name)
 model.save_pretrained(output_merged_dir, safe_serialization=True)
 
-#On récupère le tokenizer pour l'inférence
-import shutil
-shutil.copyfile("/home/planglais/llama/llama-2-13b-hf/tokenizer.model", output_merged_dir + "/tokenizer.model")
-shutil.copyfile("/home/planglais/llama/llama-2-13b-hf/special_tokens_map.json", output_merged_dir + "/special_tokens_map.json")
-shutil.copyfile("/home/planglais/llama/llama-2-13b-hf/tokenizer_config.json", output_merged_dir + "/tokenizer_config.json")
+# On récupère le tokenizer pour l'inférence
+#
+# @FIX: how to do that in a clean way ?
+
+#shutil.copyfile(
+#    "/home/planglais/llama/llama-2-13b-hf/tokenizer.model", output_merged_dir + "/tokenizer.model"
+#)
+#shutil.copyfile(
+#    "/home/planglais/llama/llama-2-13b-hf/special_tokens_map.json",
+#    output_merged_dir + "/special_tokens_map.json",
+#)
+#shutil.copyfile(
+#    "/home/planglais/llama/llama-2-13b-hf/tokenizer_config.json",
+#    output_merged_dir + "/tokenizer_config.json",
+#)

@@ -5,10 +5,9 @@ import sys
 
 import pandas as pd
 
-sys.path.append("..")
 sys.path.append(".")
 
-from commons import make_prompt_expert
+from commons import get_prompter
 
 
 def run():
@@ -20,9 +19,10 @@ def run():
     for i, doc in df.iterrows():
         d = {"description": doc["question"]}
         print(".", end="", flush=True)
+        prompt = get_prompter("albert-light").make_prompt(question=doc["question"], limit=3)
         data.append(
             {
-                "prompt": make_prompt_expert(d),
+                "prompt": prompt,
                 "answer": doc["answer"],
             }
         )
@@ -31,7 +31,9 @@ def run():
             break
 
     # df = pd.DataFrame(data).to_csv("_data/training_miaou-qa_20k.csv", index=False)
-    df = pd.DataFrame(data).to_json("_data/training_miaou-qa_20k.json", orient="records")
+    df = pd.DataFrame(data).to_json(
+        "_data/training_albert-light.json", orient="records", indent=2, force_ascii=False
+    )
 
 
 def run_async(n_async=50):
@@ -42,9 +44,9 @@ def run_async(n_async=50):
     def eval_one(args):
         doc = args["doc"]
         print(".", end="", flush=True)
-        d = {"description": doc["question"]}
+        prompt = get_prompter("albert-light").make_prompt(question=doc["question"], limit=3)
         item = {
-            "prompt": make_prompt_expert(d),
+            "prompt": prompt,
             "answer": doc["answer"],
         }
 
@@ -59,5 +61,5 @@ def run_async(n_async=50):
 
 
 if __name__ == "__main__":
-    #run_async()
+    # run_async()
     run()
