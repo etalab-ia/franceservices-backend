@@ -4,7 +4,7 @@ from qdrant_client import models as QdrantModels
 
 from commons import get_embedding_e5
 from commons.prompt_base import Prompter
-from commons.search_engine import semantic_search
+from commons.search_engines import semantic_search
 
 
 def embed(text: str) -> list:
@@ -30,7 +30,7 @@ class AlbertLightPrompter(Prompter):
         hits = semantic_search(
             "chunks",
             embed(question),
-            retrives=["title", "url", "text", "context"],
+            retrieves=["title", "url", "text", "context"],
             must_filters=None,
             limit=limit,
         )

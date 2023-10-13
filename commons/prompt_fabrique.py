@@ -4,7 +4,7 @@ from qdrant_client import models as QdrantModels
 
 from commons import get_embedding_e5
 from commons.prompt_base import Prompter
-from commons.search_engine import semantic_search
+from commons.search_engines import semantic_search
 
 
 def embed(text: str) -> list:
@@ -96,7 +96,7 @@ class FabriqueReferencePrompter(Prompter):
         hits = semantic_search(
             "experiences",
             embed(experience),
-            retrives=["id_experience", "description"],
+            retrieves=["id_experience", "description"],
             must_filters=must_filters,
             limit=limit,
         )
@@ -134,7 +134,7 @@ class FabriqueReferencePrompter(Prompter):
         hits = semantic_search(
             "experiences",
             vector,
-            retrives=["id_experience", "description"],
+            retrieves=["id_experience", "description"],
             must_filters=must_filters,
             limit=n_exp,
         )
@@ -148,7 +148,7 @@ class FabriqueReferencePrompter(Prompter):
         hits = semantic_search(
             "chunks",
             vector,
-            retrives=["title", "url", "text", "context"],
+            retrieves=["title", "url", "text", "context"],
             must_filters=None,
             limit=limit,
         )

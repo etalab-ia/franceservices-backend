@@ -15,6 +15,9 @@ def get_embedding_e5(text: str) -> list:
     query = {"text": text}
     res = requests.post(url, headers=headers, data=json.dumps(query), verify=False)
     try:
+        out = res.json()
+        if isinstance(out, dict):
+            raise ValueError(str(out))
         return res.json()
     except Exception as e:
         print("Failed embedding request:", str(e))

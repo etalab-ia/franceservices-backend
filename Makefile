@@ -33,7 +33,7 @@ sync_etalab_repo:
 
 sync_etalab_repo_outscale:
 	#rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@142.44.51.104:~/
-	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/pe-cafe"  "../legal-information-assistant" outscale@142.44.40.218:/home/outscale/test-a
+	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@142.44.40.218:~/
 
 build_llama.cpp:
 	git clone https://github.com/ggerganov/llama.cpp
