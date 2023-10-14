@@ -98,6 +98,8 @@ class EVAL(object):
         with open("_data/evaluation_experiences.json") as f:
             experience_ids = json.load(f)
 
+        # Sampling
+        # --
         size_corpus = len(experience_ids)
         if self.N:
             hazard = np.random.choice(size_corpus, size=int(self.N), replace=False)

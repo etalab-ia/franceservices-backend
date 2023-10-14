@@ -1,9 +1,13 @@
+#!/bin/python
+
 import os
 import shutil
+import sys
 
 import bitsandbytes as bnb
+import numpy as np
 import torch
-from datasets import load_dataset
+from datasets import concatenate_datasets, load_dataset
 from peft import (AutoPeftModelForCausalLM, LoraConfig, PeftModel,
                   get_peft_model)
 from transformers import (AutoModelForCausalLM, AutoTokenizer,
@@ -11,6 +15,10 @@ from transformers import (AutoModelForCausalLM, AutoTokenizer,
                           LlamaTokenizerFast, TrainingArguments, logging,
                           pipeline)
 from trl import SFTTrainer
+
+sys.path.append(".")
+
+from commons.prompt import format_llama_chat_prompt
 
 # @EXPLORE techniques to make training better, stronger, faster :
 # - FlashAttention: https://arxiv.org/abs/2307.08691
@@ -114,45 +122,34 @@ report_to = "tensorboard"
 # 2. Load training data
 #
 
+np.random.seed(42)
 
-# Préparation de la base de données
-def format_alpaca(sample):
-    instruction = f"<s>{sample['instruction']}\n\n###Réponse : \n"
-    context = None
-    response = f"{sample['output']}"
-    # join all the parts together
-    prompt = "".join([i for i in [instruction, context, response] if i is not None])
-    return prompt
+def from_conversation(item):
+    prompt = item["conversation"][0]["content"]
+    answer = item["conversation"][1]["content"]
+    return {"prompt": prompt, "answer": answer}
 
 
-# template dataset to add prompt to each sample
-def template_dataset(sample):
-    sample["text"] = f"{format_alpaca(sample)}{tokenizer.eos_token}"
-    return sample
-
-
-def format_chat_prompt(item):
-    eos, bos = "<s>", "</s>"
-    B_INST, E_INST = "[INST]", "[/INST]"
-    B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
-
-    prompt = f"{B_INST} {(item['prompt']).strip()} {E_INST} {(item['answer']).strip()} "
-    prompt = eos + prompt + bos
-    # @hugingface: it still keep other features :o
-    return {"text": prompt}
-
-
-# Chargement du dataset.
 # dataset = load_dataset("databricks/databricks-dolly-15k", split="train")
-data_files = {"main": "_data/training_albert-light.json"}
-data = load_dataset("json", data_files=data_files)
-data = data.map(format_chat_prompt)
-# data = data.shuffle(seed=42)
-dataset = data["main"].train_test_split(test_size=0.1, shuffle=True, seed=42)
+datasets = {
+    "chatgpt_rag": {"path": "_data/training_albert-light.json", "n_samples": 1000},
+    "alpaca": {"path": "_data/converted_alpaca_data_cleaned_fr_52k.jsonl", "n_samples": 300},
+    "dolly": {"path": "_data/converted_dolly_bactrian_fr_15k.jsonl", "n_samples": 300},
+}
+datasets_l = []
+for dataset_name, d in datasets.items():
+    data = load_dataset("json", data_files=d["path"], split="train")
+    data = data.select(np.random.choice(len(data), size=d["n_samples"], replace=False))
+    if dataset_name in ["alpaca", "dolly"]:
+        data = data.map(from_conversation, remove_columns=data.column_names)
+    datasets_l.append(data)
+data = concatenate_datasets(datasets_l)
+data = data.map(format_llama_chat_prompt)
+data = data.shuffle(seed=42)
+dataset = data.train_test_split(test_size=0.1, shuffle=True, seed=42)
 train_data = dataset["train"]
 eval_data = dataset["test"]
 
-exit()
 
 #
 # 3. Load model and tokenizer
@@ -188,6 +185,8 @@ model.config.pretraining_tp = 1
 #
 # 4. Fine-tuning
 #
+
+os.makedirs(output_dir, exist_ok=True)
 
 training_arguments = TrainingArguments(
     output_dir=output_dir,

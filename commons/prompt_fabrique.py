@@ -33,10 +33,10 @@ class FabriquePrompter(Prompter):
 
 class FabriqueReferencePrompter(Prompter):
     URL = "http://127.0.0.1:8082"
-    # SAMPLING_PARAMS depends of  {mode} here...
+    # SAMPLING_PARAMS depends of {mode} here...
 
     def __init__(self, mode="simple"):
-        self.mode = mode
+        super().__init__(mode)
         if self.mode == "simple":
             self.sampling_params = {
                 "max_tokens": 500,
