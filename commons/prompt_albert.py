@@ -19,8 +19,7 @@ class AlbertLightPrompter(Prompter):
         "temperature": 0.5,
     }
 
-    @staticmethod
-    def make_prompt(question=None, limit=3):
+    def make_prompt(self, question=None, limit=3):
         prompt = []
         prompt.append(
             "Utilisez les éléments de contexte suivants pour répondre à la question finale. Si vous ne connaissez pas la réponse, dites simplement que vous ne savez pas, n'essayez pas d'inventer une réponse."
@@ -34,6 +33,10 @@ class AlbertLightPrompter(Prompter):
             must_filters=None,
             limit=limit,
         )
+        self.sources = [x["url"] for x in hits]
+        if len(hits) == 3:
+            # LLM Lost in the middle
+            hits[1], hits[2] = hits[2], hits[1]
         chunks = [
             f'{x["url"]} : {x["title"] + (x["context"]) if x["context"] else ""}\n{x["text"]}'
             for x in hits
@@ -42,6 +45,5 @@ class AlbertLightPrompter(Prompter):
         prompt.append(f"{chunks}")
 
         prompt.append(f"Question : {question}")
-        prompt.append("Réponse : ")
         prompt = "\n\n".join(prompt)
         return prompt

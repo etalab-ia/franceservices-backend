@@ -78,9 +78,15 @@ class FabriqueReferencePrompter(Prompter):
         prompt = "\n\n".join(prompt)
         return prompt
 
-    @staticmethod
     def _make_prompt_experience(
-        experience=None, institution=None, context=None, links=None, limit=1, skip_first=False, **kwargs
+        self,
+        experience=None,
+        institution=None,
+        context=None,
+        links=None,
+        limit=1,
+        skip_first=False,
+        **kwargs,
     ):
         institution_ = institution + " " if institution else ""
         prompt = []
@@ -102,6 +108,7 @@ class FabriqueReferencePrompter(Prompter):
         )
         if skip_first:
             hits = hits[1:]
+        self.sources = [x["id_experiences"] for x in hits]
         chunks = [f'{x["id_experience"]} : {x["description"]}' for x in hits]
         chunks = "\n\n".join(chunks)
         prompt.append(f"Expériences :\n\n {chunks}")
@@ -110,9 +117,15 @@ class FabriqueReferencePrompter(Prompter):
         prompt = "\n\n".join(prompt)
         return prompt
 
-    @staticmethod
     def _make_prompt_expert(
-        experience=None, institution=None, context=None, links=None, limit=3, skip_first=False, **kwargs
+        self,
+        experience=None,
+        institution=None,
+        context=None,
+        links=None,
+        limit=3,
+        skip_first=False,
+        **kwargs,
     ):
         prompt = []
         prompt.append("Mode expert")
