@@ -10,7 +10,7 @@ def get_embedding_e5(text: str) -> list:
     url = f"http://{host}/api/v2/embeddings"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTczNzM1NjUsImlhdCI6MTY5NzI4NzE2NSwic3ViIjoiMyJ9.Hs4fle1mhbySXyb4sjdiBTmYxOl9p5LuJeP080Oj--M",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTc0OTAxMTAsImlhdCI6MTY5NzQwMzcxMCwic3ViIjoiMyJ9.NSXEO23pOTOHwWisD5fDb16TotVL0mnhbyEPtDsf3G0",
     }
     query = {"text": text}
     res = requests.post(url, headers=headers, data=json.dumps(query), verify=False)

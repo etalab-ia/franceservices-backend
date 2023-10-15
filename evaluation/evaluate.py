@@ -16,29 +16,44 @@ class EVAL(object):
         "miaou": {
             "url": "http://localhost:8081",
             "prompt_maker": "_make_prompt",
-            "temperature": 0.2,
-            "max_tokens": 500,
+            "prompt_args": {},
+            "sampling_args": {"temperature": 0.2, "max_tokens": 500},
+            "type": "fabrique",
         },
         "reference-simple": {
             "url": "http://localhost:8082",
             "prompt_maker": "_make_prompt_2",
-            "mode": "simple",
-            "temperature": 0.2,
-            "max_tokens": 500,
+            "prompt_args": {"mode": "simple"},
+            "sampling_args": {"temperature": 0.2, "max_tokens": 500},
+            "type": "fabrique",
         },
         "reference-experience": {
             "url": "http://localhost:8082",
             "prompt_maker": "_make_prompt_2",
-            "mode": "experience",
-            "temperature": 0.2,
-            "max_tokens": 4096,
+            "prompt_args": {"mode": "experience"},
+            "sampling_args": {"temperature": 0.2, "max_tokens": 4096},
+            "type": "fabrique",
         },
         "reference-expert": {
             "url": "http://localhost:8082",
             "prompt_maker": "_make_prompt_2",
-            "mode": "expert",
-            "temperature": 0.2,
-            "max_tokens": 4096,
+            "prompt_args": {"mode": "expert"},
+            "sampling_args": {"temperature": 0.2, "max_tokens": 4096},
+            "type": "fabrique",
+        },
+        "albert-light-rag": {
+            "url": "http://localhost:8082",
+            "prompt_maker": "_make_prompt_3",
+            "prompt_args": {"mode": "rag", "llama_chat": True},
+            "sampling_args": {"temperature": 0.3, "max_tokens": 1024},
+            "type": "chat",
+        },
+        "albert-light-simple": {
+            "url": "http://localhost:8082",
+            "prompt_maker": "_make_prompt_3",
+            "prompt_args": {"mode": "simple", "llama_chat": True},
+            "sampling_args": {"temperature": 0.3, "max_tokens": 1024},
+            "type": "chat",
         },
     }
 
@@ -53,10 +68,6 @@ class EVAL(object):
         self.outdir_x = f"_data/x/{model}-{version}/"
         self.N = limit  # number of generation
         self.n_async = n_async
-        self.settings_vllm = {
-            "max_tokens": self.SPEC[model]["max_tokens"],
-            "temperature": self.SPEC[model]["temperature"],
-        }
         self.yes = yes
 
     @staticmethod
@@ -69,6 +80,12 @@ class EVAL(object):
     def _make_prompt_2(exp: dict, mode="simple", **kwargs) -> str:
         return get_prompter("fabrique-reference", mode=mode).make_prompt(
             experience=exp["description"], institution=exp["intitule_typologie_1"], skip_first=True
+        )
+
+    @staticmethod
+    def _make_prompt_3(doc, **kwargs) -> str:
+        return get_prompter("albert-light", mode=kwargs.get("mode")).make_prompt(
+            query=doc["question"], **kwargs
         )
 
     def has_data(self):
@@ -89,18 +106,27 @@ class EVAL(object):
             os.makedirs(self.outdir_x)
             os.makedirs(self.outdir_p)
 
-        # Inference
+        # Load data
         # --
-        with open("_data/export-expa-c-riences.json") as f:
-            documents = json.load(f)
-        documents = dict((d["id_experience"], d) for d in documents)
+        route = EVAL.SPEC[self.model]
+        if route["type"] == "fabrique":
+            with open("_data/export-expa-c-riences.json") as f:
+                documents = json.load(f)
+            documents = dict((d["id_experience"], d) for d in documents)
 
-        with open("_data/evaluation_experiences.json") as f:
-            experience_ids = json.load(f)
+            with open("_data/evaluation_experiences.json") as f:
+                doc_ids = json.load(f)
+        elif route["type"] == "chat":
+            df = pd.read_excel("_data/gpt_corpus-20kq&A.xlsx", sheet_name="results", usecols="A:B")
+            documents = dict((i, df.loc[i]) for i in df.index)
+            doc_ids = df.index
+            del df
+        else:
+            raise ValueError("Model type unknown")
 
         # Sampling
         # --
-        size_corpus = len(experience_ids)
+        size_corpus = len(doc_ids)
         if self.N:
             hazard = np.random.choice(size_corpus, size=int(self.N), replace=False)
         else:
@@ -110,8 +136,9 @@ class EVAL(object):
         eval_args = [
             {
                 "model": self.model,
-                "settings_vllm": self.settings_vllm,
-                "exp": documents[experience_ids[i]],
+                "settings_vllm": route["sampling_args"],
+                "doc": documents[doc_ids[i]],
+                "id": i,
                 "outdir_p": self.outdir_p,
                 "outdir_x": self.outdir_x,
             }
@@ -133,8 +160,8 @@ class EVAL(object):
 
             try:
                 data_x = extract(answer)
-            except:
-                print(expid)
+            except Exception as e:
+                print(expid, "(%s)" % e)
                 continue
 
             rows.append(
@@ -150,6 +177,8 @@ class EVAL(object):
                     "prices_": len(data_x["prices_"]),
                     "number_artefacts": len(data_x["numbers_"]),
                     "prompt_artefacts": len(data_x["artefacts"]),
+                    "repetition": data_x["repetition"],
+                    "3word_repetition": data_x["3word_repetition"],
                 }
             )
 
@@ -162,30 +191,38 @@ def eval_one(args: dict):
     # Settings
     model = args["model"]
     settings_vllm = args["settings_vllm"]
-    doc = args["exp"]
+    doc = args["doc"]
     outdir_p = args["outdir_p"]
     outdir_x = args["outdir_x"]
     route = EVAL.SPEC[model]
     url = route["url"]
 
-    # Add an options to only run --missing exp
-    # if os.path.exists(f'{outdir_x}/{doc["id_experience"]}.txt'):
+    # @future add an id for chat data has the hash of questions
+    if "id_experience" in doc:
+        id_ = doc["id_experience"]
+    else:
+        id_ = args["id"]
+
+    # Add an options to only run --missing doc
+    # if os.path.exists(f'{outdir_x}/{id_}.txt'):
     #    return
 
     # Make prompt
     make_prompt = getattr(EVAL, route["prompt_maker"])
-    prompt = make_prompt(doc, mode=route.get("mode"))
+    prompt = make_prompt(doc, **route.get("prompt_args"))
 
     # Save prompt
-    with open(f'{outdir_p}/{doc["id_experience"]}.txt', "w", encoding="utf-8") as f:
+    with open(f"{outdir_p}/{id_}.txt", "w", encoding="utf-8") as f:
         f.write(prompt)
 
     # Generate answer
     answer = generate(url, settings_vllm, prompt)
 
     # Save answer
-    with open(f'{outdir_x}/{doc["id_experience"]}.txt', "w", encoding="utf-8") as f:
+    with open(f"{outdir_x}/{id_}.txt", "w", encoding="utf-8") as f:
         f.write(answer)
+
+    print(".", end="", flush=True)
 
 
 def evaluate(
@@ -193,11 +230,11 @@ def evaluate(
 ) -> None:
     """Model evaluation"""
 
-    eva = EVAL(model, version, limit, yes)
+    eva = EVAL(model, version, limit=limit, yes=yes, n_async=50)
 
     if not eva.has_data() or not to_:
         # Re-run if no data or if --csv is not passed (overwrite)
-        np.random.seed(2)  # @warning: this does not control the LLM seed (remote API)
+        np.random.seed(42)  # @warning: this does not control the LLM seed (remote API)
         eva.run()
 
     if to_:

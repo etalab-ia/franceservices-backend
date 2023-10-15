@@ -2,8 +2,8 @@ import re
 from collections import defaultdict
 from typing import List
 
-from lexicalrichness import LexicalRichness
 import nltk
+from lexicalrichness import LexicalRichness
 
 try:
     nltk.data.find("corpora/stopwords")
@@ -19,7 +19,8 @@ def _purge(text: str, matches: List[str]) -> str:
 
 
 def extract_data(text: str) -> (str, dict):
-    """Extract numerical data, by removing terms along the way.
+    """Extract numerical data as well as dates, url, email and mode.
+       It removes terms along the way to avoid ambiguity, so the order of extraction matters here.
 
     extract :
         - Complete and partial dates (ex : 12 mars 2023, janvier 1999)
@@ -136,23 +137,50 @@ def extract_artefact(text: str) -> (str, dict):
     return text, data_x
 
 
-def extract(text: str) -> dict:
+def extract_repetition(text: str) -> (str, dict):
+    data_x = defaultdict(list)
 
-    # General data
+    data_x["repetition"] = 0
+    data_x["3word_repetition"] = 0
+
+    sentences = text.split(".")
+    if len(set(sentences)) != len(sentences):
+        data_x["repetition"] = 1
+
+    text_ = text
+    for s in [".", ",", ":", "-", "+"]:
+        text_ = text_.replace(s, "")
+
+    pattern = r"\b(\w+)\b\s+\1\s+\1\b"
+    match = re.search(pattern, text_)
+    if match:
+        data_x["3word_repetition"] = 1
+
+    return text, data_x
+
+
+def extract(text: str) -> dict:
+    # General data
     data_x = {}
     _, x = extract_data(text)
     data_x.update(x)
 
-    # Prompt Artefact
+    # Prompt Artefact
     _, x = extract_artefact(text)
+    data_x.update(x)
+
+    # Repetitions
+    _, x = extract_repetition(text)
     data_x.update(x)
 
     # Lexical diversity
     lex = LexicalRichness(text)
-    data_x.update({
-        "words": lex.words,
-        "ttr": lex.ttr,
-    })
+    data_x.update(
+        {
+            "words": lex.words,
+            "ttr": lex.ttr,
+        }
+    )
 
     # TODO
     # - Add number of english words.

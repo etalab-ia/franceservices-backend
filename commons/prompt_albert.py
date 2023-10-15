@@ -32,7 +32,7 @@ class AlbertLightPrompter(Prompter):
         else:  # simple
             prompt = self._make_prompt_simple(**kwargs)
 
-        if "llama_chat" in kwargs:
+        if kwargs.get("llama_chat"):
             return format_llama_chat_prompt(prompt)["text"]
 
         return prompt

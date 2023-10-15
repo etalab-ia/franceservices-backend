@@ -22,7 +22,7 @@ def run_one(args):
         "query": doc["question"],
         "prompt": prompt,
         "answer": None,  # /!\ answer are regenrated separetely (see update-albert-light.py)
-        "old_answer": doc["answer"],
+        "old_answer": doc["answer"], # xgen v0
         "sources": prompter.sources,
     }
 

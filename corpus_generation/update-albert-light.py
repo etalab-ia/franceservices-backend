@@ -9,7 +9,6 @@ import pandas as pd
 
 sys.path.append(".")
 
-from commons import get_prompter
 from commons.openai_api import chat_completion
 
 # Task: Add the answer field
