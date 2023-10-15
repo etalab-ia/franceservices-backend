@@ -12,7 +12,11 @@ prompter = get_prompter("albert-light", mode="rag")
 
 while 1:
     query = input(">>> Dit moi quelque chose: ")
-    dialog = prompter.make_prompt(query, llama_chat=True)
+    # Prompter
+    # --
+    # limit: the max number of hit the RAG should return
+    # llama_chat: format pompt with llama2 chat syntax (eos, bos, inst etc)
+    dialog = prompter.make_prompt(query, limit=3, llama_chat=True)
     #print(dialog)
 
     # Send POST request with string parameter
@@ -27,7 +31,11 @@ while 1:
     # response = requests.post(url + "/api/fabrique", data=data, headers=headers, verify=False)
 
     # Open server-sent-event stream
-    response = requests.post(url + "/generate", json=data, stream=True, verify=False)
+    try:
+        response = requests.post(url + "/generate", json=data, stream=True, verify=False)
+    except Exception as e:
+        print("Error: Request failed with message - %s" % e)
+        continue
 
     # Print the streamed response
     prev_len = 0

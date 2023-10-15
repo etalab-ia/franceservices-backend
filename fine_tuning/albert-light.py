@@ -58,6 +58,8 @@ def find_all_linear_names(model):
 
     if "lm_head" in lora_module_names:  # needed for 16-bit
         lora_module_names.remove("lm_head")
+    # print("linear names:", list(lora_module_names))
+    # linear names: ['up_proj', 'v_proj', 'gate_proj', 'down_proj', 'k_proj', 'q_proj', 'o_proj']
     return list(lora_module_names)
 
 
@@ -68,16 +70,16 @@ def find_all_linear_names(model):
 model_name = "NousResearch/Llama-2-13b-chat-hf"  # Base model
 new_model_name = "albert-light-v0"  # new model name
 output_dir = f"_data/models/{new_model_name}"  # The output directory where the model predictions and checkpoints will be written
-output_merged_dir = os.path.join(output_dir, new_model_name, new_model_name)
+output_merged_dir = os.path.join(output_dir, new_model_name)
 tb_log_dir = f"{output_dir}/logs"  # Tensorboard logs
 
 # Training parameters !
-max_seq_length = 2048  # C'est la fenêtre contextuelle. Elle peut être portée jusqu'à 4096 tokens (mais attention à la mémoire disponible !)
+max_seq_length = 1024  # C'est la fenêtre contextuelle. Elle peut être portée jusqu'à 4096 tokens (mais attention à la mémoire disponible !)
 per_device_train_batch_size = (
-    12  # Nombre d'exemples envoyés par batch. En mettre plus pour aller plus vite.
+    1  # Nombre d'exemples envoyés par batch. En mettre plus pour aller plus vite.
+    # 12  # Nombre d'exemples envoyés par batch. En mettre plus pour aller plus vite.
 )
 learning_rate = 1e-4  # De préférence un taux d'apprentissage élevé pour un texte en français (depends also of the batch size)
-save_steps = 200  # Sauvegarde des steps (permet de faire redémarrer l'entraînement si le fine-tuning ne fonctionne pas)
 lr_scheduler_type = "constant"  # Learning rate schedule (constant a bit better than cosine, and has advantage for analysis)
 gradient_accumulation_steps = 2
 max_grad_norm = 0.3
@@ -87,11 +89,17 @@ lora_dropout = 0.1  # dropout probability for layers
 group_by_length = True  # Group sequences into batches with same length (saves memory and speeds up training considerably)
 warmup_ratio = 0.03  # Fraction of steps to do a warmup for
 optim = "paged_adamw_32bit"  # Optimizer to use, original is paged_adamw_32bit
-logging_steps = 10  # Log every X updates steps
+packing = False  # Use dataset packing
 
-# To adjust given the traning size and epoch number
+# To adjust given the training size and epoch number
 # max_steps = 4001 # overrides num_train_epochs
-num_train_epochs = 1
+num_train_epochs = 3
+
+# Checkpoints, loggins and Evaluation
+save_steps = 200  # Sauvegarde des steps (permet de faire redémarrer l'entraînement si le fine-tuning ne fonctionne pas)
+save_total_limit = 5
+logging_steps = 10  # Log every X updates steps
+report_to = "tensorboard"  # Visualize training
 
 # Unused ?
 local_rank = -1
@@ -109,20 +117,17 @@ compute_dtype = getattr(torch, bnb_4bit_compute_dtype)
 fp16 = True  # Enable fp16 training
 bf16 = False  # Enable bf16 training
 
-# Use dataset packing
-packing = False
 
 # Load the entire model on the GPU 0
 device_map = {"": 0}
 
-# Visualize training
-report_to = "tensorboard"
 
 #
 # 2. Load training data
 #
 
 np.random.seed(42)
+
 
 def from_conversation(item):
     prompt = item["conversation"][0]["content"]
@@ -156,9 +161,10 @@ eval_data = dataset["test"]
 #
 
 tokenizer = LlamaTokenizerFast.from_pretrained(
-    model_name, padding_side="left", add_eos_token=True, add_bos_token=True, use_fast=False
+    model_name, padding_side="right", add_eos_token=False, add_bos_token=False, use_fast=False
 )
-tokenizer.pad_token = tokenizer.eos_token  # llama2 seems to require that...
+# <!> This prevent the model inference to correctly generate an eos to terminate the inference.
+# tokenizer.pad_token = tokenizer.eos_token  # llama2 seems to require that...
 
 # Load tokenizer and model with QLoRA configuration
 bnb_config = BitsAndBytesConfig(
@@ -187,6 +193,7 @@ model.config.pretraining_tp = 1
 #
 
 os.makedirs(output_dir, exist_ok=True)
+torch.cuda.empty_cache()
 
 training_arguments = TrainingArguments(
     output_dir=output_dir,
@@ -194,6 +201,7 @@ training_arguments = TrainingArguments(
     gradient_accumulation_steps=gradient_accumulation_steps,
     optim=optim,
     save_steps=save_steps,
+    save_total_limit=save_total_limit,
     logging_steps=logging_steps,
     learning_rate=learning_rate,
     fp16=fp16,
@@ -214,12 +222,12 @@ peft_config = LoraConfig(
     r=lora_r,
     inference_mode=False,
     task_type="CAUSAL_LM",
-    target_modules=find_all_linear_names(model),
+    # target_modules=find_all_linear_names(model),
 )
 
 trainer = SFTTrainer(
     model=model,
-    train_dataset=dataset,
+    train_dataset=train_data,
     peft_config=peft_config,
     dataset_text_field="text",
     max_seq_length=max_seq_length,
@@ -228,7 +236,10 @@ trainer = SFTTrainer(
     packing=packing,
 )
 
-trainer.train(resume_from_checkpoint=True)
+try:
+    trainer.train(resume_from_checkpoint=True)
+except:
+    trainer.train()
 
 #
 # 5. Save Lora weigts
@@ -237,7 +248,7 @@ trainer.train(resume_from_checkpoint=True)
 model_to_save = (
     trainer.model.module if hasattr(trainer.model, "module") else trainer.model
 )  # Take care of distributed/parallel training
-model_to_save.save_pretrained(new_model_name)
+model_to_save.save_pretrained(os.path.join(output_dir, "final_weights"))
 
 
 #
@@ -250,7 +261,7 @@ del trainer
 torch.cuda.empty_cache()
 
 model = AutoPeftModelForCausalLM.from_pretrained(
-    new_model_name, device_map="auto", torch_dtype=torch.bfloat16
+    os.path.join(output_dir, "final_weights"), device_map="auto", torch_dtype=torch.bfloat16
 )
 model = model.merge_and_unload()
 model.save_pretrained(output_merged_dir, safe_serialization=True)
