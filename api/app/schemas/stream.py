@@ -8,11 +8,16 @@ if TYPE_CHECKING:
 
 class StreamBase(BaseModel):
     model_name: str
-    mode: str = ""  # None instead ?
+    # For chat/albert (+RAG) like prompt
+    mode: str = None  # Possible value should be documented by each model/prompt
+    query: str = ""
+    limit: int = None
+    # For instruct/fabrique like prompt.
     user_text: str
     context: str = ""
     institution: str = ""
     links: str = ""
+    # Sampling params
     temperature: int = Field(20, ge=0, le=100)
 
 

@@ -26,30 +26,31 @@ class AlbertLightPrompter(Prompter):
         if not self.mode:
             self.mode = "rag"
 
-    def make_prompt(self, question=None, **kwargs):
+    def make_prompt(self, **kwargs):
         if self.mode == "rag":
-            prompt = self._make_prompt_rag(question, **kwargs)
+            prompt = self._make_prompt_rag(**kwargs)
         else:  # simple
-            prompt = self._make_prompt_simple(question, **kwargs)
+            prompt = self._make_prompt_simple(**kwargs)
 
         if "llama_chat" in kwargs:
             return format_llama_chat_prompt(prompt)["text"]
 
         return prompt
 
-    def _make_prompt_simple(self, question=None, **kwargs):
-        return question
+    def _make_prompt_simple(self, query=None, **kwargs):
+        return query
 
-    def _make_prompt_rag(self, question=None, limit=3, **kwargs):
+    def _make_prompt_rag(self, query=None, limit=3, **kwargs):
         prompt = []
         prompt.append(
             "Utilisez les éléments de contexte à votre disposition ci-dessous pour répondre à la question finale. Si vous ne connaissez pas la réponse, dites simplement que vous ne savez pas, n'essayez pas d'inventer une réponse."
         )
 
         # Rag
+        limit = 3 if limit is None else limit
         hits = semantic_search(
             "chunks",
-            embed(question),
+            embed(query),
             retrieves=["title", "url", "text", "context"],
             must_filters=None,
             limit=limit,
@@ -65,6 +66,6 @@ class AlbertLightPrompter(Prompter):
         chunks = "\n\n".join(chunks)
         prompt.append(f"{chunks}")
 
-        prompt.append(f"Question : {question}")
+        prompt.append(f"Question : {query}")
         prompt = "\n\n".join(prompt)
         return prompt

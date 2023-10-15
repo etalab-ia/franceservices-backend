@@ -1,14 +1,13 @@
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
-
 from app import crud, models, schemas
 from app.clients.api_vllm_client import ApiVllmClient
 from app.config import WITH_GPU
 from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
-from app.deps import get_db, get_current_user
+from app.deps import get_current_user, get_db
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 
 from commons import get_prompter
 
@@ -70,6 +69,9 @@ def start_stream(
     stream_id = db_stream.id
     model_name = db_stream.model_name
     mode = db_stream.mode
+    query = db_stream.query
+    # @DEBUG: This should be passed once a request time, and not saved (pass parameters to the first call to start_stream)
+    limit = db_stream.limit
     user_text = db_stream.user_text
     context = db_stream.context
     institution = db_stream.institution
@@ -81,7 +83,16 @@ def start_stream(
     def generate():
         # Buid prompt (warning, it's extra sensitive + avoid carriage return):
         prompter = get_prompter(model_name, mode)
-        prompt = prompter.make_prompt(experience=user_text, institution=institution, context=context, links=links)
+        # We pass a mix of all kw arguments used by all prompters...
+        # This is allows because each prompter accept a **kwargs arguments...
+        prompt = prompter.make_prompt(
+            experience=user_text,
+            institution=institution,
+            context=context,
+            links=links,
+            query=query,
+            limit=limit,
+        )
         sampling_params = prompt.sampling_params
         for k in ["max_tokens", "temperature", "top_p"]:
             v = getattr(db_stream, k)

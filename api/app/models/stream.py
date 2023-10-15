@@ -13,6 +13,8 @@ class Stream(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     model_name = Column(Text)
     mode = Column(Text)
+    query = Column(Text)
+    limit = Column(Integer)
     user_text = Column(Text)
     context = Column(Text)
     institution = Column(Text)

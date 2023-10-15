@@ -19,7 +19,7 @@ class FabriquePrompter(Prompter):
     }
 
     @staticmethod
-    def make_prompt(experience=None, institution=None, context=None, links=None):
+    def make_prompt(experience=None, institution=None, context=None, links=None, **kwargs):
         institution_ = institution + " " if institution else ""
         prompt = f"Question soumise au service {institution_}: {experience}\n---Réponse : "
         if context and links:
@@ -94,6 +94,7 @@ class FabriqueReferencePrompter(Prompter):
         prompt.append(f"Question soumise au service {institution_} : {experience}")
 
         # Rag / similar experiences
+        limit = 1 if limit is None else limit
         if skip_first:
             limit += 1
         must_filters = None
@@ -158,6 +159,7 @@ class FabriqueReferencePrompter(Prompter):
         prompt.append(f"Réponse :\n\n {rep1}")
 
         # Rag / relevant sheets
+        limit = 3 if limit is None else limit
         hits = semantic_search(
             "chunks",
             vector,
