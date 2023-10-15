@@ -159,6 +159,29 @@ def extract_repetition(text: str) -> (str, dict):
     return text, data_x
 
 
+def extract_idk(text: str) -> (str, dict):
+    data_x = defaultdict(list)
+
+    data_x["idk"] = 0
+
+    missed_patterns = [
+        "ne fournissent pas",
+        "a pas d'éléments de contexte",
+        "pas possible de répondre",
+        "peux pas répondre à cette question",
+        "je ne sais pas",
+        "je ne peux pas",
+    ]
+
+    text_ = text.lower()
+    for s in missed_patterns:
+        if s in text_:
+            data_x["idk"] = 1
+            break
+
+    return text, data_x
+
+
 def extract(text: str) -> dict:
     # General data
     data_x = {}
@@ -171,6 +194,10 @@ def extract(text: str) -> dict:
 
     # Repetitions
     _, x = extract_repetition(text)
+    data_x.update(x)
+
+    # I don"t kown the answer.
+    _, x = extract_idk(text)
     data_x.update(x)
 
     # Lexical diversity

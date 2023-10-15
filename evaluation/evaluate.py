@@ -179,6 +179,7 @@ class EVAL(object):
                     "prompt_artefacts": len(data_x["artefacts"]),
                     "repetition": data_x["repetition"],
                     "3word_repetition": data_x["3word_repetition"],
+                    "idk": data_x["idk"],
                 }
             )
 
