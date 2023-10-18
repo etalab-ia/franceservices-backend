@@ -10,6 +10,7 @@ Usage:
     gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE]
     gpt.py finetune MODEL VERSION
     gpt.py evaluate MODEL VERSION [-n N] [-y] [--csv]
+    gpt.py evaluate -o OUTPUT (--merge MODEL VERSION)...
 
 Commands:
     download_directory  Download official directorier to build whitelists. Files are stored under _data/directory/.
@@ -29,6 +30,8 @@ Commands:
 
     evaluate        Run evaluation for the given llm model.
                     Results will be saved in _data/x/{MODEL}-{VERSION}.
+                    if --merge is used, a json containing the list of prompts + generations under _data/{p,x} directory will be saved
+                    using the the list of the {MODEL-VERSION} couples given.
 
 
 Options:
@@ -36,6 +39,7 @@ Options:
     --chunk-overlap N        The size of the overlap between chunks [default: 200]
     --index-type INDEX_TYPE  The type of index to create (bm25, bucket, e5) [default: bm25]
     --size N, -n N           Limit the number of generations/inferences.
+    --output OUTPUT, -o OUTPUT    A ouput name, to save result to.
     --yes, -y                assumes yes for every user input question.
     --csv                    Make a csv table
 
@@ -50,6 +54,7 @@ Examples:
     ./gpt.py index chunks       # assumes _data/xmlfiles_as_chunks.json exists
     ./gpt.py evaluate miaou v0  # Run the inference
     ./gpt.py evaluate miaou v0 --csv  # make an result table with inference file found in data/x/{model}-{version}
+    ./gpt.py evaluate --merge albert-light-simple v0 --merge albert-light-rag v0 -o albert-light-v0
 """
 
 
@@ -79,7 +84,9 @@ if __name__ == "__main__":
         make_embeddings()
 
     elif args["download_directory"]:
-        from evaluation.download_directory import download_directory, create_whitelist
+        from evaluation.download_directory import (create_whitelist,
+                                                   download_directory)
+
         download_directory()
         create_whitelist()
 
@@ -93,7 +100,19 @@ if __name__ == "__main__":
     elif args["finetune"]:
         raise NotImplementedError
     elif args["evaluate"]:
-        from evaluation import evaluate
-        evaluate(args["MODEL"], args["VERSION"], limit=args["--size"], yes=args["--yes"], to_=args["--csv"])
+        from evaluation import evaluate, merge_eval
+
+        if args.get("--merge", 0) == 0:
+            # run evaluation
+            evaluate(
+                args["MODEL"][0],
+                args["VERSION"][0],
+                limit=args["--size"],
+                yes=args["--yes"],
+                to_=args["--csv"],
+            )
+        else:
+            # Merge evaluation results into a final json file
+            merge_eval(args["MODEL"], args["VERSION"], args["--ouput"])
     else:
         raise NotImplementedError

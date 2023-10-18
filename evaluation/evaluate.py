@@ -2,6 +2,7 @@ import json
 import multiprocessing
 import os
 from pprint import pprint
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -64,8 +65,9 @@ class EVAL(object):
 
         self.model = model
         self.version = version
-        self.outdir_p = f"_data/p/{model}-{version}/"
-        self.outdir_x = f"_data/x/{model}-{version}/"
+        self.name = "-".join((model, version))
+        self.outdir_p = f"_data/p/{self.name}/"
+        self.outdir_x = f"_data/x/{self.name}/"
         self.N = limit  # number of generation
         self.n_async = n_async
         self.yes = yes
@@ -188,7 +190,7 @@ class EVAL(object):
 
 
 # async
-def eval_one(args: dict):
+def eval_one(args: dict) -> None:
     # Settings
     model = args["model"]
     settings_vllm = args["settings_vllm"]
@@ -226,6 +228,11 @@ def eval_one(args: dict):
     print(".", end="", flush=True)
 
 
+#
+# Fire
+#
+
+
 def evaluate(
     model: str, version: str, limit: int = None, yes: bool = False, to_: str = None
 ) -> None:
@@ -240,3 +247,41 @@ def evaluate(
 
     if to_:
         eva.to_csv()
+
+
+def merge_eval(models: List[str], versions: List[str], output=str) -> None:
+    names = [couple for couple in zip(models, versions)]
+    result = []
+
+    for i, (model, version) in enumerate(names):
+        eva = EVAL(model, version)
+        name = eva.name
+        prompt_path = eva.outdir_p
+        answer_path = eva.outdir_x
+
+        prompt_files = os.listdir(prompt_path)
+        # answer_files = os.listdir(answer_path)
+        for j, file in enumerate(prompt_files):
+            prompt_file_path = os.path.join(prompt_path, file)
+            answer_file_path = os.path.join(answer_path, file)
+
+            with open(prompt_file_path, "r") as prompt_file, open(
+                answer_file_path, "r"
+            ) as answer_file:
+                prompt_content = prompt_file.read()
+                answer_content = answer_file.read()
+
+                if i == 0:
+                    result.append(
+                        {f"prompt_{name}": prompt_content, f"answer_{name}": answer_content}
+                    )
+                else:
+                    item = result[j]
+                    item.update(
+                        {f"prompt_{name}": prompt_content, f"answer_{name}": answer_content}
+                    )
+                    result.insert(j, item)
+
+    output = output if output.endswith(".json") else output + ".json"
+    with open(output, "w") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
