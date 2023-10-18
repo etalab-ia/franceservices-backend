@@ -93,6 +93,8 @@ def start_stream(
             query=query,
             limit=limit,
         )
+
+        # Allow client to tune the sampling parameters.
         sampling_params = prompt.sampling_params
         for k in ["max_tokens", "temperature", "top_p"]:
             v = getattr(db_stream, k)

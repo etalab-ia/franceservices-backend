@@ -40,14 +40,14 @@ class AlbertLightPrompter(Prompter):
     def _make_prompt_simple(self, query=None, **kwargs):
         return query
 
-    def _make_prompt_rag(self, query=None, limit=3, **kwargs):
+    def _make_prompt_rag(self, query=None, limit=4, **kwargs):
         prompt = []
         prompt.append(
             "Utilisez les éléments de contexte à votre disposition ci-dessous pour répondre à la question finale. Si vous ne connaissez pas la réponse, dites simplement que vous ne savez pas, n'essayez pas d'inventer une réponse."
         )
 
         # Rag
-        limit = 3 if limit is None else limit
+        limit = 4 if limit is None else limit
         hits = semantic_search(
             "chunks",
             embed(query),
