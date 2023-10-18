@@ -16,7 +16,7 @@ while 1:
     # --
     # limit: the max number of hit the RAG should return
     # llama_chat: format pompt with llama2 chat syntax (eos, bos, inst etc)
-    dialog = prompter.make_prompt(query=query, limit=3, llama_chat=True)
+    dialog = prompter.make_prompt(query=query, limit=4)
     #print(dialog)
 
     # Send POST request with string parameter

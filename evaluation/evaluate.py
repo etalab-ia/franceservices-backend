@@ -45,14 +45,14 @@ class EVAL(object):
         "albert-light-rag": {
             "url": "http://localhost:8082",
             "prompt_maker": "_make_prompt_3",
-            "prompt_args": {"mode": "rag", "llama_chat": True},
+            "prompt_args": {"mode": "rag"},
             "sampling_args": {"temperature": 0.3, "max_tokens": 1024},
             "type": "chat",
         },
         "albert-light-simple": {
             "url": "http://localhost:8082",
             "prompt_maker": "_make_prompt_3",
-            "prompt_args": {"mode": "simple", "llama_chat": True},
+            "prompt_args": {"mode": "simple"},
             "sampling_args": {"temperature": 0.3, "max_tokens": 1024},
             "type": "chat",
         },

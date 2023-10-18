@@ -17,7 +17,7 @@ def run_one(args):
     print(".", end="", flush=True)
 
     prompter = get_prompter("albert-light")
-    prompt = prompter.make_prompt(query=doc["question"], limit=4)
+    prompt = prompter.make_prompt(query=doc["question"], limit=4, llama_chat=False)
     item = {
         "query": doc["question"],
         "prompt": prompt,

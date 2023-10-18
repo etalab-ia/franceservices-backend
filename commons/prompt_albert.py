@@ -26,7 +26,7 @@ class AlbertLightPrompter(Prompter):
         if not self.mode:
             self.mode = "rag"
 
-    def make_prompt(self, **kwargs):
+    def make_prompt(self, llama_chat=True, **kwargs):
         if self.mode == "rag":
             prompt = self._make_prompt_rag(**kwargs)
         else:  # simple
