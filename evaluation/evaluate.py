@@ -166,24 +166,7 @@ class EVAL(object):
                 print(expid, "(%s)" % e)
                 continue
 
-            rows.append(
-                {
-                    "id": expid,
-                    "words": data_x["words"],
-                    "ttr": data_x["ttr"],
-                    "emails": len(data_x["emails"]),
-                    "urls": len(data_x["urls"]),
-                    "phones": len(data_x["phones"]),
-                    "dates": len(data_x["dates"]),
-                    "hours": len(data_x["hours"]),
-                    "prices_": len(data_x["prices_"]),
-                    "number_artefacts": len(data_x["numbers_"]),
-                    "prompt_artefacts": len(data_x["artefacts"]),
-                    "repetition": data_x["repetition"],
-                    "3word_repetition": data_x["3word_repetition"],
-                    "idk": data_x["idk"],
-                }
-            )
+            rows.append({"id": expid, **data_x})
 
         df = pd.DataFrame(rows)
         df.to_csv(self.outdir_x + "res.csv", index=False)

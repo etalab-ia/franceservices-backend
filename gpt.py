@@ -49,6 +49,7 @@ Examples:
     ./gpt.py make_chunks --chunk-size 500 --chunk-overlap 20 _data/data.gouv/vos-droits-et-demarche/
     ./gpt.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche/
     ./gpt.py make_questions _data/data.gouv/vos-droits-et-demarche/
+    !make institutions          # Generate the french institution list
     ./gpt.py index experiences  # assumes _data/export-expa-c-riences.json exists
     ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ exists
     ./gpt.py index chunks       # assumes _data/xmlfiles_as_chunks.json exists

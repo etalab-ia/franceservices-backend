@@ -33,6 +33,10 @@ def extract_data(text: str) -> (str, dict):
     """
     data_x = defaultdict(list)
 
+    # Be markdown aware:
+    # - remove all ordered list tp avoid false positive in number extraction.
+    text = re.sub(r"^\d+\. ", "", text, flags=re.MULTILINE)
+
     # Dates
     date_pattern = [
         # dates (ex : mars, 12 mars, mars 2023, 12 mars 2023)
@@ -138,13 +142,19 @@ def extract_artefact(text: str) -> (str, dict):
 
 
 def extract_repetition(text: str) -> (str, dict):
+    # NOTE: if placed after extract_data, false positive will be detected because number are beeing removed
+    # when they stand to differentiate two lines.
+    #
     data_x = defaultdict(list)
 
     data_x["repetition"] = 0
     data_x["3word_repetition"] = 0
 
-    sentences = text.split(".")
-    if len(set(sentences)) != len(sentences):
+    # Remove all ordered list (1., 2. etc).
+
+    sentences = list(filter(lambda x: x.strip() != "", text.split(". ")))
+    lines = list(filter(lambda x: x.strip() != "", text.split("\n")))
+    if len(sentences) - len(set(sentences)) >= 2 or len(lines) - len(set(lines)) >= 2:
         data_x["repetition"] = 1
 
     text_ = text
@@ -168,7 +178,7 @@ def extract_idk(text: str) -> (str, dict):
         "ne fournissent pas",
         "a pas d'éléments de contexte",
         "pas possible de répondre",
-        "peux pas répondre à cette question",
+        "peux pas répondre",
         "je ne sais pas",
         "je ne peux pas",
     ]
@@ -182,9 +192,14 @@ def extract_idk(text: str) -> (str, dict):
     return text, data_x
 
 
-def extract(text: str) -> dict:
-    # General data
+def extract_all(text: str) -> dict:
     data_x = {}
+
+    # Repetitions
+    _, x = extract_repetition(text)
+    data_x.update(x)
+
+    # General data
     _, x = extract_data(text)
     data_x.update(x)
 
@@ -192,9 +207,6 @@ def extract(text: str) -> dict:
     _, x = extract_artefact(text)
     data_x.update(x)
 
-    # Repetitions
-    _, x = extract_repetition(text)
-    data_x.update(x)
 
     # I don"t kown the answer.
     _, x = extract_idk(text)
@@ -214,3 +226,35 @@ def extract(text: str) -> dict:
     # - optinnal NER extraction
 
     return data_x
+
+
+def extract(text: str, how: str = "count") -> dict:
+    """
+    how: count | binary | content
+    """
+    data_x = extract_all(text)
+
+    if how == "binary":
+        measure = lambda x: int(len(x) > 0)
+    elif how == "count":
+        measure = len
+    elif how == "content":
+        measure = lambda x: x
+    else:
+        raise ValueError("metrics measure unknown: %s" % how)
+
+    return {
+        "words": data_x["words"],
+        "ttr": data_x["ttr"],
+        "emails": measure(data_x["emails"]),
+        "urls": measure(data_x["urls"]),
+        "phones": measure(data_x["phones"]),
+        "dates": measure(data_x["dates"]),
+        "hours": measure(data_x["hours"]),
+        "prices_": measure(data_x["prices_"]),
+        "number_artefacts": measure(data_x["numbers_"]),
+        "prompt_artefacts": measure(data_x["artefacts"]),
+        "loop": data_x["repetition"],
+        # "3word_repetition": data_x["3word_repetition"],
+        "idk": data_x["idk"],
+    }
