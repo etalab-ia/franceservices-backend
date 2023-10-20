@@ -3,6 +3,8 @@ import json
 import requests
 from app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
+# @FUTURE: the offical hostname of the (public) LIA API should go here.
+# @IMPROVE: move this app.config
 PUBLIC_API_HOST = "localhost:8090"
 
 response = requests.post(
@@ -20,9 +22,7 @@ except Exception as e:
 def get_embedding_e5(text: str) -> list:
     """OpenAI-like embedding API"""
     global API_TOKEN
-    # @FUTURE: the offical hostname of the (public) LIA API
-    # should go here.
-    host = "localhost:8090"
+    host = PUBLIC_API_HOST
     url = f"http://{host}/api/v2/embeddings"
     query = {"text": text}
     try:
