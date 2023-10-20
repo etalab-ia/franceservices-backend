@@ -13,9 +13,9 @@ def embed(text: str) -> list:
 
 # WIP
 class AlbertLightPrompter(Prompter):
-    URL = "@TODO"
+    URL = "http://127.0.0.1:8082"
     SAMPLING_PARAMS = {
-        "max_tokens": 2048,
+        "max_tokens": 1024,
         "temperature": 0.3,
     }
 

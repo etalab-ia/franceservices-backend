@@ -5,8 +5,11 @@ from app.config import API_VLLM_URL
 
 
 class ApiVllmClient:
-    def __init__(self):
-        self.url = API_VLLM_URL
+    def __init__(self, url=None):
+        if not url:
+            url = API_VLLM_URL
+
+        self.url = url
 
     # TODO: turn into async
     def generate(self, prompt, max_tokens=500, temperature=20, top_p=1, streaming=True):

@@ -1,27 +1,55 @@
 import json
 
 import requests
+from app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
+
+PUBLIC_API_HOST = "localhost:8090"
+
+response = requests.post(
+    f"{PUBLIC_API_HOST}/api/v2/sign_in",
+    headers={"Content-Type": "application/json"},
+    json={"email": FIRST_ADMIN_EMAIL, "password": FIRST_ADMIN_PASSWORD},
+)
+try:
+    API_TOKEN = response.json()["token"]
+except Exception as e:
+    API_TOKEN = None
+    print("Error: unable to authenticate to LIA: %s" % str(e))
 
 
 def get_embedding_e5(text: str) -> list:
     """OpenAI-like embedding API"""
-    # host = "localhost:8080"
-    host = "142.44.40.218"
+    global API_TOKEN
+    # @FUTURE: the offical hostname of the (public) LIA API
+    # should go here.
+    host = "localhost:8090"
     url = f"http://{host}/api/v2/embeddings"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTc0OTAxMTAsImlhdCI6MTY5NzQwMzcxMCwic3ViIjoiMyJ9.NSXEO23pOTOHwWisD5fDb16TotVL0mnhbyEPtDsf3G0",
-    }
     query = {"text": text}
-    res = requests.post(url, headers=headers, data=json.dumps(query), verify=False)
     try:
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {API_TOKEN}",
+        }
+        res = requests.post(url, headers=headers, data=json.dumps(query), verify=False)
         out = res.json()
-        if isinstance(out, dict):
+        if isinstance(out, dict):  # e.g: unauthorized.
             raise ValueError(str(out))
         return res.json()
     except Exception as e:
         print("Failed embedding request:", str(e))
-        return []
+        # retry once more with an updated token
+        # ===
+        response = requests.post(
+            f"{PUBLIC_API_HOST}/api/v2/sign_in",
+            headers={"Content-Type": "application/json"},
+            json={"email": FIRST_ADMIN_EMAIL, "password": FIRST_ADMIN_PASSWORD},
+        )
+        API_TOKEN = response.json()["token"]
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {API_TOKEN}",
+        }
+        return requests.post(url, headers=headers, data=json.dumps(query), verify=False).json()
 
 
 def generate(url, conf, text):

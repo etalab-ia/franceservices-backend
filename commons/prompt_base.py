@@ -19,6 +19,10 @@ class Prompter:
     def set_mode(self, mode):
         self.mode = mode
 
+    @property
+    def url(self):
+        return self.URL
+
 
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
 def format_llama_chat_prompt(item: Union[Dict, str]):

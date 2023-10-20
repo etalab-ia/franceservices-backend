@@ -104,7 +104,7 @@ def start_stream(
 
         # Get the right stream generator
         if WITH_GPU:
-            api_vllm_client = ApiVllmClient()
+            api_vllm_client = ApiVllmClient(url=prompter.url)
             generator = api_vllm_client.generate(prompt, **sampling_params)
         else:
             callback = gpt4all_callback(db, stream_id)

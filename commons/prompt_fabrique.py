@@ -32,7 +32,7 @@ class FabriquePrompter(Prompter):
 
 
 class FabriqueReferencePrompter(Prompter):
-    URL = "http://127.0.0.1:8082"
+    URL = "http://127.0.0.1:8081"
     # SAMPLING_PARAMS depends of {mode} here...
 
     def __init__(self, mode="simple"):
