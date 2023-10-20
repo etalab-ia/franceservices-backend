@@ -1,7 +1,12 @@
 import json
 
 import requests
-from app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
+
+# @IMPROVE: commons & app.config unification
+try:
+    from app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
+except ModuleNotFoundError as e:
+    from api.app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
 # @FUTURE: the offical hostname of the (public) LIA API should go here.
 # @IMPROVE: move this app.config

@@ -9,6 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+# @IMPROVE: commons & app.config unification
+#import sys
+#sys.path.append("..")
 from commons import get_prompter
 
 router = APIRouter()
