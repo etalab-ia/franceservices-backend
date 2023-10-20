@@ -8,7 +8,7 @@ from app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 PUBLIC_API_HOST = "localhost:8090"
 
 response = requests.post(
-    f"{PUBLIC_API_HOST}/api/v2/sign_in",
+    f"http://{PUBLIC_API_HOST}/api/v2/sign_in",
     headers={"Content-Type": "application/json"},
     json={"email": FIRST_ADMIN_EMAIL, "password": FIRST_ADMIN_PASSWORD},
 )
@@ -40,7 +40,7 @@ def get_embedding_e5(text: str) -> list:
         # retry once more with an updated token
         # ===
         response = requests.post(
-            f"{PUBLIC_API_HOST}/api/v2/sign_in",
+            f"http://{host}/api/v2/sign_in",
             headers={"Content-Type": "application/json"},
             json={"email": FIRST_ADMIN_EMAIL, "password": FIRST_ADMIN_PASSWORD},
         )
