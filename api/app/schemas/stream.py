@@ -9,9 +9,9 @@ if TYPE_CHECKING:
 class StreamBase(BaseModel):
     model_name: str
     # For chat/albert (+RAG) like prompt
-    mode: str = None  # Possible value should be documented by each model/prompt
+    mode: str | None = None  # Possible value should be documented by each model/prompt
     query: str = ""
-    limit: int = None
+    limit: int | None = None
     # For instruct/fabrique like prompt.
     user_text: str
     context: str = ""
