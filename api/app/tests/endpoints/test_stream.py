@@ -28,7 +28,7 @@ class TestEndpointsStream(TestClass):
 
         # Create Stream:
         response = create_stream(
-            client, token, "Merci pour le service Service-Public+. Bien à vous."
+            client, token, "fabrique-miaou", "Merci pour le service Service-Public+. Bien à vous."
         )
         assert response.status_code == 200
         stream_id = response.json()["id"]

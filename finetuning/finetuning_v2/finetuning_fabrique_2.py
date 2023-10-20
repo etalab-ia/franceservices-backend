@@ -68,7 +68,7 @@ bnb_4bit_compute_dtype = "float16"
 bnb_4bit_quant_type = "nf4"
 
 # Number of training epochs
-num_train_epochs = 1
+num_train_epochs = 3
 
 # Enable fp16 training
 fp16 = True
@@ -113,8 +113,6 @@ tokenizer = LlamaTokenizerFast.from_pretrained(model_name, add_eos_token=True, f
 tokenizer.padding_side = "right"
 
 #3. Préparation de la base de données
-
-from datasets import load_dataset
 
 def format_alpaca(sample):
     instruction = f"<s>{sample['instruction']}\n\n###Réponse : \n"

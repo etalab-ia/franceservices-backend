@@ -2,19 +2,14 @@ import json
 import multiprocessing
 import os
 from pprint import pprint
+from typing import List
 
 import numpy as np
 import pandas as pd
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
+
+from commons import generate, get_prompter
 
 from .extract import extract
-from .utils import generate, get_embedding_e5
-
-
-def embed(text: str) -> list:
-    return get_embedding_e5(text)
 
 
 class EVAL(object):
@@ -22,29 +17,44 @@ class EVAL(object):
         "miaou": {
             "url": "http://localhost:8081",
             "prompt_maker": "_make_prompt",
-            "temperature": 0.2,
-            "max_tokens": 500,
+            "prompt_args": {},
+            "sampling_args": {"temperature": 0.2, "max_tokens": 500},
+            "type": "fabrique",
         },
         "reference-simple": {
-            "url": "http://localhost:8001",
+            "url": "http://localhost:8082",
             "prompt_maker": "_make_prompt_2",
-            "mode": "simple",
-            "temperature": 0.2,
-            "max_tokens": 500,
+            "prompt_args": {"mode": "simple"},
+            "sampling_args": {"temperature": 0.2, "max_tokens": 500},
+            "type": "fabrique",
         },
         "reference-experience": {
-            "url": "http://localhost:8001",
+            "url": "http://localhost:8082",
             "prompt_maker": "_make_prompt_2",
-            "mode": "experience",
-            "temperature": 0.2,
-            "max_tokens": 4096,
+            "prompt_args": {"mode": "experience"},
+            "sampling_args": {"temperature": 0.2, "max_tokens": 4096},
+            "type": "fabrique",
         },
         "reference-expert": {
-            "url": "http://localhost:8001",
+            "url": "http://localhost:8082",
             "prompt_maker": "_make_prompt_2",
-            "mode": "expert",
-            "temperature": 0.2,
-            "max_tokens": 4096,
+            "prompt_args": {"mode": "expert"},
+            "sampling_args": {"temperature": 0.2, "max_tokens": 4096},
+            "type": "fabrique",
+        },
+        "albert-light-rag": {
+            "url": "http://localhost:8082",
+            "prompt_maker": "_make_prompt_3",
+            "prompt_args": {"mode": "rag"},
+            "sampling_args": {"temperature": 0.3, "max_tokens": 1024},
+            "type": "chat",
+        },
+        "albert-light-simple": {
+            "url": "http://localhost:8082",
+            "prompt_maker": "_make_prompt_3",
+            "prompt_args": {"mode": "simple"},
+            "sampling_args": {"temperature": 0.3, "max_tokens": 1024},
+            "type": "chat",
         },
     }
 
@@ -55,112 +65,30 @@ class EVAL(object):
 
         self.model = model
         self.version = version
-        self.outdir_p = f"_data/p/{model}-{version}/"
-        self.outdir_x = f"_data/x/{model}-{version}/"
+        self.name = "-".join((model, version))
+        self.outdir_p = f"_data/p/{self.name}/"
+        self.outdir_x = f"_data/x/{self.name}/"
         self.N = limit  # number of generation
         self.n_async = n_async
-        self.settings_vllm = {
-            "max_tokens": self.SPEC[model]["max_tokens"],
-            "temperature": self.SPEC[model]["temperature"],
-        }
         self.yes = yes
 
     @staticmethod
     def _make_prompt(exp: dict, **kwargs) -> str:
-        institution = exp["intitule_typologie_1"]
-        institution_ = institution + " " if institution else ""
-        prompt = f'Question soumise au service {institution_}: {exp["description"]}\n---Réponse : '
-        return prompt
+        return get_prompter("fabrique-miaou").make_prompt(
+            experience=exp["description"], institution=exp["intitule_typologie_1"]
+        )
 
     @staticmethod
     def _make_prompt_2(exp: dict, mode="simple", **kwargs) -> str:
-        institution = exp["intitule_typologie_1"]
-        institution_ = institution + " " if institution else ""
-        text = exp["description"]
+        return get_prompter("fabrique-reference", mode=mode).make_prompt(
+            experience=exp["description"], institution=exp["intitule_typologie_1"], skip_first=True
+        )
 
-        prompt = []
-        if mode == "simple":
-            prompt.append("Mode simple")
-            prompt.append(f"Question soumise au service {institution_}: {text}")
-            prompt.append("###Réponse : \n")
-            prompt = "\n\n".join(prompt)
-        elif mode == "experience":
-            prompt.append("Mode expérience")
-            prompt.append(f"Question soumise au service {institution_}: {text}")
-
-            # Rag
-            retrieves = ["id_experience", "description"]
-            _extract = lambda x: dict((r, x[r]) for r in retrieves)
-            embedding = embed(text)
-            client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
-            index_name = "experiences"
-            # Filter on institution
-            query_filter = None
-            if institution:
-                query_filter = QdrantModels.Filter(
-                    must=[
-                        QdrantModels.FieldCondition(
-                            key="intitule_typologie_1",
-                            match=QdrantModels.MatchValue(
-                                value=institution,
-                            ),
-                        )
-                    ]
-                )
-            res = client.search(
-                collection_name=index_name,
-                query_vector=embedding,
-                query_filter=query_filter,
-                limit=3,
-            )
-            es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
-            # @Debug : qdrant doesnt accept the hash id as string..
-            _uid = lambda x: x
-            hits = [_extract(es.get(index=index_name, id=_uid(x.id))["_source"]) for x in res if x]
-            chunks = [f'{x["id_experience"]} : {x["description"]}' for x in hits]
-            chunks = "\n\n".join(chunks)
-            prompt.append(f"Expériences :\n\n{chunks}")
-
-            prompt.append("###Réponse : \n")
-            prompt = "\n\n".join(prompt)
-        elif mode == "expert":
-            prompt.append("Mode expert")
-            prompt.append(f"Expérience : {text}")
-            # Get reponse...
-            rep1 = generate(
-                EVAL.SPEC["miaou"]["url"],
-                {"max_tokens": 500, "temperature": 0.2},
-                EVAL._make_prompt(exp),
-            )
-            rep1 = "".join(rep1)
-            prompt.append(f"Réponse :\n\n{rep1}")
-
-            # Rag
-            retrieves = ["title", "url", "text", "context"]
-            _extract = lambda x: dict((r, x[r]) for r in retrieves)
-            embedding = embed(text)
-            client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
-            index_name = "chunks"
-            res = client.search(
-                collection_name=index_name, query_vector=embedding, query_filter=None, limit=3
-            )
-            es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
-            # @Debug : qdrant doesnt accept the hash id as string..
-            _uid = lambda x: bytes.fromhex(x.replace("-", "")).decode("utf8")
-            hits = [_extract(es.get(index=index_name, id=_uid(x.id))["_source"]) for x in res if x]
-            chunks = [
-                f'{x["url"]} : {x["title"] + (" > "+x["context"]) if x["context"] else ""}\n{x["text"]}'
-                for x in hits
-            ]
-            chunks = "\n\n".join(chunks)
-            prompt.append(f"Fiches :\n\n{chunks}")
-
-            prompt.append("###Réponse : \n")
-            prompt = "\n\n".join(prompt)
-        else:
-            raise NotImplementedError(mode)
-
-        return prompt
+    @staticmethod
+    def _make_prompt_3(doc, **kwargs) -> str:
+        return get_prompter("albert-light", mode=kwargs.get("mode")).make_prompt(
+            query=doc["question"], **kwargs
+        )
 
     def has_data(self):
         return os.path.exists(self.outdir_x)
@@ -180,16 +108,27 @@ class EVAL(object):
             os.makedirs(self.outdir_x)
             os.makedirs(self.outdir_p)
 
-        # Inference
+        # Load data
         # --
-        with open("_data/export-expa-c-riences.json") as f:
-            documents = json.load(f)
-        documents = dict((d["id_experience"], d) for d in documents)
+        route = EVAL.SPEC[self.model]
+        if route["type"] == "fabrique":
+            with open("_data/export-expa-c-riences.json") as f:
+                documents = json.load(f)
+            documents = dict((d["id_experience"], d) for d in documents)
 
-        with open("_data/evaluation_experiences.json") as f:
-            experience_ids = json.load(f)
+            with open("_data/evaluation_experiences.json") as f:
+                doc_ids = json.load(f)
+        elif route["type"] == "chat":
+            df = pd.read_excel("_data/gpt_corpus-20kq&A.xlsx", sheet_name="results", usecols="A:B")
+            documents = dict((i, df.loc[i]) for i in df.index)
+            doc_ids = df.index
+            del df
+        else:
+            raise ValueError("Model type unknown")
 
-        size_corpus = len(experience_ids)
+        # Sampling
+        # --
+        size_corpus = len(doc_ids)
         if self.N:
             hazard = np.random.choice(size_corpus, size=int(self.N), replace=False)
         else:
@@ -199,8 +138,9 @@ class EVAL(object):
         eval_args = [
             {
                 "model": self.model,
-                "settings_vllm": self.settings_vllm,
-                "exp": documents[experience_ids[i]],
+                "settings_vllm": route["sampling_args"],
+                "doc": documents[doc_ids[i]],
+                "id": i,
                 "outdir_p": self.outdir_p,
                 "outdir_x": self.outdir_x,
             }
@@ -222,8 +162,8 @@ class EVAL(object):
 
             try:
                 data_x = extract(answer)
-            except:
-                print(expid)
+            except Exception as e:
+                print(expid, "(%s)" % e)
                 continue
 
             rows.append(
@@ -239,6 +179,9 @@ class EVAL(object):
                     "prices_": len(data_x["prices_"]),
                     "number_artefacts": len(data_x["numbers_"]),
                     "prompt_artefacts": len(data_x["artefacts"]),
+                    "repetition": data_x["repetition"],
+                    "3word_repetition": data_x["3word_repetition"],
+                    "idk": data_x["idk"],
                 }
             )
 
@@ -247,34 +190,47 @@ class EVAL(object):
 
 
 # async
-def eval_one(args: dict):
+def eval_one(args: dict) -> None:
     # Settings
     model = args["model"]
     settings_vllm = args["settings_vllm"]
-    doc = args["exp"]
+    doc = args["doc"]
     outdir_p = args["outdir_p"]
     outdir_x = args["outdir_x"]
     route = EVAL.SPEC[model]
     url = route["url"]
 
-    # Add an options to only run --missing exp
-    # if os.path.exists(f'{outdir_x}/{doc["id_experience"]}.txt'):
+    # @future add an id for chat data has the hash of questions
+    if "id_experience" in doc:
+        id_ = doc["id_experience"]
+    else:
+        id_ = args["id"]
+
+    # Add an options to only run --missing doc
+    # if os.path.exists(f'{outdir_x}/{id_}.txt'):
     #    return
 
     # Make prompt
     make_prompt = getattr(EVAL, route["prompt_maker"])
-    prompt = make_prompt(doc, mode=route.get("mode"))
+    prompt = make_prompt(doc, **route.get("prompt_args"))
 
     # Save prompt
-    with open(f'{outdir_p}/{doc["id_experience"]}.txt', "w", encoding="utf-8") as f:
+    with open(f"{outdir_p}/{id_}.txt", "w", encoding="utf-8") as f:
         f.write(prompt)
 
     # Generate answer
     answer = generate(url, settings_vllm, prompt)
 
     # Save answer
-    with open(f'{outdir_x}/{doc["id_experience"]}.txt', "w", encoding="utf-8") as f:
+    with open(f"{outdir_x}/{id_}.txt", "w", encoding="utf-8") as f:
         f.write(answer)
+
+    print(".", end="", flush=True)
+
+
+#
+# Fire
+#
 
 
 def evaluate(
@@ -282,12 +238,50 @@ def evaluate(
 ) -> None:
     """Model evaluation"""
 
-    eva = EVAL(model, version, limit, yes)
+    eva = EVAL(model, version, limit=limit, yes=yes, n_async=50)
 
     if not eva.has_data() or not to_:
         # Re-run if no data or if --csv is not passed (overwrite)
-        np.random.seed(2)  # @warning: this does not control the LLM seed (remote API)
+        np.random.seed(42)  # @warning: this does not control the LLM seed (remote API)
         eva.run()
 
     if to_:
         eva.to_csv()
+
+
+def merge_eval(models: List[str], versions: List[str], output=str) -> None:
+    names = [couple for couple in zip(models, versions)]
+    result = []
+
+    for i, (model, version) in enumerate(names):
+        eva = EVAL(model, version)
+        name = eva.name
+        prompt_path = eva.outdir_p
+        answer_path = eva.outdir_x
+
+        prompt_files = os.listdir(prompt_path)
+        # answer_files = os.listdir(answer_path)
+        for j, file in enumerate(prompt_files):
+            prompt_file_path = os.path.join(prompt_path, file)
+            answer_file_path = os.path.join(answer_path, file)
+
+            with open(prompt_file_path, "r") as prompt_file, open(
+                answer_file_path, "r"
+            ) as answer_file:
+                prompt_content = prompt_file.read()
+                answer_content = answer_file.read()
+
+                if i == 0:
+                    result.append(
+                        {f"prompt_{name}": prompt_content, f"answer_{name}": answer_content}
+                    )
+                else:
+                    item = result[j]
+                    item.update(
+                        {f"prompt_{name}": prompt_content, f"answer_{name}": answer_content}
+                    )
+                    result.insert(j, item)
+
+    output = output if output.endswith(".json") else output + ".json"
+    with open(output, "w") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
