@@ -2,6 +2,13 @@ from elasticsearch import Elasticsearch
 from qdrant_client import QdrantClient
 from qdrant_client import models as QdrantModels
 
+# @IMPROVE: commons & app.config unification
+try:
+    from app.config import ELASTICSEARCH_CREDS, ELASTICSEARCH_URL, QDRANT_URL
+except ModuleNotFoundError as e:
+    from api.app.config import (ELASTICSEARCH_CREDS, ELASTICSEARCH_URL,
+                                QDRANT_URL)
+
 
 # Note: the only difference between this function and the one used in api/app/core/indexes.py
 # is that the embedding here is built with an api called, while in the api, it actually compute the embedding.
@@ -32,7 +39,7 @@ def semantic_search(index_name, vector, retrieves=None, must_filters=None, limit
         limit = limit * 5
         do_unique_sheets = True
 
-    client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
+    client = QdrantClient(url=QDRANT_URL, grpc_port=6334, prefer_grpc=True)
     query_filter = None
     if must_filters:
         # Filter results
@@ -54,7 +61,7 @@ def semantic_search(index_name, vector, retrieves=None, must_filters=None, limit
         limit=limit,
     )
 
-    es = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
+    es = Elasticsearch(ELASTICSEARCH_URL, basic_auth=ELASTICSEARCH_CREDS)
     # @Debug : qdrant doesnt accept the hash id as string..
     if index_name == "chunks":
         _uid = lambda x: bytes.fromhex(x.replace("-", "")).decode("utf8")

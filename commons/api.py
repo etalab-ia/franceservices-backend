@@ -4,20 +4,16 @@ import requests
 
 # @IMPROVE: commons & app.config unification
 try:
-    from app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
+    from app.config import FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD, PUBLIC_API_HOST
 except ModuleNotFoundError as e:
-    from api.app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
+    from api.app.config import FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD, PUBLIC_API_HOST
 
-# @FUTURE: the offical hostname of the (public) LIA API should go here.
-# @IMPROVE: move this app.config
-PUBLIC_API_HOST = "localhost:8090"
-
-response = requests.post(
-    f"http://{PUBLIC_API_HOST}/api/v2/sign_in",
-    headers={"Content-Type": "application/json"},
-    json={"email": FIRST_ADMIN_EMAIL, "password": FIRST_ADMIN_PASSWORD},
-)
 try:
+    response = requests.post(
+        f"http://{PUBLIC_API_HOST}/api/v2/sign_in",
+        headers={"Content-Type": "application/json"},
+        json={"username": FIRST_ADMIN_USERNAME, "password": FIRST_ADMIN_PASSWORD},
+    )
     API_TOKEN = response.json()["token"]
 except Exception as e:
     API_TOKEN = None
@@ -47,7 +43,7 @@ def get_embedding_e5(text: str) -> list:
         response = requests.post(
             f"http://{host}/api/v2/sign_in",
             headers={"Content-Type": "application/json"},
-            json={"email": FIRST_ADMIN_EMAIL, "password": FIRST_ADMIN_PASSWORD},
+            json={"username": FIRST_ADMIN_USERNAME, "password": FIRST_ADMIN_PASSWORD},
         )
         API_TOKEN = response.json()["token"]
         headers = {

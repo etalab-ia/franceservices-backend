@@ -263,7 +263,7 @@ def merge_eval(models: List[str], versions: List[str], output=str) -> None:
                     item.update(
                         {f"prompt_{name}": prompt_content, f"answer_{name}": answer_content}
                     )
-                    result.insert(j, item)
+                    result[j] = item
 
     output = output if output.endswith(".json") else output + ".json"
     with open(output, "w") as f:

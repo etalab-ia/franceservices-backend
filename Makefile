@@ -31,9 +31,11 @@ institutions:
 sync_etalab_repo:
 	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@datascience-01.infra.data.gouv.fr:~/
 
-sync_etalab_repo_outscale:
-	#rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@142.44.51.104:~/
+sync_etalab_repo_outscale_0:
 	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@142.44.40.218:~/
+
+sync_etalab_repo_outscale:
+	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@217.75.171.132:~/
 
 build_llama.cpp:
 	git clone https://github.com/ggerganov/llama.cpp

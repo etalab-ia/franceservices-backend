@@ -81,14 +81,11 @@ tb_log_dir = f"{output_dir}/logs"  # Tensorboard logs
 num_train_epochs = 3
 # C'est la fenêtre contextuelle. Elle peut être portée jusqu'à 4096 tokens (mais attention à la mémoire disponible !)
 max_seq_length = 2048
-# Nombre d'exemples envoyés par batch. En mettre plus pour aller plus vite.
-per_device_train_batch_size = (
-    1
-    # 12
-)
-learning_rate = 2e-4  # De préférence un taux d'apprentissage élevé pour un texte en français (depends also of the batch size)
-lr_scheduler_type = "constant"  # Learning rate schedule (constant a bit better than cosine, and has advantage for analysis)
+per_device_train_batch_size = 4
 gradient_accumulation_steps = 2
+gradient_checkpointing = True  # see https://huggingface.co/docs/transformers/perf_train_gpu_one
+learning_rate = 1e-4  # De préférence un taux d'apprentissage élevé pour un texte en français (depends also of the batch size)
+lr_scheduler_type = "constant"  # Learning rate schedule (constant a bit better than cosine, and has advantage for analysis)
 max_grad_norm = 0.3
 lora_r = 64  # dimension of the updated matrices
 lora_alpha = 16  # parameter for scaling
@@ -110,7 +107,6 @@ report_to = "tensorboard"  # Visualize training
 local_rank = -1
 per_device_eval_batch_size = 1
 weight_decay = 0.001
-gradient_checkpointing = True  # Enable gradient checkpointing
 
 # Quantization
 use_4bit = True  # Activate 4-bit precision base model loading
@@ -156,12 +152,14 @@ data = concatenate_datasets(datasets_l)
 
 # Filter sample that exceding the 3/4 of the max_seq_length
 # @improve: A few samples exceed the max_seq_length
-data.filter(lambda x: (len(x["prompt"].split()) * 1.25 < 3 / 5 * max_seq_length) and x["prompt"] != "nan" )
+data.filter(
+    lambda x: (len(x["prompt"].split()) * 1.25 < 3 / 4 * max_seq_length) and x["prompt"] != "nan"
+)
 
 # Format, shufflet and train-test split
 data = data.map(format_llama_chat_prompt)
 data = data.shuffle(seed=42)
-print("Dataset summary")
+print("Dataset summary:")
 print(data)
 dataset = data.train_test_split(test_size=0.1, shuffle=True, seed=42)
 train_data = dataset["train"]
@@ -212,6 +210,7 @@ training_arguments = TrainingArguments(
     num_train_epochs=num_train_epochs,
     per_device_train_batch_size=per_device_train_batch_size,
     gradient_accumulation_steps=gradient_accumulation_steps,
+    gradient_checkpointing=gradient_checkpointing,
     optim=optim,
     learning_rate=learning_rate,
     fp16=fp16,

@@ -114,6 +114,6 @@ if __name__ == "__main__":
             )
         else:
             # Merge evaluation results into a final json file
-            merge_eval(args["MODEL"], args["VERSION"], args["--ouput"])
+            merge_eval(args["MODEL"], args["VERSION"], args["--output"])
     else:
         raise NotImplementedError

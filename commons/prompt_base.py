@@ -31,18 +31,18 @@ def format_llama_chat_prompt(item: Union[Dict, str]):
     if isinstance(item, str):
         item = {"prompt": item}
 
-    eos, bos = "<s>", "</s>"
+    bos, eos = "<s>", "</s>"
     B_INST, E_INST = "[INST]", "[/INST]"
     B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
     if "answer" in item:
         # Finetuning format
         prompt = f"{B_INST} {(item['prompt']).strip()} {E_INST} {(item['answer']).strip()} "
-        prompt = eos + prompt + bos
+        prompt = bos + prompt + eos
     else:
         # Inference format
         prompt = f"{B_INST} {(item['prompt']).strip()} {E_INST}"
-        prompt = eos + prompt
+        prompt = bos + prompt
 
     # @hugingface: it still keep other features :o
     return {"text": prompt}
