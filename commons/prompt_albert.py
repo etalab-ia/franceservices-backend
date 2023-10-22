@@ -70,6 +70,6 @@ class AlbertLightPrompter(Prompter):
         prompt = "\n\n".join(prompt)
 
         if len(prompt.split()) * 1.25 > 3/4*self.SAMPLING_PARAMS["max_tokens"]:
-            return self._make_prompt_rag(query, limit=3, **kwargs)
+            return self._make_prompt_rag(query, limit=limit-1, **kwargs)
 
         return prompt

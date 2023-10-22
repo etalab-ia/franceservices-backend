@@ -72,7 +72,6 @@ model_name = "NousResearch/Llama-2-13b-chat-hf"  # base model
 new_model_name = f"albert-light-{version}"  # model name
 output_dir = f"_data/models/{new_model_name}"  # The output directory where the model predictions and checkpoints will be written
 output_merged_dir = os.path.join(output_dir, new_model_name)
-tb_log_dir = f"{output_dir}/logs"  # Tensorboard logs
 
 # Training parameters !
 # --
@@ -81,9 +80,10 @@ tb_log_dir = f"{output_dir}/logs"  # Tensorboard logs
 num_train_epochs = 3
 # C'est la fenêtre contextuelle. Elle peut être portée jusqu'à 4096 tokens (mais attention à la mémoire disponible !)
 max_seq_length = 2048
-per_device_train_batch_size = 4
-gradient_accumulation_steps = 2
-gradient_checkpointing = True  # see https://huggingface.co/docs/transformers/perf_train_gpu_one
+per_device_train_batch_size = 4  # ===
+per_device_eval_batch_size = 4  # ===
+gradient_accumulation_steps = 2  # see https://huggingface.co/docs/transformers/perf_train_gpu_one
+gradient_checkpointing = True  # ===
 learning_rate = 2e-4  # De préférence un taux d'apprentissage élevé pour un texte en français (depends also of the batch size)
 lr_scheduler_type = "constant"  # Learning rate schedule (constant a bit better than cosine, and has advantage for analysis)
 max_grad_norm = 0.3
@@ -206,9 +206,9 @@ os.makedirs(output_dir, exist_ok=True)
 torch.cuda.empty_cache()
 
 training_arguments = TrainingArguments(
-    output_dir=output_dir,
     num_train_epochs=num_train_epochs,
     per_device_train_batch_size=per_device_train_batch_size,
+    per_device_eval_batch_size=per_device_eval_batch_size,
     gradient_accumulation_steps=gradient_accumulation_steps,
     gradient_checkpointing=gradient_checkpointing,
     optim=optim,
@@ -225,6 +225,7 @@ training_arguments = TrainingArguments(
     logging_steps=logging_steps,
     evaluation_strategy=evaluation_strategy,
     report_to=report_to,
+    output_dir=output_dir,
 )
 
 # Lora/peft config
