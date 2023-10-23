@@ -13,7 +13,7 @@ publish-api:
     - docker:dind
   script:
     - cp $ENV_FILE api/app/.env
-    - cd api && docker build -t $CI_REGISTRY_IMAGE/api-v2:latest .
+    - docker build -t $CI_REGISTRY_IMAGE/api-v2:latest -f api/Dockerfile .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE/api-v2:latest
 
