@@ -1,3 +1,5 @@
+#!/bin/python
+
 import os
 
 from huggingface_hub import HfApi
@@ -18,8 +20,10 @@ def repo_exists(repo_id):
 
 org_name = "etalab-ia"
 model_name = "albert-light"
+version = "v1"
+revision = "main"
 repo_id = f"{org_name}/{model_name}"
-folder_path = "_data/models/albert-light-v0/albert-light-v0"
+folder_path = f"_data/models/{model_name}-{version}/{model_name}-{version}"
 
 
 if __name__ == "__main__":
@@ -30,4 +34,12 @@ if __name__ == "__main__":
 
     # Upload all the content to remote space
     # Authenticate with: !huggingface-cli login --token $HUGGINGFACE_TOKEN
-    api.upload_folder(folder_path=folder_path, repo_id=repo_id, repo_type="model", token=hf_token)
+    api.upload_folder(
+        folder_path=folder_path,
+        repo_id=repo_id,
+        repo_type="model",
+        revision=revision,
+        token=hf_token,
+    )
+
+    api.create_tag(repo_id, tag=version, revision=revision)
