@@ -2,7 +2,7 @@ from elasticsearch import Elasticsearch
 from qdrant_client import QdrantClient, models as QdrantModels
 
 from app.config import ELASTICSEARCH_CREDS, ELASTICSEARCH_URL, QDRANT_URL
-from app.core.embeddings import make_embeddings
+from commons.embeddings import make_embeddings
 
 
 def search_indexes(name, query, limit, similarity, institution):

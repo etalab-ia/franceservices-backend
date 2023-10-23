@@ -9,9 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-# @IMPROVE: commons & app.config unification
-#import sys
-#sys.path.append("..")
 from commons import get_prompter
 
 router = APIRouter()
@@ -84,10 +81,10 @@ def start_stream(
     # TODO: turn into async
     # Streaming case
     def generate():
-        # Buid prompt (warning, it's extra sensitive + avoid carriage return):
+        # Build prompt (warning, it's extra sensitive + avoid carriage return):
         prompter = get_prompter(model_name, mode)
         # We pass a mix of all kw arguments used by all prompters...
-        # This is allows because each prompter accept a **kwargs arguments...
+        # This is allowed because each prompter accepts **kwargs arguments...
         prompt = prompter.make_prompt(
             experience=user_text,
             institution=institution,

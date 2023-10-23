@@ -1,14 +1,6 @@
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
-
-from commons import get_embedding_e5
+from commons.embeddings import embed
 from commons.prompt_base import Prompter, format_llama_chat_prompt
 from commons.search_engines import semantic_search
-
-
-def embed(text: str) -> list:
-    return get_embedding_e5(text)
 
 
 # WIP
