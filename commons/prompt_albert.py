@@ -15,7 +15,7 @@ def embed(text: str) -> list:
 class AlbertLightPrompter(Prompter):
     URL = "http://127.0.0.1:8082"
     SAMPLING_PARAMS = {
-        "max_tokens": 1024,
+        "max_tokens": 2048,
         "temperature": 0.3,
     }
 
@@ -32,7 +32,7 @@ class AlbertLightPrompter(Prompter):
         else:  # simple
             prompt = self._make_prompt_simple(**kwargs)
 
-        if kwargs.get("llama_chat"):
+        if llama_chat:
             return format_llama_chat_prompt(prompt)["text"]
 
         return prompt
@@ -68,4 +68,8 @@ class AlbertLightPrompter(Prompter):
 
         prompt.append(f"Question : {query}")
         prompt = "\n\n".join(prompt)
+
+        if len(prompt.split()) * 1.25 > 3 / 4 * self.SAMPLING_PARAMS["max_tokens"]:
+            return self._make_prompt_rag(query, limit=limit - 1, **kwargs)
+
         return prompt
