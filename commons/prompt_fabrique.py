@@ -111,7 +111,7 @@ class FabriqueReferencePrompter(Prompter):
         )
         if skip_first:
             hits = hits[1:]
-        self.sources = [x["id_experiences"] for x in hits]
+        self.sources = [x["id_experience"] for x in hits]
         chunks = [f'{x["id_experience"]} : {x["description"]}' for x in hits]
         chunks = "\n\n".join(chunks)
         prompt.append(f"Expériences :\n\n {chunks}")
