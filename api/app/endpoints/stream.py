@@ -98,9 +98,9 @@ def start_stream(
         )
 
         # Allow client to tune the sampling parameters.
-        sampling_params = prompt.sampling_params
+        sampling_params = prompter.sampling_params
         for k in ["max_tokens", "temperature", "top_p"]:
-            v = getattr(db_stream, k)
+            v = getattr(db_stream, k, None)
             if v:
                 v = v * 100 if k == "temperature" else v
                 sampling_params.update({k: v})
