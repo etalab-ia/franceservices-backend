@@ -21,13 +21,15 @@ class FabriquePrompter(Prompter):
     @staticmethod
     def make_prompt(experience=None, institution=None, context=None, links=None, **kwargs):
         institution_ = institution + " " if institution else ""
-        prompt = f"Question soumise au service {institution_}: {experience}\n---Réponse : "
+        prompt = f"Question soumise au service {institution_}: {experience}\n"
         if context and links:
-            prompt.append(f"{context} {links}")
+            prompt += f"Prompt : {context} {links}\n"
         elif context:
-            prompt.append(f"{context}")
+            prompt += f"Prompt : {context}\n"
         elif links:
-            prompt.append(f"{links}")
+            prompt += f"Prompt : {links}\n"
+
+        prompt += "---Réponse : "
         return prompt
 
 
@@ -68,11 +70,11 @@ class FabriqueReferencePrompter(Prompter):
         prompt.append("Mode simple")
         prompt.append(f"Question soumise au service {institution_}: {experience}")
         if context and links:
-            prompt.append(f"{context} {links}")
+            prompt.append(f"Prompt : {context} {links}")
         elif context:
-            prompt.append(f"{context}")
+            prompt.append(f"Prompt : {context}")
         elif links:
-            prompt.append(f"{links}")
+            prompt.append(f"Prompt : {links}")
 
         prompt.append("###Réponse : \n")
         prompt = "\n\n".join(prompt)
@@ -109,7 +111,7 @@ class FabriqueReferencePrompter(Prompter):
         )
         if skip_first:
             hits = hits[1:]
-        self.sources = [x["id_experiences"] for x in hits]
+        self.sources = [x["id_experience"] for x in hits]
         chunks = [f'{x["id_experience"]} : {x["description"]}' for x in hits]
         chunks = "\n\n".join(chunks)
         prompt.append(f"Expériences :\n\n {chunks}")

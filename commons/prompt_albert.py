@@ -69,7 +69,7 @@ class AlbertLightPrompter(Prompter):
         prompt.append(f"Question : {query}")
         prompt = "\n\n".join(prompt)
 
-        if len(prompt.split()) * 1.25 > 3/4*self.SAMPLING_PARAMS["max_tokens"]:
-            return self._make_prompt_rag(query, limit=limit-1, **kwargs)
+        if len(prompt.split()) * 1.25 > 3 / 4 * self.SAMPLING_PARAMS["max_tokens"]:
+            return self._make_prompt_rag(query, limit=limit - 1, **kwargs)
 
         return prompt
