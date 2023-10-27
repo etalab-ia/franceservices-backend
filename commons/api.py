@@ -3,21 +3,13 @@ import json
 import requests
 
 
-def get_embedding_e5(text: str) -> list:
-    """OpenAI-like embedding API"""
-    host = "localhost:8080"
-    url = f"http://{host}/api/embedding"
-    headers = {"Content-Type": "application/json"}
-    query = {"text": text}
-    res = requests.post(url, headers=headers, data=json.dumps(query), verify=False).json()
-    return res
-
-
+# TODO: factorize with api/app/clients/api_vllm_client.py
 def generate(url, conf, text):
     """OpenAI-like completion API"""
     headers = {"Content-Type": "application/json"}
     c = conf.copy()
     c["prompt"] = text
+    c["temperature"] = c["temperature"] / 100
     response = requests.post(url + "/generate", json=c, stream=True, verify=False)
     res = b""
     for r in response:

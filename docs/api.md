@@ -1,6 +1,6 @@
 # API
 
-(work in progress)
+@obsolete since commit 6342af5
 
 ### Fabrique LLM Routes
 
@@ -96,6 +96,6 @@ For index=chunks
 
 > **GET /api/institutions*
 
-Get a list of known insitutions.
+Get a list of known institutions.
 
 Returns: A Json list of string.

@@ -21,12 +21,12 @@ MJ_API_KEY = os.environ["MJ_API_KEY"]
 MJ_API_SECRET = os.environ["MJ_API_SECRET"]
 POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
 
-API_VLLM_URL = "http://127.0.0.1:8081"
+API_VLLM_URL = "http://127.0.0.1:8081"  # default... @obsolete ?
 ELASTICSEARCH_URL = "http://127.0.0.1:9202"
 ELASTICSEARCH_CREDS = ("elastic", "changeme")
 QDRANT_URL = "http://127.0.0.1:6333"
 
-PASSWORD_PATTERN = r"^[A-Za-z\d$!%*?&#_]{8,20}$"
+PASSWORD_PATTERN = r"^[A-Za-z\d$!%*+?&#_-]{8,20}$"
 
 if ENV == "unittest":
     PASSWORD_RESET_TOKEN_TTL = 3  # seconds

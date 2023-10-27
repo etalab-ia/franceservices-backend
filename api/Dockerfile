@@ -5,7 +5,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /code
-COPY ./requirements.txt /code/requirements.txt
+COPY ./api/requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-COPY ./app /code/app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090", "--root-path", "/api/v2"]
+COPY ./commons /code/commons
+COPY ./api/alembic.ini /code/alembic.ini
+COPY ./api/alembic /code/alembic
+COPY ./api/app /code/app
+COPY ./api/start.sh /code/start.sh
+RUN chmod +x /code/start.sh
+CMD ["bash", "start.sh"]

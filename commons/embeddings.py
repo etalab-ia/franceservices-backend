@@ -1,9 +1,15 @@
 import numpy as np
 import torch.nn.functional as F
+import torch
 from torch import Tensor
 from transformers import AutoModel, AutoTokenizer
 
-from app.config import DEVICE_MAP, WITH_GPU
+if torch.cuda.is_available():
+    WITH_GPU = True
+    DEVICE_MAP = "cuda:0"
+else:
+    WITH_GPU = False
+    DEVICE_MAP = None
 
 _model_name_ebd = "intfloat/multilingual-e5-base"
 tokenizer_ebd = AutoTokenizer.from_pretrained(_model_name_ebd)
@@ -49,3 +55,7 @@ def _make_embeddings(texts, batch_size=1):
 
 def make_embeddings(query):
     return _make_embeddings([query])[0]
+
+
+def embed(text):
+    return make_embeddings(text).tolist()

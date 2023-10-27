@@ -20,9 +20,12 @@ termcolor==2.3.0
 tiktoken==0.5.1
 torch==2.0.1
 transformers==4.33.1
+trl==0.7.2
 weaviate-client==3.24.1
 meilisearch==0.28.2
 elasticsearch==8.9.0
 qdrant-client==1.5.4
 lexicalrichness==0.5.1
 requests==2.31.0
+openpyxl==3.1.2
+wget==3.2
