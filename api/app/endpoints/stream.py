@@ -99,7 +99,6 @@ def start_stream(
         for k in ["max_tokens", "temperature", "top_p"]:
             v = getattr(db_stream, k, None)
             if v:
-                v = v * 100 if k == "temperature" else v
                 sampling_params.update({k: v})
 
         # Get the right stream generator

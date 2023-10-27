@@ -7,7 +7,7 @@ class FabriquePrompter(Prompter):
     URL = "http://127.0.0.1:8081"
     SAMPLING_PARAMS = {
         "max_tokens": 500,
-        "temperature": 0.2,
+        "temperature": 20,
     }
 
     @staticmethod
@@ -34,12 +34,12 @@ class FabriqueReferencePrompter(Prompter):
         if self.mode == "simple":
             self.sampling_params = {
                 "max_tokens": 500,
-                "temperature": 0.2,
+                "temperature": 20,
             }
         elif self.mode in ["experience", "expert"]:
             self.sampling_params = {
                 "max_tokens": 4096,
-                "temperature": 0.2,
+                "temperature": 20,
                 "top_p": 0.95,
             }
         else:

@@ -8,7 +8,7 @@ class AlbertLightPrompter(Prompter):
     URL = "http://127.0.0.1:8082"
     SAMPLING_PARAMS = {
         "max_tokens": 2048,
-        "temperature": 0.3,
+        "temperature": 30,
     }
 
     def __init__(self, mode="simple"):
