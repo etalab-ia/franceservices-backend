@@ -1,21 +1,13 @@
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
-
-from commons import get_embedding_e5
+from commons.embeddings import embed
 from commons.prompt_base import Prompter
 from commons.search_engines import semantic_search
-
-
-def embed(text: str) -> list:
-    return get_embedding_e5(text)
 
 
 class FabriquePrompter(Prompter):
     URL = "http://127.0.0.1:8081"
     SAMPLING_PARAMS = {
         "max_tokens": 500,
-        "temperature": 0.2,
+        "temperature": 20,
     }
 
     @staticmethod
@@ -42,12 +34,12 @@ class FabriqueReferencePrompter(Prompter):
         if self.mode == "simple":
             self.sampling_params = {
                 "max_tokens": 500,
-                "temperature": 0.2,
+                "temperature": 20,
             }
         elif self.mode in ["experience", "expert"]:
             self.sampling_params = {
                 "max_tokens": 4096,
-                "temperature": 0.2,
+                "temperature": 20,
                 "top_p": 0.95,
             }
         else:

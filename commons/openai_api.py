@@ -1,6 +1,5 @@
 import os
 import time
-from typing import Dict, List
 
 import openai
 
@@ -11,7 +10,7 @@ if "OPENAI_ORG_KEY" in os.environ:
     openai.organization = os.environ["OPENAI_ORG_KEY"]
 
 
-def get_embeddings(values: List[list[float]]):
+def get_embeddings(values: list[list[float]]):
     model_name = "text-embedding-ada-002"
     try:
         res = openai.Embedding.create(model=model_name, input=values)
@@ -38,7 +37,7 @@ def get_embedding(text: str):
     return get_embeddings([text])[0]
 
 
-def chat_completion(dialog: List[Dict], temperature: float = 1.0):
+def chat_completion(dialog: list[dict], temperature: float = 1.0):
     model = "gpt-3.5-turbo"
     try:
         res = openai.ChatCompletion.create(model=model, messages=dialog, temperature=temperature)

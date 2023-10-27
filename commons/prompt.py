@@ -1,12 +1,9 @@
-from typing import Dict, List, Optional
-
 from commons.prompt_albert import AlbertLightPrompter
-from commons.prompt_base import format_llama_chat_prompt
 from commons.prompt_fabrique import FabriquePrompter, FabriqueReferencePrompter
 
 
-def get_prompter(model_name: str, mode: Optional[str] = None):
-    # All pompter class derived from the following bastract class
+def get_prompter(model_name: str, mode: str | None = None):
+    # All prompter classes derived from the following abstract class
     #
     # class Prompter:
     #
