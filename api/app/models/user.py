@@ -25,5 +25,6 @@ class User(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     # pylint: enable=not-callable
 
+    chats = relationship("Chat", back_populates="user")
     streams = relationship("Stream", back_populates="user")
     password_reset_token = relationship("PasswordResetToken", back_populates="user")

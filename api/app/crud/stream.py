@@ -14,11 +14,18 @@ def get_streams(db: Session, user_id: str, skip: int = 0, limit: int = 100):
     )
 
 
-def create_stream(db: Session, stream: schemas.StreamCreate, user_id: int, commit=True):
+def create_stream(
+    db: Session,
+    stream: schemas.StreamCreate,
+    user_id: int | None = None,
+    chat_id: int | None = None,
+    commit=True,
+):
     db_stream = models.Stream(
         **stream.model_dump(),
         is_streaming=False,
         user_id=user_id,
+        chat_id=chat_id,
     )
     db.add(db_stream)
     if commit:

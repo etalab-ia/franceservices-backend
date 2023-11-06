@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -10,7 +10,8 @@ class Stream(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     is_streaming = Column(Boolean)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    chat_id = Column(Integer, ForeignKey("chats.id"), nullable=True)
     model_name = Column(Text)
     mode = Column(Text)
     query = Column(Text)
@@ -26,3 +27,11 @@ class Stream(Base):
     # pylint: enable=not-callable
 
     user = relationship("User", back_populates="streams")
+    chat = relationship("Chat", back_populates="streams")
+
+    __table_args__ = (
+        CheckConstraint(
+            "(user_id IS NULL OR chat_id IS NULL) AND (user_id IS NOT NULL OR chat_id IS NOT NULL)",  # pylint: disable=line-too-long
+            name="_streams_user_id_chat_id_cc",
+        ),
+    )
