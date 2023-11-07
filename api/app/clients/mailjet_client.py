@@ -1,6 +1,6 @@
 from mailjet_rest import Client
 
-from app.config import MJ_API_KEY, MJ_API_SECRET
+from app.config import FRONT_URL, MJ_API_KEY, MJ_API_SECRET
 
 
 class MailjetClient:
@@ -35,7 +35,11 @@ class MailjetClient:
         text = "Now you can sign in"
         return self._send(to, subject, text)
 
-    def send_reset_password_email(self, to, token):
+    def send_reset_password_email(self, to, token, app):
         subject = "Reset Password"
-        text = f"Password Reset Token: {token}"
+        if app == "spp":
+            url = f"{FRONT_URL}/new-password?token={token}"
+        else:
+            url = f"{FRONT_URL}/albert/new-password?token={token}"
+        text = f"Click on this link to set your new password: {url}"
         return self._send(to, subject, text)

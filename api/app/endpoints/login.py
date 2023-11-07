@@ -56,6 +56,7 @@ def send_reset_password_email(
     db: Session = Depends(get_db),
 ):
     email = form_data.email
+    app = form_data.app
     user = crud.user.get_user_by_email(db, email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -67,7 +68,7 @@ def send_reset_password_email(
     db.commit()
 
     mailjet_client = MailjetClient()
-    mailjet_client.send_reset_password_email(email, token)
+    mailjet_client.send_reset_password_email(email, token, app)
     return {"msg": "Password recovery email sent"}
 
 
