@@ -28,6 +28,8 @@ QDRANT_URL = "http://127.0.0.1:6333"
 
 PASSWORD_PATTERN = r"^[A-Za-z\d$!%*+?&#_-]{8,20}$"
 
+FRONT_URL = "http://171.33.114.210"
+
 if ENV == "unittest":
     PASSWORD_RESET_TOKEN_TTL = 3  # seconds
     ACCESS_TOKEN_TTL = 9  # seconds
