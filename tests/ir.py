@@ -29,7 +29,7 @@ with open("_data/stopwords/fr.txt", "r") as file:
 # for document search.
 #
 
-score = "cosine"
+score = "e5"
 n_best = 3
 question = "qu'est ce que le JOAFE ?"
 
@@ -142,8 +142,8 @@ elif score == "e5":
         return np.vstack(embeddings)
 
     # sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="e5-multilingual", device = "cuda")
-    # model_name = "intfloat/multilingual-e5-large"
-    model_name = "intfloat/multilingual-e5-small"
+    #model_name = "intfloat/multilingual-e5-small"
+    model_name = "intfloat/multilingual-e5-large"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModel.from_pretrained(model_name, device_map=device_map)  # -> SentenceTransformer
 

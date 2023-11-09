@@ -94,6 +94,12 @@ def start_stream(
             limit=limit,
         )
 
+        if (
+            "max_tokens" in prompter.sampling_params
+            and len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8
+        ):
+            raise HTTPException(413, detail="Prompt too large")
+
         # Allow client to tune the sampling parameters.
         sampling_params = prompter.sampling_params
         for k in ["max_tokens", "temperature", "top_p"]:
