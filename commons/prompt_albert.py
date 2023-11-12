@@ -1,14 +1,5 @@
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
-
-from commons import get_embedding_e5
+from commons.api import get_legacy_client
 from commons.prompt_base import Prompter, format_llama_chat_prompt
-from commons.search_engines import semantic_search
-
-
-def embed(text: str) -> list:
-    return get_embedding_e5(text)
 
 
 # WIP
@@ -16,7 +7,7 @@ class AlbertLightPrompter(Prompter):
     URL = "http://127.0.0.1:8082"
     SAMPLING_PARAMS = {
         "max_tokens": 2048,
-        "temperature": 0.3,
+        "temperature": 30,
     }
 
     def __init__(self, mode="simple"):
@@ -47,14 +38,9 @@ class AlbertLightPrompter(Prompter):
         )
 
         # Rag
+        client = get_legacy_client()
         limit = 4 if limit is None else limit
-        hits = semantic_search(
-            "chunks",
-            embed(query),
-            retrieves=["title", "url", "text", "context"],
-            must_filters=None,
-            limit=limit,
-        )
+        hits = client.search("chunks", query, limit=limit, similarity="e5")
         self.sources = [x["url"] for x in hits]
         # if len(hits) == 3:
         #    # LLM Lost in the middle
@@ -69,7 +55,7 @@ class AlbertLightPrompter(Prompter):
         prompt.append(f"Question : {query}")
         prompt = "\n\n".join(prompt)
 
-        if len(prompt.split()) * 1.25 > 3 / 4 * self.SAMPLING_PARAMS["max_tokens"]:
+        if limit > 1 and len(prompt.split()) * 1.25 > 3 / 4 * self.SAMPLING_PARAMS["max_tokens"]:
             return self._make_prompt_rag(query, limit=limit - 1, **kwargs)
 
         return prompt

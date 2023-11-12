@@ -1,21 +1,12 @@
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
-
-from commons import get_embedding_e5
+from commons.api import get_legacy_client
 from commons.prompt_base import Prompter
-from commons.search_engines import semantic_search
-
-
-def embed(text: str) -> list:
-    return get_embedding_e5(text)
 
 
 class FabriquePrompter(Prompter):
     URL = "http://127.0.0.1:8081"
     SAMPLING_PARAMS = {
         "max_tokens": 500,
-        "temperature": 0.2,
+        "temperature": 20,
     }
 
     @staticmethod
@@ -42,12 +33,12 @@ class FabriqueReferencePrompter(Prompter):
         if self.mode == "simple":
             self.sampling_params = {
                 "max_tokens": 500,
-                "temperature": 0.2,
+                "temperature": 20,
             }
         elif self.mode in ["experience", "expert"]:
             self.sampling_params = {
                 "max_tokens": 4096,
-                "temperature": 0.2,
+                "temperature": 20,
                 "top_p": 0.95,
             }
         else:
@@ -96,19 +87,11 @@ class FabriqueReferencePrompter(Prompter):
         prompt.append(f"Question soumise au service {institution_} : {experience}")
 
         # Rag / similar experiences
+        client = get_legacy_client()
         limit = 1 if limit is None else limit
         if skip_first:
             limit += 1
-        must_filters = None
-        if institution:
-            must_filters = {"intitule_typologie_1": institution}
-        hits = semantic_search(
-            "experiences",
-            embed(experience),
-            retrieves=["id_experience", "description"],
-            must_filters=must_filters,
-            limit=limit,
-        )
+        hits = client.search("experiences", experience, limit=limit, similarity="e5", institution=institution)
         if skip_first:
             hits = hits[1:]
         self.sources = [x["id_experience"] for x in hits]
@@ -134,7 +117,7 @@ class FabriqueReferencePrompter(Prompter):
         prompt.append("Mode expert")
         prompt.append(f"Experience : {experience}")
 
-        vector = embed(experience)
+        client = get_legacy_client()
         # Get a reponse...
         # --
         # Using LLM
@@ -144,16 +127,7 @@ class FabriqueReferencePrompter(Prompter):
         n_exp = 1
         if skip_first:
             n_exp = 2
-        must_filters = None
-        if institution:
-            must_filters = {"intitule_typologie_1": institution}
-        hits = semantic_search(
-            "experiences",
-            vector,
-            retrieves=["id_experience", "description"],
-            must_filters=must_filters,
-            limit=n_exp,
-        )
+        hits = client.search("experiences", experience, limit=n_exp, similarity="e5", institution=institution)
         if skip_first:
             hits = hits[1:]
         rep1 = hits[0]["description"]
@@ -162,13 +136,7 @@ class FabriqueReferencePrompter(Prompter):
 
         # Rag / relevant sheets
         limit = 3 if limit is None else limit
-        hits = semantic_search(
-            "chunks",
-            vector,
-            retrieves=["title", "url", "text", "context"],
-            must_filters=None,
-            limit=limit,
-        )
+        hits = client.search("chunks", experience, limit=limit, similarity="e5")
         chunks = [
             f'{x["url"]} : {x["title"] + (x["context"]) if x["context"] else ""}\n{x["text"]}'
             for x in hits

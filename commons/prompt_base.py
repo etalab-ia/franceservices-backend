@@ -1,16 +1,13 @@
-from typing import Dict, List, Optional, Union
-
-
 class Prompter:
     URL = "URL of the LLM API"
-    SAMPLING_PARAMS = "dict of default smapling params fo a given child class"
+    SAMPLING_PARAMS = "dict of default sampling params fo a given child class"
 
     def __init__(self, mode=None):
-        # The smapling params to pass to LLM generate function for inference.
+        # The sampling params to pass to LLM generate function for inference.
         self.sampling_params = self.SAMPLING_PARAMS
         # A parameter used to configure the prompt (correspond to a system message for chat oriented LLM)
         self.mode = mode
-        # Eventually stores the sources returns by the last RAG prompt built
+        # Eventually stores the sources returned by the last RAG prompt built
         self.sources = None
 
     def make_prompt(self, **kwargs):
@@ -25,9 +22,9 @@ class Prompter:
 
 
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
-def format_llama_chat_prompt(item: Union[Dict, str]):
+def format_llama_chat_prompt(item: dict | str):
     # An item as at least one {prompt} entry, and on optionnal {answer} entry
-    # in the case of a formating for a finetuning step.
+    # in the case of a formatting for a finetuning step.
     if isinstance(item, str):
         item = {"prompt": item}
 
@@ -44,5 +41,5 @@ def format_llama_chat_prompt(item: Union[Dict, str]):
         prompt = f"{B_INST} {(item['prompt']).strip()} {E_INST}"
         prompt = bos + prompt
 
-    # @hugingface: it still keep other features :o
+    # @huggingface: it still keeps other features :o
     return {"text": prompt}

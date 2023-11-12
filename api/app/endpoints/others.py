@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from app import models, schemas
-from app.core.embeddings import make_embeddings
 from app.core.indexes import search_indexes
 from app.core.institutions import INSTITUTIONS
 from app.deps import get_current_user
+from commons.embeddings import make_embeddings
 
 router = APIRouter()
 
@@ -51,10 +51,5 @@ def get_indexes(
     index: schemas.Index,
     current_user: models.User = Depends(get_current_user),  # noqa
 ):
-    name = index.name
-    query = index.query
-    limit = index.limit
-    similarity = index.similarity
-    institution = index.institution
-    hits = search_indexes(name, query, limit, similarity, institution)
+    hits = search_indexes(index.name, index.query, index.limit, index.similarity, index.institution)
     return JSONResponse(hits)

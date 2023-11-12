@@ -9,9 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-# @IMPROVE: commons & app.config unification
-#import sys
-#sys.path.append("..")
 from commons import get_prompter
 
 router = APIRouter()
@@ -84,10 +81,10 @@ def start_stream(
     # TODO: turn into async
     # Streaming case
     def generate():
-        # Buid prompt (warning, it's extra sensitive + avoid carriage return):
+        # Build prompt (warning, it's extra sensitive + avoid carriage return):
         prompter = get_prompter(model_name, mode)
         # We pass a mix of all kw arguments used by all prompters...
-        # This is allows because each prompter accept a **kwargs arguments...
+        # This is allowed because each prompter accepts **kwargs arguments...
         prompt = prompter.make_prompt(
             experience=user_text,
             institution=institution,
@@ -97,12 +94,17 @@ def start_stream(
             limit=limit,
         )
 
+        if (
+            "max_tokens" in prompter.sampling_params
+            and len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8
+        ):
+            raise HTTPException(413, detail="Prompt too large")
+
         # Allow client to tune the sampling parameters.
         sampling_params = prompter.sampling_params
         for k in ["max_tokens", "temperature", "top_p"]:
             v = getattr(db_stream, k, None)
             if v:
-                v = v * 100 if k == "temperature" else v
                 sampling_params.update({k: v})
 
         # Get the right stream generator

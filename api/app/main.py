@@ -1,3 +1,6 @@
+import sys
+
+sys.path.append("..")
 from fastapi import APIRouter, FastAPI
 from starlette.middleware.cors import CORSMiddleware
 

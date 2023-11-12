@@ -1,63 +1,85 @@
 import json
+from datetime import datetime, timedelta
 
 import requests
 
-# @IMPROVE: commons & app.config unification
+# @IMPROVE: commons & app.config unification (relative imports...)
 try:
-    from app.config import FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD, PUBLIC_API_HOST
+    from app.config import (FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME,
+                            PUBLIC_API_HOST)
 except ModuleNotFoundError as e:
-    from api.app.config import FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD, PUBLIC_API_HOST
-
-try:
-    response = requests.post(
-        f"http://{PUBLIC_API_HOST}/api/v2/sign_in",
-        headers={"Content-Type": "application/json"},
-        json={"username": FIRST_ADMIN_USERNAME, "password": FIRST_ADMIN_PASSWORD},
-    )
-    API_TOKEN = response.json()["token"]
-except Exception as e:
-    API_TOKEN = None
-    print("Error: unable to authenticate to LIA: %s" % str(e))
+    from api.app.config import (FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME,
+                                PUBLIC_API_HOST)
 
 
-def get_embedding_e5(text: str) -> list:
-    """OpenAI-like embedding API"""
-    global API_TOKEN
-    host = PUBLIC_API_HOST
-    url = f"http://{host}/api/v2/embeddings"
-    query = {"text": text}
-    try:
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {API_TOKEN}",
+def get_legacy_client():
+    return ApiClient(PUBLIC_API_HOST, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
+
+
+class ApiClient:
+    def __init__(self, url, username, password):
+        self.url = url
+        self.username = username
+        self.password = password
+
+        # Token:
+        self.token = None
+        self.token_dt = None
+        self.token_ttl = 3600 * 23  # seconds
+
+    def _fetch(self, method, route, headers=None, json_data=None):
+        d = {
+            "POST": requests.post,
+            "GET": requests.get,
+            "PUT": requests.put,
+            "DELETE": requests.delete,
         }
-        res = requests.post(url, headers=headers, data=json.dumps(query), verify=False)
-        out = res.json()
-        if isinstance(out, dict):  # e.g: unauthorized.
-            raise ValueError(str(out))
-        return res.json()
-    except Exception as e:
-        print("Failed embedding request:", str(e))
-        # retry once more with an updated token
-        # ===
-        response = requests.post(
-            f"http://{host}/api/v2/sign_in",
-            headers={"Content-Type": "application/json"},
-            json={"username": FIRST_ADMIN_USERNAME, "password": FIRST_ADMIN_PASSWORD},
-        )
-        API_TOKEN = response.json()["token"]
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {API_TOKEN}",
+        response = d[method](f"{self.url}{route}", headers=headers, json=json_data)
+        response.raise_for_status()
+        return response
+
+    def _is_token_expired(self):
+        if self.token is None or self.token_dt is None:
+            return True
+        dt_ttl = datetime.utcnow() - timedelta(seconds=self.token_ttl)
+        return self.token_dt < dt_ttl
+
+    def _sign_in(self):
+        json_data = {"username": self.username, "password": self.password}
+        response = self._fetch("POST", "/sign_in", json_data=json_data)
+        self.token = response.json()["token"]
+        self.token_dt = datetime.utcnow()
+
+    def _signed_in_fetch(self, method, route, json_data=None):
+        if self._is_token_expired():
+            self._sign_in()
+        headers = {"Authorization": f"Bearer {self.token}"}
+        return self._fetch(method, route, headers=headers, json_data=json_data)
+
+    def create_embedding(self, text):
+        json_data = {"text": text}
+        response = self._signed_in_fetch("POST", "/embeddings", json_data=json_data)
+        return response.json()
+
+    def search(self, index_name, query, limit=10, similarity="bm25", institution=None):
+        json_data = {
+            "name": index_name,
+            "query": query,
+            "limit": limit,
+            "similarity": similarity,
+            "institution": institution,
         }
-        return requests.post(url, headers=headers, data=json.dumps(query), verify=False).json()
+        response = self._signed_in_fetch("POST", "/indexes", json_data=json_data)
+        return response.json()
 
 
+# TODO: factorize with api/app/clients/api_vllm_client.py
 def generate(url, conf, text):
     """OpenAI-like completion API"""
     headers = {"Content-Type": "application/json"}
     c = conf.copy()
     c["prompt"] = text
+    c["temperature"] = c["temperature"] / 100
     response = requests.post(url + "/generate", json=c, stream=True, verify=False)
     res = b""
     for r in response:
