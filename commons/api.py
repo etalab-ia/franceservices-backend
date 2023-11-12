@@ -5,15 +5,15 @@ import requests
 
 # @IMPROVE: commons & app.config unification (relative imports...)
 try:
-    from app.config import (FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME,
-                            PUBLIC_API_HOST)
+    from app.config import (API_LIA_URL, FIRST_ADMIN_PASSWORD,
+                            FIRST_ADMIN_USERNAME)
 except ModuleNotFoundError as e:
-    from api.app.config import (FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME,
-                                PUBLIC_API_HOST)
+    from api.app.config import (API_LIA_URL, FIRST_ADMIN_PASSWORD,
+                                FIRST_ADMIN_USERNAME)
 
 
 def get_legacy_client():
-    return ApiClient(PUBLIC_API_HOST, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
+    return ApiClient(API_LIA_URL, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
 
 
 class ApiClient:
