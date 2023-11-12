@@ -43,14 +43,14 @@ class EVAL(object):
             "type": "fabrique",
         },
         "albert-light-rag": {
-            "url": "http://localhost:8082",
+            "url": "http://localhost:8081",
             "prompt_maker": "_make_prompt_3",
             "prompt_args": {"mode": "rag"},
             "sampling_args": {"temperature": 30, "max_tokens": 1024},
             "type": "chat",
         },
         "albert-light-simple": {
-            "url": "http://localhost:8082",
+            "url": "http://localhost:8081",
             "prompt_maker": "_make_prompt_3",
             "prompt_args": {"mode": "simple"},
             "sampling_args": {"temperature": 30, "max_tokens": 1024},
@@ -95,15 +95,17 @@ class EVAL(object):
 
     def run(self):
         """Generate answers in parallel (see self.n_async) for evaluation purpose."""
+        do_overwrite = False
+
         # Input validation
         # --
         if self.has_data():
             if not self.yes:
                 user_input = input(
-                    f"Path {self.outdir_x} already exists. Evaluation data will be overwritten.\nDo you want to continue? (Y/n): "
+                    f"Path {self.outdir_x} already exists. Keep going with missing entries (1) or overwrite data (2). Enter 1 or 2: "
                 )
-                if user_input.lower() in ["n", "q", "c", "x", "no"]:
-                    exit()
+                if user_input.lower() in ["2"]:
+                    do_overwrite = True
         else:
             os.makedirs(self.outdir_x)
             os.makedirs(self.outdir_p)
@@ -144,7 +146,7 @@ class EVAL(object):
                 "outdir_p": self.outdir_p,
                 "outdir_x": self.outdir_x,
             }
-            for i in hazard
+            for i in hazard if (not os.path.exists(f"{self.outdir_x}/{i}.txt") or do_overwrite)
         ]
         pool = multiprocessing.Pool(self.n_async)
         _ = pool.map(eval_one, eval_args)
@@ -166,24 +168,7 @@ class EVAL(object):
                 print(expid, "(%s)" % e)
                 continue
 
-            rows.append(
-                {
-                    "id": expid,
-                    "words": data_x["words"],
-                    "ttr": data_x["ttr"],
-                    "emails": len(data_x["emails"]),
-                    "urls": len(data_x["urls"]),
-                    "phones": len(data_x["phones"]),
-                    "dates": len(data_x["dates"]),
-                    "hours": len(data_x["hours"]),
-                    "prices_": len(data_x["prices_"]),
-                    "number_artefacts": len(data_x["numbers_"]),
-                    "prompt_artefacts": len(data_x["artefacts"]),
-                    "repetition": data_x["repetition"],
-                    "3word_repetition": data_x["3word_repetition"],
-                    "idk": data_x["idk"],
-                }
-            )
+            rows.append({"id": expid, **data_x})
 
         df = pd.DataFrame(rows)
         df.to_csv(self.outdir_x + "res.csv", index=False)
@@ -238,7 +223,7 @@ def evaluate(
 ) -> None:
     """Model evaluation"""
 
-    eva = EVAL(model, version, limit=limit, yes=yes, n_async=50)
+    eva = EVAL(model, version, limit=limit, yes=yes, n_async=40)
 
     if not eva.has_data() or not to_:
         # Re-run if no data or if --csv is not passed (overwrite)
@@ -280,7 +265,7 @@ def merge_eval(models: List[str], versions: List[str], output=str) -> None:
                     item.update(
                         {f"prompt_{name}": prompt_content, f"answer_{name}": answer_content}
                     )
-                    result.insert(j, item)
+                    result[j] = item
 
     output = output if output.endswith(".json") else output + ".json"
     with open(output, "w") as f:

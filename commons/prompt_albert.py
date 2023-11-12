@@ -1,6 +1,5 @@
-from commons.embeddings import embed
+from commons.api import get_legacy_client
 from commons.prompt_base import Prompter, format_llama_chat_prompt
-from commons.search_engines import semantic_search
 
 
 # WIP
@@ -39,14 +38,9 @@ class AlbertLightPrompter(Prompter):
         )
 
         # Rag
+        client = get_legacy_client()
         limit = 4 if limit is None else limit
-        hits = semantic_search(
-            "chunks",
-            embed(query),
-            retrieves=["title", "url", "text", "context"],
-            must_filters=None,
-            limit=limit,
-        )
+        hits = client.search("chunks", query, limit=limit, similarity="e5")
         self.sources = [x["url"] for x in hits]
         # if len(hits) == 3:
         #    # LLM Lost in the middle

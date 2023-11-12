@@ -18,6 +18,27 @@ def _purge(text: str, matches: List[str]) -> str:
     return text
 
 
+def _remove_punctuations(text: str) -> str:
+    # Remove punctuations
+    text_ = text
+    for s in [".", ",", ":", "-", "+"]:
+        text_ = text_.replace(s, "")
+
+    return text_
+
+
+def _load_stopwords(lang: str) -> List[str]:
+    stops = []
+    try:
+        with open(f"_data/stopwords/{lang}.txt", "r") as file:
+            for line in file:
+                stops.append(line.strip())
+    except FileNotFoundError as e:
+        raise FileNotFoundError("Stopwords language not found for lang: %s\n\n %s" % str(e))
+
+    return stops
+
+
 def extract_data(text: str) -> (str, dict):
     """Extract numerical data as well as dates, url, email and mode.
        It removes terms along the way to avoid ambiguity, so the order of extraction matters here.
@@ -32,6 +53,10 @@ def extract_data(text: str) -> (str, dict):
     Note: Order is important. Ex if a string like "name3310@me.io", is parsed for phone number before email, we loose it.
     """
     data_x = defaultdict(list)
+
+    # Be markdown aware:
+    # - remove all ordered list tp avoid false positive in number extraction.
+    text = re.sub(r"^\d+\. ", "", text, flags=re.MULTILINE)
 
     # Dates
     date_pattern = [
@@ -138,18 +163,22 @@ def extract_artefact(text: str) -> (str, dict):
 
 
 def extract_repetition(text: str) -> (str, dict):
+    # NOTE: if placed after extract_data, false positive will be detected because number are beeing removed
+    # when they stand to differentiate two lines.
+    #
     data_x = defaultdict(list)
 
     data_x["repetition"] = 0
     data_x["3word_repetition"] = 0
 
-    sentences = text.split(".")
-    if len(set(sentences)) != len(sentences):
+    # Remove all ordered list (1., 2. etc).
+
+    sentences = list(filter(lambda x: x.strip() != "", text.split(". ")))
+    lines = list(filter(lambda x: x.strip() != "", text.split("\n")))
+    if len(sentences) - len(set(sentences)) >= 2 or len(lines) - len(set(lines)) >= 2:
         data_x["repetition"] = 1
 
-    text_ = text
-    for s in [".", ",", ":", "-", "+"]:
-        text_ = text_.replace(s, "")
+    text_ = _remove_punctuations(text)
 
     pattern = r"\b(\w+)\b\s+\1\s+\1\b"
     match = re.search(pattern, text_)
@@ -168,7 +197,7 @@ def extract_idk(text: str) -> (str, dict):
         "ne fournissent pas",
         "a pas d'éléments de contexte",
         "pas possible de répondre",
-        "peux pas répondre à cette question",
+        "peux pas répondre",
         "je ne sais pas",
         "je ne peux pas",
     ]
@@ -182,18 +211,37 @@ def extract_idk(text: str) -> (str, dict):
     return text, data_x
 
 
-def extract(text: str) -> dict:
-    # General data
+def extract_anglicism(text: str) -> (str, dict):
+    data_x = defaultdict(list)
+
+    data_x["lang:en"] = 0
+
+    # Load stop words
+    # @TODO: upload stopwors to etalab-ia HF space
+    stops_en = _load_stopwords("en")
+    stops_fr = _load_stopwords("fr") + ["an", "part", "but", "former", "due"]
+
+    text_ = _remove_punctuations(text).split()
+    for s in set(stops_en) - set(stops_fr):
+        if s in text_:
+            data_x["lang:en"] += 1
+
+    return text, data_x
+
+
+def extract_all(text: str) -> dict:
     data_x = {}
+
+    # Repetitions
+    _, x = extract_repetition(text)
+    data_x.update(x)
+
+    # General data
     _, x = extract_data(text)
     data_x.update(x)
 
     # Prompt Artefact
     _, x = extract_artefact(text)
-    data_x.update(x)
-
-    # Repetitions
-    _, x = extract_repetition(text)
     data_x.update(x)
 
     # I don"t kown the answer.
@@ -209,8 +257,43 @@ def extract(text: str) -> dict:
         }
     )
 
+    _, x = extract_anglicism(text)
+    data_x.update(x)
+
     # TODO
-    # - Add number of english words.
     # - optinnal NER extraction
 
     return data_x
+
+
+def extract(text: str, how: str = "count") -> dict:
+    """
+    how: count | binary | content
+    """
+    data_x = extract_all(text)
+
+    if how == "binary":
+        measure = lambda x: int(len(x) > 0)
+    elif how == "count":
+        measure = len
+    elif how == "content":
+        measure = lambda x: x
+    else:
+        raise ValueError("metrics measure unknown: %s" % how)
+
+    return {
+        "words": data_x["words"],
+        "ttr": data_x["ttr"],
+        "emails": measure(data_x["emails"]),
+        "urls": measure(data_x["urls"]),
+        "phones": measure(data_x["phones"]),
+        "dates": measure(data_x["dates"]),
+        "hours": measure(data_x["hours"]),
+        "prices_": measure(data_x["prices_"]),
+        "number_artefacts": measure(data_x["numbers_"]),
+        "prompt_artefacts": measure(data_x["artefacts"]),
+        "loop": data_x["repetition"],
+        # "3word_repetition": data_x["3word_repetition"],
+        "idk": data_x["idk"],
+        "lang:en": data_x["lang:en"],
+    }

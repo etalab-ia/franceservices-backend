@@ -31,10 +31,10 @@ institutions:
 sync_etalab_repo:
 	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@datascience-01.infra.data.gouv.fr:~/
 
-sync_etalab_repo_outscale_0:
+sync_etalab_repo_outscale_prod:
 	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@171.33.114.210:~/
 
-sync_etalab_repo_outscale:
+sync_etalab_repo_outscale_sand:
 	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@217.75.171.132:~/
 
 build_llama.cpp:

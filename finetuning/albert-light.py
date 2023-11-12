@@ -67,21 +67,25 @@ def find_all_linear_names(model):
 # 1. Parametrization
 #
 
-model_name = "NousResearch/Llama-2-13b-chat-hf"  # Base model
-new_model_name = "albert-light-v0"  # new model name
+version = "v1"  # model version
+model_name = "NousResearch/Llama-2-13b-chat-hf"  # base model
+new_model_name = f"albert-light-{version}"  # model name
 output_dir = f"_data/models/{new_model_name}"  # The output directory where the model predictions and checkpoints will be written
 output_merged_dir = os.path.join(output_dir, new_model_name)
-tb_log_dir = f"{output_dir}/logs"  # Tensorboard logs
 
 # Training parameters !
-max_seq_length = 1024  # C'est la fenêtre contextuelle. Elle peut être portée jusqu'à 4096 tokens (mais attention à la mémoire disponible !)
-per_device_train_batch_size = (
-    1  # Nombre d'exemples envoyés par batch. En mettre plus pour aller plus vite.
-    # 12  # Nombre d'exemples envoyés par batch. En mettre plus pour aller plus vite.
-)
-learning_rate = 1e-4  # De préférence un taux d'apprentissage élevé pour un texte en français (depends also of the batch size)
+# --
+# To adjust given the training size and epoch number
+# max_steps = 4001 # overrides num_train_epochs
+num_train_epochs = 3
+# C'est la fenêtre contextuelle. Elle peut être portée jusqu'à 4096 tokens (mais attention à la mémoire disponible !)
+max_seq_length = 2048
+per_device_train_batch_size = 4  # ===
+per_device_eval_batch_size = 4  # ===
+gradient_accumulation_steps = 2  # see https://huggingface.co/docs/transformers/perf_train_gpu_one
+gradient_checkpointing = True  # ===
+learning_rate = 2e-4  # De préférence un taux d'apprentissage élevé pour un texte en français (depends also of the batch size)
 lr_scheduler_type = "constant"  # Learning rate schedule (constant a bit better than cosine, and has advantage for analysis)
-gradient_accumulation_steps = 2
 max_grad_norm = 0.3
 lora_r = 64  # dimension of the updated matrices
 lora_alpha = 16  # parameter for scaling
@@ -91,21 +95,18 @@ warmup_ratio = 0.03  # Fraction of steps to do a warmup for
 optim = "paged_adamw_32bit"  # Optimizer to use, original is paged_adamw_32bit
 packing = False  # Use dataset packing
 
-# To adjust given the training size and epoch number
-# max_steps = 4001 # overrides num_train_epochs
-num_train_epochs = 3
 
 # Checkpoints, loggins and Evaluation
 save_steps = 200  # Sauvegarde des steps (permet de faire redémarrer l'entraînement si le fine-tuning ne fonctionne pas)
 save_total_limit = 5
-logging_steps = 10  # Log every X updates steps
+logging_steps = 25  # Log every X updates steps
+evaluation_strategy = "steps"
 report_to = "tensorboard"  # Visualize training
 
 # Unused ?
 local_rank = -1
 per_device_eval_batch_size = 1
 weight_decay = 0.001
-gradient_checkpointing = True  # Enable gradient checkpointing
 
 # Quantization
 use_4bit = True  # Activate 4-bit precision base model loading
@@ -135,11 +136,10 @@ def from_conversation(item):
     return {"prompt": prompt, "answer": answer}
 
 
-# dataset = load_dataset("databricks/databricks-dolly-15k", split="train")
 datasets = {
-    "chatgpt_rag": {"path": "_data/training_albert-light.json", "n_samples": 1000},
-    "alpaca": {"path": "_data/converted_alpaca_data_cleaned_fr_52k.jsonl", "n_samples": 300},
-    "dolly": {"path": "_data/converted_dolly_bactrian_fr_15k.jsonl", "n_samples": 300},
+    "chatgpt_rag": {"path": "_data/albert-light_train.json", "n_samples": 3750},
+    "alpaca": {"path": "_data/converted_alpaca_data_cleaned_fr_52k.jsonl", "n_samples": 625},
+    "dolly": {"path": "_data/converted_dolly_bactrian_fr_15k.jsonl", "n_samples": 625},
 }
 datasets_l = []
 for dataset_name, d in datasets.items():
@@ -149,8 +149,18 @@ for dataset_name, d in datasets.items():
         data = data.map(from_conversation, remove_columns=data.column_names)
     datasets_l.append(data)
 data = concatenate_datasets(datasets_l)
+
+# Filter sample that exceding the 3/4 of the max_seq_length
+# @improve: A few samples exceed the max_seq_length
+data.filter(
+    lambda x: (len(x["prompt"].split()) * 1.25 < 3 / 4 * max_seq_length) and x["prompt"] != "nan"
+)
+
+# Format, shufflet and train-test split
 data = data.map(format_llama_chat_prompt)
 data = data.shuffle(seed=42)
+print("Dataset summary:")
+print(data)
 dataset = data.train_test_split(test_size=0.1, shuffle=True, seed=42)
 train_data = dataset["train"]
 eval_data = dataset["test"]
@@ -196,23 +206,26 @@ os.makedirs(output_dir, exist_ok=True)
 torch.cuda.empty_cache()
 
 training_arguments = TrainingArguments(
-    output_dir=output_dir,
+    num_train_epochs=num_train_epochs,
     per_device_train_batch_size=per_device_train_batch_size,
+    per_device_eval_batch_size=per_device_eval_batch_size,
     gradient_accumulation_steps=gradient_accumulation_steps,
+    gradient_checkpointing=gradient_checkpointing,
     optim=optim,
-    save_steps=save_steps,
-    save_total_limit=save_total_limit,
-    logging_steps=logging_steps,
     learning_rate=learning_rate,
     fp16=fp16,
     bf16=bf16,
     max_grad_norm=max_grad_norm,
     # max_steps=max_steps,
-    num_train_epochs=num_train_epochs,
     warmup_ratio=warmup_ratio,
     group_by_length=group_by_length,
     lr_scheduler_type=lr_scheduler_type,
+    save_steps=save_steps,
+    save_total_limit=save_total_limit,
+    logging_steps=logging_steps,
+    evaluation_strategy=evaluation_strategy,
     report_to=report_to,
+    output_dir=output_dir,
 )
 
 # Lora/peft config
@@ -228,11 +241,12 @@ peft_config = LoraConfig(
 trainer = SFTTrainer(
     model=model,
     train_dataset=train_data,
-    peft_config=peft_config,
+    eval_dataset=eval_data,
     dataset_text_field="text",
     max_seq_length=max_seq_length,
-    tokenizer=tokenizer,
     args=training_arguments,
+    peft_config=peft_config,
+    tokenizer=tokenizer,
     packing=packing,
 )
 

@@ -1,3 +1,5 @@
+#!/bin/python
+
 import json
 import multiprocessing
 import os
@@ -21,7 +23,13 @@ def run_one(args):
     doc = args["doc"]
 
     # Format the prompt,in openai format.
-    dialog = [{"role": "user", "content": doc["prompt"]}]
+    dialog = [
+        {
+            "role": "system",
+            "content": "Tu es un agent de l'état français. Tu es chargé d'informer ton intorculateur en t'aidant, si possible, des éléments de réponses fournis.",
+        },
+        {"role": "user", "content": doc["prompt"]},
+    ]
     # generate the answer
     answer = chat_completion(dialog, temperature=0.5)
     # save the answer
@@ -33,9 +41,9 @@ def run_one(args):
     print(".", end="", flush=True)
 
 
-def run_parallel(n_async=25, N=None, overwrite=False):
+def run_parallel(n_async=25, N=None, overwrite=False, max_seq_length=1500):
     # Load the data (LLM generated Q/A)
-    df = pd.read_json("_data/training_albert-light.json")
+    df = pd.read_json("_data/albert-light_train.json")
     if not overwrite:
         # Only take nan values...
         indexes = df[(df["answer"] == "nan") | df["answer"].isna()].index
@@ -45,7 +53,8 @@ def run_parallel(n_async=25, N=None, overwrite=False):
     # Sampling
     size_corpus = len(indexes)
     if size_corpus == 0:
-        print("Nothing to compute."); exit()
+        print("Nothing to compute.")
+        exit()
     if N:
         N = N if size_corpus >= N else size_corpus
         hazard = np.random.choice(indexes, size=int(N), replace=False)
@@ -55,7 +64,14 @@ def run_parallel(n_async=25, N=None, overwrite=False):
     # Run inference in parallel
     tempdir = "_data/temp_prompt"
     os.makedirs(tempdir, exist_ok=True)
-    eval_args = [{"doc": df.loc[i], "tempdir": tempdir, "id": i} for i in hazard]
+    eval_args = [
+        {"doc": df.loc[i], "tempdir": tempdir, "id": i}
+        for i in hazard
+        if (
+            (not os.path.exists(f"{tempdir}/{i}.json"))
+            and (len(df.loc[i]["prompt"].split()) * 1.25 < max_seq_length)
+        )
+    ]
     pool = multiprocessing.Pool(n_async)
     _ = pool.map(run_one, eval_args)
 
@@ -76,7 +92,7 @@ def run_parallel(n_async=25, N=None, overwrite=False):
     for i, index in enumerate(order):
         df.loc[index, "answer"] = final[i]
 
-    df.to_json("_data/training_albert-light.json", orient="records", indent=2, force_ascii=False)
+    df.to_json("_data/albert-light_train.json", orient="records", indent=2, force_ascii=False)
 
     # Remove temporary folder
     shutil.rmtree(tempdir)
@@ -84,4 +100,4 @@ def run_parallel(n_async=25, N=None, overwrite=False):
 
 if __name__ == "__main__":
     np.random.seed(42)
-    run_parallel(10, 1000)
+    run_parallel(50, 5000)
