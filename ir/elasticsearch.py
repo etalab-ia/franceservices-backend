@@ -3,10 +3,17 @@ from pprint import pprint
 
 from elasticsearch import Elasticsearch, helpers
 
+try:
+    from app.config import ELASTICSEARCH_IX_VER, collate_ix_name
+except ModuleNotFoundError as e:
+    from api.app.config import ELASTICSEARCH_IX_VER, collate_ix_name
+
 
 def create_bm25_index(index_name, add_doc=True):
     # Connect to Elasticsearch
     client = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
+
+    ix_name = collate_ix_name(index_name, ELASTICSEARCH_IX_VER)
 
     # Define index settings and mappings
     if index_name == "experiences":
@@ -41,7 +48,7 @@ def create_bm25_index(index_name, add_doc=True):
             },
         }
         # Create the index
-        client.indices.create(index=index_name, mappings=mappings, settings=settings, ignore=400)
+        client.indices.create(index=ix_name, mappings=mappings, settings=settings, ignore=400)
 
         if add_doc:
             # Add documents
@@ -51,7 +58,7 @@ def create_bm25_index(index_name, add_doc=True):
             for doc in documents:
                 doc["_id"] = doc["id_experience"]
 
-            helpers.bulk(client, documents, index=index_name)
+            helpers.bulk(client, documents, index=ix_name)
 
     elif index_name == "sheets":
         settings = {
@@ -83,7 +90,7 @@ def create_bm25_index(index_name, add_doc=True):
             },
         }
         # Create the index
-        client.indices.create(index=index_name, mappings=mappings, settings=settings, ignore=400)
+        client.indices.create(index=ix_name, mappings=mappings, settings=settings, ignore=400)
 
         if add_doc:
             # Add documents
@@ -97,7 +104,7 @@ def create_bm25_index(index_name, add_doc=True):
                 doc["text"] = doc["text"][0]
                 doc["_id"] = doc["sid"]
 
-            helpers.bulk(client, documents, index=index_name)
+            helpers.bulk(client, documents, index=ix_name)
 
     elif index_name == "chunks":
         settings = {
@@ -129,7 +136,7 @@ def create_bm25_index(index_name, add_doc=True):
             },
         }
         # Create the index
-        client.indices.create(index=index_name, mappings=mappings, settings=settings, ignore=400)
+        client.indices.create(index=ix_name, mappings=mappings, settings=settings, ignore=400)
 
         if add_doc:
             # Add documents
@@ -141,11 +148,11 @@ def create_bm25_index(index_name, add_doc=True):
                 if "context" in doc:
                     doc["context"] = " > ".join(doc["context"])
 
-            helpers.bulk(client, documents, index=index_name)
+            helpers.bulk(client, documents, index=ix_name)
 
     else:
         raise NotImplementedError("Index unknown")
 
     # Test index
     # client.indices.refresh(index=index_name)
-    pprint(client.cat.count(index=index_name, format="json"))
+    pprint(client.cat.count(index=ix_name, format="json"))

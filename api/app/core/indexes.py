@@ -1,7 +1,10 @@
 from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient, models as QdrantModels
+from qdrant_client import QdrantClient
+from qdrant_client import models as QdrantModels
 
-from app.config import ELASTICSEARCH_CREDS, ELASTICSEARCH_URL, QDRANT_URL
+from app.config import (ELASTICSEARCH_CREDS, ELASTICSEARCH_IX_VER,
+                        ELASTICSEARCH_URL, QDRANT_IX_VER, QDRANT_URL,
+                        collate_ix_name)
 from app.core.embeddings import make_embeddings
 
 
@@ -39,7 +42,7 @@ def search_indexes(name, query, limit, similarity, institution):
             },
             "size": limit,
         }
-        res = client.search(index=name, body=body)
+        res = client.search(index=collate_ix_name(name, ELASTICSEARCH_IX_VER), body=body)
         hits = [_extract(x.get("_source")) for x in res["hits"]["hits"] if x]
 
     elif similarity == "e5":
@@ -66,7 +69,7 @@ def search_indexes(name, query, limit, similarity, institution):
             )
 
         res = client.search(
-            collection_name=name,
+            collection_name=collate_ix_name(name, QDRANT_IX_VER),
             query_vector=embeddings,
             query_filter=query_filter,
             limit=limit,
@@ -78,7 +81,13 @@ def search_indexes(name, query, limit, similarity, institution):
             _uid = lambda x: bytes.fromhex(x.replace("-", "")).decode("utf8")
         else:
             _uid = lambda x: x
-        hits = [_extract(es.get(index=name, id=_uid(x.id))["_source"]) for x in res if x]
+        hits = [
+            _extract(
+                es.get(index=collate_ix_name(name, ELASTICSEARCH_IX_VER), id=_uid(x.id))["_source"]
+            )
+            for x in res
+            if x
+        ]
         if do_unique_sheets:
             keep_idx = []
             seen_sheets = []

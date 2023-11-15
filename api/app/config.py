@@ -30,6 +30,16 @@ QDRANT_URL = "http://171.33.114.210:6333"
 API_LIA_URL = "http://171.33.114.210"
 FRONT_URL = "http://171.33.114.210"
 
+ELASTICSEARCH_IX_VER = "v2"
+QDRANT_IX_VER = "v2"
+
+
+def collate_ix_name(name, version):
+    if version:
+        return "-".join([name, version])
+    return name
+
+
 if ENV == "unittest":
     PASSWORD_RESET_TOKEN_TTL = 3  # seconds
     ACCESS_TOKEN_TTL = 9  # seconds
