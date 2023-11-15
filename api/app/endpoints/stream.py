@@ -3,8 +3,11 @@ import json
 from app import crud, models, schemas
 from app.clients.api_vllm_client import ApiVllmClient
 from app.config import WITH_GPU
-from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
 from app.deps import get_current_user, get_db
+
+if not WITH_GPU:
+    from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -93,6 +96,12 @@ def start_stream(
             query=query,
             limit=limit,
         )
+
+        if (
+            "max_tokens" in prompter.sampling_params
+            and len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8
+        ):
+            raise HTTPException(413, detail="Prompt too large")
 
         # Allow client to tune the sampling parameters.
         sampling_params = prompter.sampling_params

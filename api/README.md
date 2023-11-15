@@ -68,6 +68,11 @@ docker-compose -f docker/elasticsearch/docker-compose.yml up
 docker-compose -f docker/qdrant/docker-compose.yml up
 ```
 
+Alternatively with docker only
+
+    docker run --name elasticsearch -p 9202:9200 -p 9302:9300 -e discovery.type="single-node" -e xpack.security.enabled="false" -e ES_JAVA_OPTS="-Xms2g -Xmx2g" --mount source=vol-elasticsearch,target=/var/lib/elasticsearch/data -d docker.elastic.co/elasticsearch/elasticsearch:8.9.1
+
+    docker run --name qdrant -p 6333:6333 -p 6334:6334 --mount source=vol-qdrant,target=/qdrant/storage -d qdrant/qdrant:v1.5.0
 
 # Build the indexes
 

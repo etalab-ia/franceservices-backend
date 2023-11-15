@@ -75,7 +75,8 @@ def make_embeddings():
         with_gpu = True
         device_map = "cuda:0"
 
-    model_name = "intfloat/multilingual-e5-base"
+    model_name = "intfloat/multilingual-e5-large"
+    # model_name = "intfloat/multilingual-e5-base"
     # model_name = "intfloat/multilingual-e5-small"
 
     #

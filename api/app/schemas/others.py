@@ -33,4 +33,4 @@ class Index(BaseModel):
     query: str
     limit: int = 3
     similarity: IndexSimilarity = IndexSimilarity.bm25
-    institution: str
+    institution: str | None

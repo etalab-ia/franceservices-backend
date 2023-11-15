@@ -301,6 +301,7 @@ def _parse_xml_text(xml_file, structured=False):
     # -> could be used to improve the chat with media information (links, images, etc)
     extract_all(soup, "ServiceEnLigne")
     extract_all(soup, "OuSAdresser")
+    # @TODO: For resource URL: check ServiceEnLigne, OuSAdresser et LienWeb... vos-droits-et-demarche/particulier/R62483.xml
     # Remove <RefActualite> (file in subfolder actualites/)
     extract_all(soup, "RefActualite")
 
