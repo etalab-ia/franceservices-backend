@@ -1,6 +1,7 @@
 fastapi==0.103.1
 uvicorn==0.23.2
 vllm==0.1.7
+xformers==0.0.22
 
 # if the following error occur: ImportError: libcudart.so.11.0: cannot open shared object file
 # check https://github.com/vllm-project/vllm/issues/1369#issuecomment-1766295559
