@@ -1,3 +1,4 @@
 fastapi==0.103.1
 uvicorn==0.23.2
 vllm==0.1.7
+xformers==0.0.22
