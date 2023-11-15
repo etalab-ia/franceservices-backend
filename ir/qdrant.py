@@ -4,6 +4,11 @@ import json
 import numpy as np
 from qdrant_client import QdrantClient, models
 
+try:
+    from app.config import QDRANT_IX_VER, collate_ix_name
+except ModuleNotFoundError as e:
+    from api.app.config import QDRANT_IX_VER, collate_ix_name
+
 
 def get_unique_color(string):
     if not string:
@@ -17,18 +22,20 @@ def create_vector_index(index_name, add_doc=True):
     # client = QdrantClient(":memory:")  # or QdrantClient(path="path/to/db")
     client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
 
+    collection_name = collate_ix_name(index_name, QDRANT_IX_VER)
+
     if index_name == "experiences":
         # Load data
-        embeddings = np.load("_data/embeddings_e5_experiences.npy")
+        embeddings = np.load("_data/embeddings/e5-large/embeddings_e5_experiences.npy")
         with open("_data/export-expa-c-riences.json") as f:
             documents = json.load(f)
 
         # Create collection
-        collection_name = index_name
-
         client.recreate_collection(
             collection_name=collection_name,
-            vectors_config=models.VectorParams(size=embeddings.shape[1], distance=models.Distance.COSINE),
+            vectors_config=models.VectorParams(
+                size=embeddings.shape[1], distance=models.Distance.COSINE
+            ),
         )
 
         client.upsert(
@@ -65,16 +72,16 @@ def create_vector_index(index_name, add_doc=True):
     # elif index_name == "sheets":
     elif index_name == "chunks":
         # Load data
-        embeddings = np.load("_data/embeddings_e5_chunks.npy")
+        embeddings = np.load("_data/embeddings/e5-large/embeddings_e5_chunks.npy")
         with open("_data/xmlfiles_as_chunks.json") as f:
             documents = json.load(f)
 
         # Create collection
-        collection_name = index_name
-
         client.recreate_collection(
             collection_name=collection_name,
-            vectors_config=models.VectorParams(size=embeddings.shape[1], distance=models.Distance.COSINE),
+            vectors_config=models.VectorParams(
+                size=embeddings.shape[1], distance=models.Distance.COSINE
+            ),
         )
 
         client.upsert(
