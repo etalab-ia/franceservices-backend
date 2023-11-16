@@ -23,10 +23,11 @@ POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
 
 PASSWORD_PATTERN = r"^[A-Za-z\d$!%*+?&#_-]{8,20}$"
 
-API_VLLM_URL = "http://127.0.0.1:8081"
-ELASTICSEARCH_URL = "http://171.33.114.210:9202"
+# @obsolete: use HOST instead of URL, this is confusing
+API_VLLM_URL = "http://127.0.0.1:8081"  # default
+ELASTICSEARCH_URL = "http://127.0.0.1:9202"
 ELASTICSEARCH_CREDS = ("elastic", "changeme")
-QDRANT_URL = "http://171.33.114.210:6333"
+QDRANT_URL = "http://127.0.0.1:6333"
 API_LIA_URL = "http://171.33.114.210"
 FRONT_URL = "http://171.33.114.210"
 

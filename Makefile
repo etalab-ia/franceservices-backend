@@ -55,11 +55,11 @@ build_all_indexes: # not embeddings
 	python3 gpt.py index sheets --index-type bm25
 	python3 gpt.py index chunks --index-type bm25
 	# meilisearch
-	python3 gpt.py index experiences --index-type bucket
-	sleep 3 # debug @async..
-	python3 gpt.py index sheets --index-type bucket
-	sleep 3
-	python3 gpt.py index chunks --index-type bucket
+	#python3 gpt.py index experiences --index-type bucket
+	#sleep 3 # debug @async..
+	#python3 gpt.py index sheets --index-type bucket
+	#sleep 3
+	#python3 gpt.py index chunks --index-type bucket
 	# qdrant | requires _data/embeddings_*.npy
 	python3 gpt.py index experiences --index-type e5
 	python3 gpt.py index chunks --index-type e5
@@ -70,9 +70,9 @@ clean_all_indexex: # not embeddings
 	curl -XDELETE http://localhost:9202/sheets
 	curl -XDELETE http://localhost:9202/chunks
 	# meillisearch
-	curl -X DELETE http://localhost:7700/indexes/experiences
-	curl -X DELETE http://localhost:7700/indexes/sheets
-	curl -X DELETE http://localhost:7700/indexes/chunks
+	#curl -X DELETE http://localhost:7700/indexes/experiences
+	#curl -X DELETE http://localhost:7700/indexes/sheets
+	#curl -X DELETE http://localhost:7700/indexes/chunks
 	# qdrant
 	curl -X DELETE http://localhost:6333/collections/experiences
 	curl -X DELETE http://localhost:6333/collections/chunks

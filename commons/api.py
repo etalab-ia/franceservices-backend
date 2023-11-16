@@ -13,7 +13,9 @@ except ModuleNotFoundError as e:
 
 
 def get_legacy_client():
-    return ApiClient(API_LIA_URL, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
+    return ApiClient(
+        API_LIA_URL.rstrip("/") + "/api/v2", FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD
+    )
 
 
 class ApiClient:
