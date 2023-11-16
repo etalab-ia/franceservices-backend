@@ -20,7 +20,7 @@ while 1:
     #print(dialog)
 
     # Send POST request with string parameter
-    url = "http://localhost:8081"
+    url = "http://localhost:8082"
     headers = {"Content-Type": "application/json"}
     data = {
         "prompt": dialog,
