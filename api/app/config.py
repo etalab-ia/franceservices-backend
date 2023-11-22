@@ -13,6 +13,15 @@ ENV = os.getenv("ENV", "dev")
 if ENV not in ("unittest", "dev", "prod"):
     raise EnvironmentError("Wrong ENV value")
 
+BACKEND_CORS_ORIGINS = [
+    "http://localhost:4173",
+    "http://localhost:8080",
+    "http://albert.etalab.gouv.fr",
+    "http://ia.etalab.gouv.fr",
+    "https://albert.etalab.gouv.fr",
+    "https://ia.etalab.gouv.fr",
+]
+
 SECRET_KEY = os.environ["SECRET_KEY"]
 FIRST_ADMIN_USERNAME = os.environ["FIRST_ADMIN_USERNAME"]
 FIRST_ADMIN_EMAIL = os.environ["FIRST_ADMIN_EMAIL"]
