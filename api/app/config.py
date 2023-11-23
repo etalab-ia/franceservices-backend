@@ -37,8 +37,9 @@ API_VLLM_URL = "http://127.0.0.1:8081"  # default
 ELASTICSEARCH_URL = "http://127.0.0.1:9202"
 ELASTICSEARCH_CREDS = ("elastic", "changeme")
 QDRANT_URL = "http://127.0.0.1:6333"
-API_LIA_URL = "http://171.33.114.210"
-FRONT_URL = "http://171.33.114.210"
+API_LIA_URL = "https://albert.etalab.gouv.fr"
+FRONT_URL = "https://albert.etalab.gouv.fr"
+#FRONT_URL = "http://171.33.114.210"
 
 ELASTICSEARCH_IX_VER = "v2"
 QDRANT_IX_VER = "v2"
