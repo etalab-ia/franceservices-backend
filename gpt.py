@@ -51,8 +51,8 @@ Examples:
     ./gpt.py make_questions _data/data.gouv/vos-droits-et-demarche/
     !make institutions          # Generate the french institution list
     ./gpt.py index experiences  # assumes _data/export-expa-c-riences.json exists
-    ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ exists
-    ./gpt.py index chunks       # assumes _data/xmlfiles_as_chunks.json exists
+    ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ + _data/fiches-travail.json exist
+    ./gpt.py index chunks       # assumes _data/xmlfiles_as_chunks.json + _data/fiches-travail.json exist
     ./gpt.py evaluate miaou v0  # Run the inference
     ./gpt.py evaluate miaou v0 --csv  # make an result table with inference file found in data/x/{model}-{version}
     ./gpt.py evaluate --merge albert-light-simple v0 --merge albert-light-rag v0 -o albert-light-v0

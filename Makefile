@@ -25,6 +25,11 @@ download_servicepublic_sheets:
 	# https://www.data.gouv.fr/fr/datasets/service-public-fr-guide-vos-droits-et-demarches-entreprendre/
 	# https://www.data.gouv.fr/fr/datasets/service-public-fr-guide-vos-droits-et-demarches-associations/
 
+download_travailemploie_sheets:
+	# git clone https://github.com/SocialGouv/fiches-travail-data
+	# cp fiches-travail-data/data/fiches-travail.json _data
+	# rm -rf fiches-travail-data
+
 institutions:
 	cat _data/export-expa-c-riences.json  | jq  'map(.intitule_typologie_1) | unique | map(select(. != null))' > _data/institutions.json
 

@@ -14,6 +14,7 @@ def create_bm25_index(index_name, add_doc=True):
     client = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
 
     ix_name = collate_ix_name(index_name, ELASTICSEARCH_IX_VER)
+    sources = ["service-public", "travail-emploi"]
 
     # Define index settings and mappings
     if index_name == "experiences":
@@ -96,14 +97,26 @@ def create_bm25_index(index_name, add_doc=True):
             # Add documents
             from xml_parsing import parse_xml
 
-            df = parse_xml("_data/data.gouv/vos-droits-et-demarche/", structured=False)
-            documents = [d for d in df.to_dict(orient="records") if d["text"][0]]
+            documents = []
 
-            for doc in documents:
-                doc["sid"] = doc["url"].split("/")[-1]
-                doc["text"] = doc["text"][0]
-                doc["_id"] = doc["sid"]
+            if "service-public" in sources:
+                df = parse_xml("_data/data.gouv/vos-droits-et-demarche/", structured=False)
+                _documents = [d for d in df.to_dict(orient="records") if d["text"][0]]
 
+                for doc in _documents:
+                    doc["sid"] = doc["url"].split("/")[-1]
+                    doc["text"] = doc["text"][0]
+                    doc["_id"] = doc["sid"]
+
+                documents.extend(_documents)
+
+            if "travail-emploi" in sources:
+                raise NotImplementedError
+
+            if len(documents) == 0:
+                print(f"warning: No documents to add to the index '{ix_name}'")
+
+            exit()
             helpers.bulk(client, documents, index=ix_name)
 
     elif index_name == "chunks":
@@ -140,14 +153,25 @@ def create_bm25_index(index_name, add_doc=True):
 
         if add_doc:
             # Add documents
-            with open("_data/xmlfiles_as_chunks.json") as f:
-                documents = json.load(f)
 
-            for doc in documents:
-                doc["_id"] = doc["hash"]
-                if "context" in doc:
-                    doc["context"] = " > ".join(doc["context"])
+            documents = []
 
+            if "service-public" in sources:
+                with open("_data/xmlfiles_as_chunks.json") as f:
+                    documents = json.load(f)
+
+                for doc in documents:
+                    doc["_id"] = doc["hash"]
+                    if "context" in doc:
+                        doc["context"] = " > ".join(doc["context"])
+
+            if "travail-emploi" in sources:
+                raise NotImplementedError
+
+            if len(documents) == 0:
+                print(f"warning: No documents to add to the index '{ix_name}'")
+
+            exit()
             helpers.bulk(client, documents, index=ix_name)
 
     else:

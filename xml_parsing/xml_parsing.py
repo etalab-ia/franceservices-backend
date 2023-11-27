@@ -19,6 +19,7 @@ from retrieving.text_spliter import HybridSplitter
 
 
 def normalize(text: str) -> str:
+    # Like removing non-breaking space in latin-1 (\xa0)
     return unicodedata.normalize("NFKC", text)
 
 
@@ -460,22 +461,27 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
                     print("Warning: empty fragment")
                     continue
 
-                h = hashlib.blake2b(fragment.encode(), digest_size=8).hexdigest()
-                if h in hashes:
-                    print("Warning: duplicate chunk")
-                    continue
-                hashes.append(h)
-
                 info[surtitre]["chunk_len"].append(len(fragment.split()))
 
                 chunk = {
                     **data,
                     "chunk_index": index,
-                    "hash": h,
                     "text": fragment,  # overwrite previous value
                 }
                 if isinstance(natural_chunk, dict) and "context" in natural_chunk:
                     chunk["context"] = natural_chunk["context"]
+                    chunk_content = "".join(chunk["context"]) + fragment
+                else:
+                    chunk_content = fragment
+
+                # add an unique hash/id
+                h = hashlib.blake2b(chunk_content.encode(), digest_size=8).hexdigest()
+                if h in hashes:
+                    print("Warning: duplicate chunk")
+                    continue
+                hashes.append(h)
+                chunk["hash"] = h
+
                 chunks.append(chunk)
                 index += 1
 
@@ -519,3 +525,57 @@ def make_questions(directory: str) -> None:
     with open(q_fn, mode="w", encoding="utf-8") as f:
         json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=4)
     print("Questions created in", q_fn)
+
+
+def get_travailEmploie_as_sheets():
+    with open("_data/fiches-travail.json") as f:
+        data = json.load(f)
+
+    def join_sections(sections):
+        text = ""
+        for section in sections:
+            text += normalize(f'{section["title"]}\n\n{section["text"]}')
+
+        return text
+
+    sheets = []
+    for doc in data:
+        sheet = {
+            "title": normalize["title"],
+            "url": doc["url"],
+            "date": doc["date"],
+            "sid": doc["pubId"],
+            "introduction": get_text(BeautifulSoup(doc["intro"], "html.parser")),
+            "text": join_sections(doc["sections"]),
+        }
+
+        sheets.append(sheet)
+
+    return sheets
+
+
+def get_travailEmploie_as_chunks():
+    with open("_data/fiches-travail.json") as f:
+        data = json.load(f)
+
+    chunks = []
+    for doc in data:
+        for section in doc["sections"]:
+            chunk = {
+                "title": normalize["title"],
+                "url": doc["url"],
+                "date": doc["date"],
+                "sid": doc["pubId"],
+                "introduction": get_text(BeautifulSoup(doc["intro"], "html.parser")),
+                "text": normalize(section["text"]),
+                "context": normalize(section["title"]),
+            }
+
+            # add an unique hash/id
+            chunk_content = chunk["context"] + chunk["text"]
+            h = hashlib.blake2b(chunk_content.encode(), digest_size=8).hexdigest()
+            chunk["hash"] = h
+
+            chunks.append(chunk)
+
+    return chunks
