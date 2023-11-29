@@ -13,6 +13,15 @@ ENV = os.getenv("ENV", "dev")
 if ENV not in ("unittest", "dev", "prod"):
     raise EnvironmentError("Wrong ENV value")
 
+BACKEND_CORS_ORIGINS = [
+    "http://localhost:4173",
+    "http://localhost:8080",
+    "http://albert.etalab.gouv.fr",
+    "http://ia.etalab.gouv.fr",
+    "https://albert.etalab.gouv.fr",
+    "https://ia.etalab.gouv.fr",
+]
+
 SECRET_KEY = os.environ["SECRET_KEY"]
 FIRST_ADMIN_USERNAME = os.environ["FIRST_ADMIN_USERNAME"]
 FIRST_ADMIN_EMAIL = os.environ["FIRST_ADMIN_EMAIL"]
@@ -28,8 +37,9 @@ API_VLLM_URL = "http://127.0.0.1:8081"  # default
 ELASTICSEARCH_URL = "http://127.0.0.1:9202"
 ELASTICSEARCH_CREDS = ("elastic", "changeme")
 QDRANT_URL = "http://127.0.0.1:6333"
-API_LIA_URL = "http://171.33.114.210"
-FRONT_URL = "http://171.33.114.210"
+API_LIA_URL = "https://albert.etalab.gouv.fr"
+FRONT_URL = "https://albert.etalab.gouv.fr"
+#FRONT_URL = "http://171.33.114.210"
 
 ELASTICSEARCH_IX_VER = "v2"
 QDRANT_IX_VER = "v2"

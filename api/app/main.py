@@ -4,7 +4,7 @@ sys.path.append("..")
 from fastapi import APIRouter, FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from app.config import ENV
+from app.config import ENV, BACKEND_CORS_ORIGINS
 from app.db.init_db import init_db
 from app.endpoints import login, others, stream, user
 from app.mockups import install_mockups
@@ -16,12 +16,6 @@ init_db()
 
 app = FastAPI()
 
-# CORS:
-# TODO:
-BACKEND_CORS_ORIGINS = [
-    "http://localhost:4173",
-    "http://localhost:8080",
-]
 if BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
