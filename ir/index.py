@@ -65,6 +65,7 @@ def make_embeddings():
             else:
                 embeddings.append(vectors.detach().numpy())
             # torch.cuda.empty_cache()
+            print(".", end="", flush=True)
 
         # return torch.cat(embeddings) # burn memory
         return np.vstack(embeddings)

@@ -457,6 +457,8 @@ def make_chunks(
     basedir="_data/",
     sources=None,
 ) -> None:
+    """ Chunkify sheets and save to a JSON file """
+
     if structured:
         chunk_overlap = 20
 
@@ -465,19 +467,6 @@ def make_chunks(
 
     sheets = RagSource.get_sheets(sources, structured=structured, path=directory)
 
-    # Chunkify and save to a JSON file
-    cols = (
-        "file",
-        "url",
-        "surtitre",
-        "theme",
-        "title",
-        "subject",
-        "introduction",
-        "text",
-        "context",
-        "source",
-    )
     chunks = []
     text_splitter = HybridSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     hashes = []

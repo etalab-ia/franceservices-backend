@@ -33,7 +33,7 @@ def search_indexes(name, query, limit, similarity, institution, sources):
     else:
         raise NotImplementedError
 
-    _extract = lambda x: dict((r, x[r]) for r in retrieves)
+    _extract = lambda x: dict((r, x[r]) for r in retrieves if r in x)
 
     hits = None
     if similarity == "bm25":
@@ -42,7 +42,7 @@ def search_indexes(name, query, limit, similarity, institution, sources):
         if institution:
             query_filter.append({"term": {"intitule_typologie_1": institution}})
         if sources:
-            query_filter.append({"term": {"source": sources}})
+            query_filter.append({"terms": {"source": sources}})
 
         body = {
             "query": {

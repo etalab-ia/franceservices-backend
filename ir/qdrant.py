@@ -97,7 +97,7 @@ def create_vector_index(index_name, add_doc=True):
                     id=documents[i]["hash"].encode("utf8").hex(),
                     vector=vector.tolist(),
                     payload={
-                        "source": doc[i]["source"],
+                        "source": documents[i]["source"],
                         # "color": "red", "rand_number": idx % 10,
                     },
                 )
