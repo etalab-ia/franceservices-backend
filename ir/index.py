@@ -1,3 +1,9 @@
+try:
+    from app.config import EMBEDDING_BOOTSTRAP_PATH, EMBEDDING_MODEL
+except ModuleNotFoundError as e:
+    from api.app.config import EMBEDDING_BOOTSTRAP_PATH, EMBEDDING_MODEL
+
+
 def create_index(index_type, index_name, add_doc=True):
     if index_type == "bucket":
         from .meilisearch import create_bucket_index
@@ -20,6 +26,7 @@ def create_index(index_type, index_name, add_doc=True):
 
 def make_embeddings():
     import json
+    import os
     import re
 
     import numpy as np
@@ -28,7 +35,6 @@ def make_embeddings():
     from sentence_transformers import SentenceTransformer
     from torch import Tensor
     from transformers import AutoModel, AutoTokenizer
-
 
     def average_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
         last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
@@ -77,9 +83,8 @@ def make_embeddings():
         with_gpu = True
         device_map = "cuda:0"
 
-    model_name = "intfloat/multilingual-e5-large"
-    # model_name = "intfloat/multilingual-e5-base"
-    # model_name = "intfloat/multilingual-e5-small"
+    model_name = EMBEDDING_MODEL
+    os.makedirs(EMBEDDING_BOOTSTRAP_PATH, exist_ok=True)
 
     #
     # Load model
@@ -105,8 +110,7 @@ def make_embeddings():
 
     texts = [x["description"] for x in documents]
     embeddings = embed(tokenizer, model, texts, batch_size=4)
-    np.save('_data/embeddings_e5_experiences.npy', embeddings)
-
+    np.save(os.path.join(EMBEDDING_BOOTSTRAP_PATH, "embeddings_experiences.npy"), embeddings)
 
     #
     # Make CHUNKS embeddings
@@ -119,8 +123,11 @@ def make_embeddings():
         if "context" in doc:
             doc["context"] = " > ".join(doc["context"])
 
-    texts = [" ".join([x["title"], x["introduction"], x["text"], x.get("context", "")]) for x in documents]
+    texts = [
+        " ".join([x["title"], x["introduction"], x["text"], x.get("context", "")])
+        for x in documents
+    ]
     embeddings = embed(tokenizer, model, texts, batch_size=4)
-    np.save('_data/embeddings_e5_chunks.npy', embeddings)
+    np.save(os.path.join(EMBEDDING_BOOTSTRAP_PATH, "embeddings_chunks.npy"), embeddings)
 
     return
