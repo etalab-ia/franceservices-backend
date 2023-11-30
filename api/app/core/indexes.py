@@ -1,14 +1,13 @@
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
-
 from app.config import (ELASTICSEARCH_CREDS, ELASTICSEARCH_IX_VER,
                         ELASTICSEARCH_URL, QDRANT_IX_VER, QDRANT_URL,
                         collate_ix_name)
 from app.core.embeddings import make_embeddings
+from elasticsearch import Elasticsearch
+from qdrant_client import QdrantClient
+from qdrant_client import models as QdrantModels
 
 
-def search_indexes(name, query, limit, similarity, institution):
+def search_indexes(name, query, limit, similarity, institution, sources):
     if name == "experiences":
         retrieves = [
             "id_experience",
@@ -18,9 +17,19 @@ def search_indexes(name, query, limit, similarity, institution):
             "reponse_structure_1",
         ]
     elif name == "sheets" and similarity not in ["e5"]:
-        retrieves = ["sid", "title", "url", "introduction", "theme", "surtitre"]
+        retrieves = ["sid", "title", "url", "introduction", "theme", "surtitre", "source"]
     elif name == "chunks" or (similarity in ["e5"] and name == "sheets"):
-        retrieves = ["hash", "title", "url", "introduction", "text", "context", "theme", "surtitre"]
+        retrieves = [
+            "hash",
+            "title",
+            "url",
+            "introduction",
+            "text",
+            "context",
+            "theme",
+            "surtitre",
+            "source",
+        ]
     else:
         raise NotImplementedError
 
@@ -32,6 +41,8 @@ def search_indexes(name, query, limit, similarity, institution):
         query_filter = []
         if institution:
             query_filter.append({"term": {"intitule_typologie_1": institution}})
+        if sources:
+            query_filter.append({"term": {"source": sources}})
 
         body = {
             "query": {
@@ -65,6 +76,19 @@ def search_indexes(name, query, limit, similarity, institution):
                             value=institution,
                         ),
                     )
+                ]
+            )
+        if sources:
+            # @debug: institution and sources are two independant filters (one for experinces, the others for sheets/chunks)
+            query_filter = QdrantModels.Filter(
+                should=[
+                    QdrantModels.FieldCondition(
+                        key="source",
+                        match=QdrantModels.MatchValue(
+                            value=source,
+                        ),
+                    )
+                    for source in sources
                 ]
             )
 

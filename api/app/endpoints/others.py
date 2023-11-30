@@ -51,5 +51,5 @@ def get_indexes(
     index: schemas.Index,
     current_user: models.User = Depends(get_current_user),  # noqa
 ):
-    hits = search_indexes(index.name, index.query, index.limit, index.similarity, index.institution)
+    hits = search_indexes(index.name, index.query, index.limit, index.similarity, index.institution, index.sources)
     return JSONResponse(hits)
