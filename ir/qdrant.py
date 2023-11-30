@@ -18,6 +18,9 @@ def get_unique_color(string):
 
 
 def create_vector_index(index_name, add_doc=True):
+    """Add vector to qdrant collection.
+    The payload, if present is useful to get back a data and filter a search.
+    """
     # For quick testing/prototyping
     # client = QdrantClient(":memory:")  # or QdrantClient(path="path/to/db")
     client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)
@@ -73,7 +76,7 @@ def create_vector_index(index_name, add_doc=True):
     elif index_name == "chunks":
         # Load data
         embeddings = np.load("_data/embeddings/e5-large/embeddings_e5_chunks.npy")
-        with open("_data/xmlfiles_as_chunks.json") as f:
+        with open("_data/sheets_as_chunks.json") as f:
             documents = json.load(f)
 
         # Create collection
@@ -90,7 +93,10 @@ def create_vector_index(index_name, add_doc=True):
                 models.PointStruct(
                     id=documents[i]["hash"].encode("utf8").hex(),
                     vector=vector.tolist(),
-                    # payload={"color": "red", "rand_number": idx % 10}
+                    payload={
+                        "source": doc[i]["source"],
+                        # "color": "red", "rand_number": idx % 10,
+                    },
                 )
                 for i, vector in enumerate(embeddings)
             ],

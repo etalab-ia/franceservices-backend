@@ -9,8 +9,8 @@ reorder_json_chunks:
 	cat ~/Downloads/files_as_chunks.json | jq 'sort_by(.url) | map(del(.file))' > tmp.json
 
 info:
-	@echo "Number of sheets: $$(cat _data/xmlfiles_as_chunks.json | jq '.[] .url' | sort | uniq | wc -l)"
-	@echo "Number of chunks: $$(cat _data/xmlfiles_as_chunks.json | jq 'length')"
+	@echo "Number of sheets: $$(cat _data/sheets_as_chunks.json | jq '.[] .url' | sort | uniq | wc -l)"
+	@echo "Number of chunks: $$(cat _data/sheets_as_chunks.json | jq 'length')"
 	@echo "Number of questions (from sheets): $$(cat _data/questions.json | jq 'length')"
 	@echo
 	@cat _data/chunks.info
@@ -86,7 +86,7 @@ list_indexes:
 	# elasticsearch
 	curl -X GET "http://localhost:9202/_cat/indices?v"
 	# meilisearch
-	curl -X GET "http://localhost:7700/indexes" | jq
+	#curl -X GET "http://localhost:7700/indexes" | jq
 	# qdrant
 	curl -X GET "http://localhost:6333/collections" | jq 
 

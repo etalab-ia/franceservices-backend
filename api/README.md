@@ -92,7 +92,7 @@ cd _data/data.gouv
 unzip vosdroits-latest.zip -d vos-droits-et-demarche
 ```
 
-3. Build the chunks (can be ignored if `_data/xmlfiles_as_chunks.json` already exists):
+3. Build the chunks (can be ignored if `_data/sheets_as_chunks.json` already exists):
 ```
 ./gpt.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche
 ```

@@ -2,14 +2,17 @@ def create_index(index_type, index_name, add_doc=True):
     if index_type == "bucket":
         from .meilisearch import create_bucket_index
 
+        print("Creating Meilisearch index...")
         return create_bucket_index(index_name, add_doc)
     elif index_type == "bm25":
         from .elasticsearch import create_bm25_index
 
+        print("Creating Elasticsearch index...")
         return create_bm25_index(index_name, add_doc)
     elif index_type == "e5":
         from .qdrant import create_vector_index
 
+        print("Creating Qdrant index...")
         return create_vector_index(index_name, add_doc)
     else:
         raise NotImplementedError
@@ -18,7 +21,6 @@ def create_index(index_type, index_name, add_doc=True):
 def make_embeddings():
     import json
     import re
-    from time import time
 
     import numpy as np
     import torch
@@ -110,7 +112,7 @@ def make_embeddings():
     # Make CHUNKS embeddings
     #
 
-    with open("_data/xmlfiles_as_chunks.json") as f:
+    with open("_data/sheets_as_chunks.json") as f:
         documents = json.load(f)
 
     for doc in documents:
