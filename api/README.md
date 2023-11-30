@@ -90,6 +90,7 @@ mkdir -p _data/data.gouv
 wget https://lecomarquage.service-public.fr/vdd/3.3/part/zip/vosdroits-latest.zip -O _data/data.gouv/vosdroits-latest.zip
 cd _data/data.gouv
 unzip vosdroits-latest.zip -d vos-droits-et-demarche
+wget https://github.com/SocialGouv/fiches-travail-data/raw/master/data/fiches-travail.json -O _data/fiches-travail.json
 ```
 
 3. Build the chunks (can be ignored if `_data/sheets_as_chunks.json` already exists):
