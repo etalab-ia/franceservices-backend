@@ -296,20 +296,56 @@ def _parse_xml_text(xml_file, structured=False) -> dict:
         soup = BeautifulSoup(f, "xml")
 
     doc = _get_metadata(soup)
+    doc["sid"] = doc["url"].split("/")[-1]
+    doc["source"] = "service-public"
 
-    # Clean document
-    # Remove <ServiceEnLigne>, <OuSadresser> (noise + non contextual information)
-    # -> could be used to improve the chat with media information (links, images, etc)
-    extract_all(soup, "ServiceEnLigne")
+    # Clean document / Remove potential noise
     extract_all(soup, "OuSAdresser")
-    # @TODO: For resource URL: check ServiceEnLigne, OuSAdresser et LienWeb... vos-droits-et-demarche/particulier/R62483.xml
-    # Remove <RefActualite> (file in subfolder actualites/)
     extract_all(soup, "RefActualite")
 
-    # Introduction
-    current = [doc["introduction"]]
+    def drop_duplicates(data: List[dict], k: str):
+        seen = []
+        keeps = []
+        for x in data:
+            if x[k] in seen:
+                continue
+
+            keeps.append(x)
+            seen.append(x[k])
+
+        return keeps
+
+    # Get related questions
+    questions = [
+        {"question": get_text(q), "sid": q["ID"]} for q in soup.find_all("QuestionReponse")
+    ]
+    questions = drop_duplicates(questions, "question")
+    doc["related_questions"] = questions
+
+    # Get the Service/contact ressources
+    web_services = [
+        {
+            "title": normalize(q.find("Titre").get_text(" ", strip=True)),
+            "institution": normalize(q.find("Source").get_text(" ", strip=True)),
+            "url": q["URL"],
+            "type": q["type"],
+        }
+        for q in soup.find_all("ServiceEnLigne")
+        if q.get("URL")
+    ]
+    web_services = drop_duplicates(web_services, "title")
+    doc["web_services"] = web_services
+
+    # Clean document / Remove potential noise
+    extract_all(soup, "OuSAdresser")
+    extract_all(soup, "ServiceEnLigne")
+    extract_all(soup, "QuestionReponse")
+    extract_all(soup, "RefActualite")
 
     # Get all textual content
+    # --
+    # Introduction
+    current = [doc["introduction"]]
     if structured:
         # Save sections for later (de-duplicate keeping order)
         sections = [
@@ -349,8 +385,6 @@ def _parse_xml_text(xml_file, structured=False) -> dict:
         texts = [" ".join(current)]
 
     doc["text"] = texts
-    doc["sid"] = doc["url"].split("/")[-1]
-    doc["source"] = "service-public"
     return doc
 
 
@@ -457,7 +491,7 @@ def make_chunks(
     basedir="_data/",
     sources=None,
 ) -> None:
-    """ Chunkify sheets and save to a JSON file """
+    """Chunkify sheets and save to a JSON file"""
 
     if structured:
         chunk_overlap = 20
@@ -515,8 +549,8 @@ def make_chunks(
                 # add an unique hash/id
                 h = hashlib.blake2b(chunk_content.encode(), digest_size=8).hexdigest()
                 if h in hashes:
-                    #print("Warning: duplicate chunk (%s)" % chunk["sid"])
-                    #print(chunk_content)
+                    # print("Warning: duplicate chunk (%s)" % chunk["sid"])
+                    # print(chunk_content)
                     continue
                 hashes.append(h)
                 chunk["hash"] = h

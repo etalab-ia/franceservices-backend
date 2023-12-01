@@ -4,9 +4,10 @@ from pprint import pprint
 from elasticsearch import Elasticsearch, helpers
 
 try:
-    from app.config import ELASTICSEARCH_IX_VER, collate_ix_name, SHEET_SOURCES
+    from app.config import ELASTICSEARCH_IX_VER, SHEET_SOURCES, collate_ix_name
 except ModuleNotFoundError as e:
-    from api.app.config import ELASTICSEARCH_IX_VER, collate_ix_name, SHEET_SOURCES
+    from api.app.config import (ELASTICSEARCH_IX_VER, SHEET_SOURCES,
+                                collate_ix_name)
 
 
 def create_bm25_index(index_name, add_doc=True):
@@ -74,15 +75,32 @@ def create_bm25_index(index_name, add_doc=True):
         mappings = {
             "dynamic": False,
             "properties": {
+                "source": {"type": "keyword", "store": True},
                 "title": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "text": {"type": "text", "analyzer": "french_analyzer"},
                 "subject": {"type": "text", "store": True, "analyzer": "french_analyzer"},
-                "source": {"type": "keyword", "store": True},
                 "introduction": {"type": "text", "index": False},
                 "theme": {"type": "text", "index": False},
                 "surtitre": {"type": "text", "index": False},
                 "url": {"type": "keyword", "index": False},
                 "sid": {"type": "keyword", "index": False},
+                "related_questions": {
+                    "type": "nested",
+                    "index": False,
+                    "properties": {
+                        "question": {"type": "text"},
+                        "sid": {"type": "keyword"},
+                    },
+                },
+                "web_services": {
+                    "type": "nested",
+                    "index": False,
+                    "properties": {
+                        "title": {"type": "text"},
+                        "source": {"type": "text"},
+                        "url": {"type": "keyword"},
+                    },
+                },
             },
         }
         # Create the index
@@ -127,15 +145,32 @@ def create_bm25_index(index_name, add_doc=True):
         mappings = {
             "dynamic": False,
             "properties": {
+                "source": {"type": "keyword", "store": True},
                 "title": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "text": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "context": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "introduction": {"type": "text", "analyzer": "french_analyzer"},
-                "source": {"type": "keyword", "store": True},
                 "theme": {"type": "text", "index": False},
                 "surtitre": {"type": "text", "index": False},
                 "url": {"type": "keyword", "index": False},
                 "hash": {"type": "keyword", "index": False},
+                "related_questions": {
+                    "type": "nested",
+                    "index": False,
+                    "properties": {
+                        "question": {"type": "text"},
+                        "sid": {"type": "keyword"},
+                    },
+                },
+                "web_services": {
+                    "type": "nested",
+                    "index": False,
+                    "properties": {
+                        "title": {"type": "text"},
+                        "source": {"type": "text"},
+                        "url": {"type": "keyword"},
+                    },
+                },
             },
         }
         # Create the index
