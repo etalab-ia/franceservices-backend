@@ -17,7 +17,17 @@ def search_indexes(name, query, limit, similarity, institution, sources):
             "reponse_structure_1",
         ]
     elif name == "sheets" and similarity not in ["e5"]:
-        retrieves = ["sid", "title", "url", "introduction", "theme", "surtitre", "source"]
+        retrieves = [
+            "sid",
+            "title",
+            "url",
+            "introduction",
+            "theme",
+            "surtitre",
+            "source",
+            "related_questions",
+            "web_services",
+        ]
     elif name == "chunks" or (similarity in ["e5"] and name == "sheets"):
         retrieves = [
             "hash",
@@ -29,6 +39,8 @@ def search_indexes(name, query, limit, similarity, institution, sources):
             "theme",
             "surtitre",
             "source",
+            "related_questions",
+            "web_services",
         ]
     else:
         raise NotImplementedError
