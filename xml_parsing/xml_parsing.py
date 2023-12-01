@@ -572,10 +572,11 @@ class RagSource:
     TRAVAIL_EMPLOI = "travail-emploi"
 
     # At this point a sheet is an hyvrid dict data structure with with only a set of mandatory fields:
-    # - "text"
-    # - "title
-    # - "source" -> The source of the sheet (service-public, vie-publique, legifrance, etc)
     # - "sid" -> unique identifier
+    # - "title -> sheet title
+    # - "text" -> main payload
+    # - "context" -> successive subtitle (if structured=True)
+    # - "source" -> The source of the sheet (service-public, vie-publique, legifrance, etc)
     # Depending on the source, they can have many more attribute...
 
     @classmethod
