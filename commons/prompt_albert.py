@@ -41,12 +41,12 @@ class AlbertLightPrompter(Prompter):
         client = get_legacy_client()
         limit = 4 if limit is None else limit
         hits = client.search("chunks", query, limit=limit, similarity="e5")
-        self.sources = [x["url"] for x in hits if "url" in x]
+        self.sources = [x["url"] for x in hits]
         # if len(hits) == 3:
         #    # LLM Lost in the middle
         #    hits[1], hits[2] = hits[2], hits[1]
         chunks = [
-            f'Contexte n°{i} : {x["title"] + (" (" + x["context"] + ")") if x["context"] else ""}\n{x["text"]}'
+            f'{x["url"]} : {x["title"] + (" (" + x["context"] + ")") if x["context"] else ""}\n{x["text"]}'
             for i, x in enumerate(hits)
         ]
         chunks = "\n\n".join(chunks)

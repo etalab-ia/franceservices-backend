@@ -611,6 +611,7 @@ class RagSource:
     # - "text" -> main payload
     # - "context" -> successive subtitle (if structured=True)
     # - "source" -> The source of the sheet (service-public, vie-publique, legifrance, etc)
+    # - "url" -> URL of the source
     # Depending on the source, they can have many more attribute...
 
     @classmethod
