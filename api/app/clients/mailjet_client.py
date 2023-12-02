@@ -20,6 +20,18 @@ class MailjetClient:
         }
         return self._send_create(data)
 
+    def send_contact_email(self, user, subject, text, institution=None):
+        text = "An admin will review your account creation"
+        to = "language_model@data.gouv.fr"
+        text = f'''
+        username: {user.username}
+        email: {user.email}
+        institution: {institution}
+
+        {text}
+        '''
+        return self._send(to, subject, text)
+
     def send_create_user_me_email(self, to):
         subject = "Welcome!"
         text = "An admin will review your account creation"
