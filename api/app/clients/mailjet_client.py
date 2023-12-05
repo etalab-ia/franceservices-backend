@@ -1,6 +1,6 @@
 from mailjet_rest import Client
 
-from app.config import FRONT_URL, MJ_API_KEY, MJ_API_SECRET
+from app.config import FRONT_URL, MJ_API_KEY, MJ_API_SECRET, CONTACT_EMAIL
 
 
 class MailjetClient:
@@ -21,7 +21,7 @@ class MailjetClient:
         return self._send_create(data)
 
     def send_contact_email(self, user, subject, text, institution=None):
-        to = "language_model@data.gouv.fr"
+        to = CONTACT_EMAIL
         text = f'''
         username: {user.username}
         email: {user.email}
