@@ -4,9 +4,10 @@ from pprint import pprint
 from elasticsearch import Elasticsearch, helpers
 
 try:
-    from app.config import ELASTICSEARCH_IX_VER, collate_ix_name
+    from app.config import ELASTICSEARCH_IX_VER, SHEET_SOURCES, collate_ix_name
 except ModuleNotFoundError as e:
-    from api.app.config import ELASTICSEARCH_IX_VER, collate_ix_name
+    from api.app.config import (ELASTICSEARCH_IX_VER, SHEET_SOURCES,
+                                collate_ix_name)
 
 
 def create_bm25_index(index_name, add_doc=True):
@@ -37,13 +38,8 @@ def create_bm25_index(index_name, add_doc=True):
             "properties": {
                 "titre": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "description": {"type": "text", "store": True, "analyzer": "french_analyzer"},
-                "intitule_typologie_1": {
-                    "type": "keyword",
-                },
-                "reponse_structure_1": {
-                    "type": "text",
-                    "index": False,
-                },
+                "intitule_typologie_1": {"type": "keyword"},
+                "reponse_structure_1": {"type": "text", "index": False},
                 "id_experiences": {"type": "keyword", "index": False},
             },
         }
@@ -79,6 +75,7 @@ def create_bm25_index(index_name, add_doc=True):
         mappings = {
             "dynamic": False,
             "properties": {
+                "source": {"type": "keyword", "store": True},
                 "title": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "text": {"type": "text", "analyzer": "french_analyzer"},
                 "subject": {"type": "text", "store": True, "analyzer": "french_analyzer"},
@@ -87,6 +84,23 @@ def create_bm25_index(index_name, add_doc=True):
                 "surtitre": {"type": "text", "index": False},
                 "url": {"type": "keyword", "index": False},
                 "sid": {"type": "keyword", "index": False},
+                "related_questions": {
+                    "type": "nested",
+                    "index": False,
+                    "properties": {
+                        "question": {"type": "text"},
+                        "sid": {"type": "keyword"},
+                    },
+                },
+                "web_services": {
+                    "type": "nested",
+                    "index": False,
+                    "properties": {
+                        "title": {"type": "text"},
+                        "source": {"type": "text"},
+                        "url": {"type": "keyword"},
+                    },
+                },
             },
         }
         # Create the index
@@ -94,15 +108,21 @@ def create_bm25_index(index_name, add_doc=True):
 
         if add_doc:
             # Add documents
-            from xml_parsing import parse_xml
+            from xml_parsing import RagSource
 
-            df = parse_xml("_data/data.gouv/vos-droits-et-demarche/", structured=False)
-            documents = [d for d in df.to_dict(orient="records") if d["text"][0]]
+            documents = RagSource.get_sheets(
+                SHEET_SOURCES,
+                structured=False,
+                path="_data/data.gouv/vos-droits-et-demarche/",
+            )
+            documents = [d for d in documents if d["text"][0]]
 
             for doc in documents:
-                doc["sid"] = doc["url"].split("/")[-1]
                 doc["text"] = doc["text"][0]
                 doc["_id"] = doc["sid"]
+
+            if len(documents) == 0:
+                print(f"warning: No documents to add to the index '{ix_name}'")
 
             helpers.bulk(client, documents, index=ix_name)
 
@@ -125,6 +145,7 @@ def create_bm25_index(index_name, add_doc=True):
         mappings = {
             "dynamic": False,
             "properties": {
+                "source": {"type": "keyword", "store": True},
                 "title": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "text": {"type": "text", "store": True, "analyzer": "french_analyzer"},
                 "context": {"type": "text", "store": True, "analyzer": "french_analyzer"},
@@ -133,6 +154,23 @@ def create_bm25_index(index_name, add_doc=True):
                 "surtitre": {"type": "text", "index": False},
                 "url": {"type": "keyword", "index": False},
                 "hash": {"type": "keyword", "index": False},
+                "related_questions": {
+                    "type": "nested",
+                    "index": False,
+                    "properties": {
+                        "question": {"type": "text"},
+                        "sid": {"type": "keyword"},
+                    },
+                },
+                "web_services": {
+                    "type": "nested",
+                    "index": False,
+                    "properties": {
+                        "title": {"type": "text"},
+                        "source": {"type": "text"},
+                        "url": {"type": "keyword"},
+                    },
+                },
             },
         }
         # Create the index
@@ -140,13 +178,19 @@ def create_bm25_index(index_name, add_doc=True):
 
         if add_doc:
             # Add documents
-            with open("_data/xmlfiles_as_chunks.json") as f:
+
+            documents = []
+
+            with open("_data/sheets_as_chunks.json") as f:
                 documents = json.load(f)
 
             for doc in documents:
                 doc["_id"] = doc["hash"]
                 if "context" in doc:
                     doc["context"] = " > ".join(doc["context"])
+
+            if len(documents) == 0:
+                print(f"warning: No documents to add to the index '{ix_name}'")
 
             helpers.bulk(client, documents, index=ix_name)
 

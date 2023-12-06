@@ -3,6 +3,11 @@ from pprint import pprint
 
 import meilisearch
 
+try:
+    from app.config import SHEET_SOURCES
+except ModuleNotFoundError as e:
+    from api.app.config import SHEET_SOURCES
+
 
 def create_bucket_index(index_name, add_doc=True):
     client = meilisearch.Client("http://localhost:7700", "masterKey")
@@ -65,12 +70,13 @@ def create_bucket_index(index_name, add_doc=True):
         client.create_index(index_name, {"primaryKey": "sid"})
         client.index(index_name).update_settings(
             {
-                "searchableAttributes": ["title", "text", "subject"],
+                "searchableAttributes": ["title", "text", "subject", "source"],
                 "displayedAttributes": [
                     "title",
                     "subject",
                     "introduction",
                     "url",
+                    "source",
                 ],
                 "stopWords": stopwords,
             }
@@ -80,15 +86,18 @@ def create_bucket_index(index_name, add_doc=True):
         index = client.get_index(index_name)
 
         if add_doc:
-            from xml_parsing import parse_xml
-
             # Add documents
-            df = parse_xml("_data/data.gouv/vos-droits-et-demarche/", structured=False)
-            documents = [d for d in df.to_dict(orient="records") if d["text"][0]]
+            from xml_parsing import RagSource
+
+            documents = RagSource.get_sheets(
+                SHEET_SOURCES,
+                structured=False,
+                path="_data/data.gouv/vos-droits-et-demarche/",
+            )
+            documents = [d for d in documents if d["text"][0]]
 
             for doc in documents:
                 # one chunks for unstructured parsing.
-                doc["sid"] = doc["url"].split("/")[-1]
                 doc["text"] = doc["text"][0]
 
             index.update_documents_in_batches(documents)
@@ -109,12 +118,14 @@ def create_bucket_index(index_name, add_doc=True):
                     "context",
                     "text",
                     "introduction",
+                    "source",
                 ],
                 "displayedAttributes": [
                     "title",
                     "context",
                     "text",
                     "url",
+                    "source",
                 ],
                 "stopWords": stopwords,
             }
@@ -125,7 +136,7 @@ def create_bucket_index(index_name, add_doc=True):
 
         if add_doc:
             # Add documents
-            with open("_data/xmlfiles_as_chunks.json") as f:
+            with open("_data/sheets_as_chunks.json") as f:
                 documents = json.load(f)
 
             for doc in documents:

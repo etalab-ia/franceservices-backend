@@ -4,7 +4,7 @@ import os
 import string
 import unicodedata
 from collections import defaultdict
-from typing import List
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -19,6 +19,7 @@ from retrieving.text_spliter import HybridSplitter
 
 
 def normalize(text: str) -> str:
+    # Like removing non-breaking space in latin-1 (\xa0)
     return unicodedata.normalize("NFKC", text)
 
 
@@ -55,7 +56,7 @@ def extract_all(soup: Tag, tag: str, pop=True) -> List[str]:
 
 
 # ***************
-# * XML parsing *
+# * Sheet parsing *
 # ***************
 
 
@@ -290,25 +291,61 @@ def _parse_xml_text_structured(
     return state
 
 
-def _parse_xml_text(xml_file, structured=False):
+def _parse_xml_text(xml_file, structured=False) -> dict:
     with open(xml_file, mode="r", encoding="utf-8") as f:
         soup = BeautifulSoup(f, "xml")
 
     doc = _get_metadata(soup)
+    doc["sid"] = doc["url"].split("/")[-1]
+    doc["source"] = "service-public"
 
-    # Clean document
-    # Remove <ServiceEnLigne>, <OuSadresser> (noise + non contextual information)
-    # -> could be used to improve the chat with media information (links, images, etc)
-    extract_all(soup, "ServiceEnLigne")
+    # Clean document / Remove potential noise
     extract_all(soup, "OuSAdresser")
-    # @TODO: For resource URL: check ServiceEnLigne, OuSAdresser et LienWeb... vos-droits-et-demarche/particulier/R62483.xml
-    # Remove <RefActualite> (file in subfolder actualites/)
     extract_all(soup, "RefActualite")
 
-    # Introduction
-    current = [doc["introduction"]]
+    def drop_duplicates(data: List[dict], k: str):
+        seen = []
+        keeps = []
+        for x in data:
+            if x[k] in seen:
+                continue
+
+            keeps.append(x)
+            seen.append(x[k])
+
+        return keeps
+
+    # Get related questions
+    questions = [
+        {"question": get_text(q), "sid": q["ID"]} for q in soup.find_all("QuestionReponse")
+    ]
+    questions = drop_duplicates(questions, "question")
+    doc["related_questions"] = questions
+
+    # Get the Service/contact ressources
+    web_services = [
+        {
+            "title": normalize(q.find("Titre").get_text(" ", strip=True)),
+            "institution": normalize(q.find("Source").get_text(" ", strip=True)),
+            "url": q["URL"],
+            "type": q["type"],
+        }
+        for q in soup.find_all("ServiceEnLigne")
+        if q.get("URL")
+    ]
+    web_services = drop_duplicates(web_services, "title")
+    doc["web_services"] = web_services
+
+    # Clean document / Remove potential noise
+    extract_all(soup, "OuSAdresser")
+    extract_all(soup, "ServiceEnLigne")
+    extract_all(soup, "QuestionReponse")
+    extract_all(soup, "RefActualite")
 
     # Get all textual content
+    # --
+    # Introduction
+    current = [doc["introduction"]]
     if structured:
         # Save sections for later (de-duplicate keeping order)
         sections = [
@@ -348,11 +385,10 @@ def _parse_xml_text(xml_file, structured=False):
         texts = [" ".join(current)]
 
     doc["text"] = texts
-    doc["file"] = xml_file
     return doc
 
 
-def _parse_xml_questions(xml_file):
+def _parse_xml_questions(xml_file: str) -> List[dict]:
     with open(xml_file, mode="r", encoding="utf-8") as f:
         soup = BeautifulSoup(f, "xml")
 
@@ -366,7 +402,6 @@ def _parse_xml_questions(xml_file):
             audience = t["audience"].lower()
             doc = {
                 "question": f(t),
-                "file": xml_file,
                 "url": f"https://www.service-public.fr/{audience}/vosdroits/{t['ID']}",
                 "tag": tag,
             }
@@ -375,9 +410,12 @@ def _parse_xml_questions(xml_file):
     return docs
 
 
-def _parse_xml(path: str, parse_type: str, structured: bool = False) -> pd.DataFrame:
+def _parse_xml(path: str, parse_type: str, structured: bool = False) -> List[dict]:
     if parse_type not in ("text", "questions"):
         raise ValueError()
+
+    if not os.path.exists(path):
+        raise FileNotFoundError("path to xml sheets not found.")
 
     xml_files = _get_xml_files(path)
 
@@ -398,41 +436,76 @@ def _parse_xml(path: str, parse_type: str, structured: bool = False) -> pd.DataF
             _docs = _parse_xml_questions(xml_file)
             docs.extend(_docs)
 
-    return pd.DataFrame(docs)
+    return docs
 
 
-def parse_xml(xml_3_folders_path: str = "_data/xml", structured: bool = False) -> pd.DataFrame:
-    return _parse_xml(xml_3_folders_path, "text", structured=structured)
+def _parse_travailEmploi(basedir: str = "_data/", structured: bool = False) -> List[dict]:
+    with open("_data/fiches-travail.json") as f:
+        data = json.load(f)
+
+    if structured:
+
+        def join_sections(sections):
+            texts = []
+            for section in sections:
+                texts.append(
+                    {
+                        "text": normalize(section["text"]),
+                        "context": [normalize(section["title"])],
+                    }
+                )
+            return texts
+
+    else:
+
+        def join_sections(sections):
+            text = ""
+            for section in sections:
+                text += normalize(f'{section["title"]}\n\n{section["text"]}')
+
+            return [text]
+
+    docs = []
+    for doc in data:
+        sheet = {
+            "title": normalize(doc["title"]),
+            "url": doc["url"],
+            "date": doc["date"],
+            "sid": doc["pubId"],
+            "introduction": get_text(BeautifulSoup(doc["intro"], "html.parser")),
+            "text": join_sections(doc["sections"]),
+            "surtitre": "Travail-Emploi",
+            "source": "travail-emploi",
+        }
+
+        docs.append(sheet)
+
+    return docs
 
 
-def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap=200) -> None:
+def make_chunks(
+    directory: str,
+    structured=False,
+    chunk_size=1100,
+    chunk_overlap=200,
+    basedir="_data/",
+    sources=None,
+) -> None:
+    """Chunkify sheets and save to a JSON file"""
+
     if structured:
         chunk_overlap = 20
 
-    df = parse_xml(directory, structured=structured)
+    if sources is None:
+        raise ValueError("You must give a list of source to chunkify in the param 'sources'.")
 
-    # Chunkify and save to a JSON file
-    basedir = "_data/"
-    cols = (
-        "file",
-        "url",
-        "surtitre",
-        "theme",
-        "title",
-        "subject",
-        "introduction",
-        "text",
-        "context",
-    )
+    sheets = RagSource.get_sheets(sources, structured=structured, path=directory)
+
     chunks = []
     text_splitter = HybridSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     hashes = []
     info = defaultdict(lambda: defaultdict(list))
-    for sheet in df.to_dict(orient="records"):
-        data = {}
-        for col in cols:
-            if col in sheet:
-                data[col] = sheet[col]
+    for data in sheets:
         texts = data["text"]
         surtitre = data["surtitre"]
 
@@ -446,8 +519,8 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
             s = [x["text"] for x in texts]
         else:
             s = texts
-        info[surtitre]["len"].append(len(" ".join(s).split()))
 
+        info[surtitre]["len"].append(len(" ".join(s).split()))
         index = 0
         for natural_chunk in texts:
             if isinstance(natural_chunk, dict):
@@ -460,26 +533,32 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
                     print("Warning: empty fragment")
                     continue
 
-                h = hashlib.blake2b(fragment.encode(), digest_size=8).hexdigest()
-                if h in hashes:
-                    print("Warning: duplicate chunk")
-                    continue
-                hashes.append(h)
-
                 info[surtitre]["chunk_len"].append(len(fragment.split()))
 
                 chunk = {
                     **data,
                     "chunk_index": index,
-                    "hash": h,
                     "text": fragment,  # overwrite previous value
                 }
                 if isinstance(natural_chunk, dict) and "context" in natural_chunk:
                     chunk["context"] = natural_chunk["context"]
+                    chunk_content = "".join(chunk["context"]) + fragment
+                else:
+                    chunk_content = fragment
+
+                # add an unique hash/id
+                h = hashlib.blake2b(chunk_content.encode(), digest_size=8).hexdigest()
+                if h in hashes:
+                    # print("Warning: duplicate chunk (%s)" % chunk["sid"])
+                    # print(chunk_content)
+                    continue
+                hashes.append(h)
+                chunk["hash"] = h
+
                 chunks.append(chunk)
                 index += 1
 
-    json_file_target = os.path.join(basedir, "xmlfiles_as_chunks.json")
+    json_file_target = os.path.join(basedir, "sheets_as_chunks.json")
     with open(json_file_target, mode="w", encoding="utf-8") as f:
         json.dump(chunks, f, ensure_ascii=False, indent=4)
 
@@ -511,11 +590,52 @@ def make_chunks(directory: str, structured=False, chunk_size=1100, chunk_overlap
     print("Chunks info created in", chunks_fn)
 
 
-def make_questions(directory: str) -> None:
-    basedir = "_data/"
-    df = _parse_xml(directory, "questions")
+def make_questions(directory: str, basedir: str = "_data/") -> None:
+    questions = _parse_xml(directory, "questions")
+    df = pd.DataFrame(questions)
     df = df.drop_duplicates(subset=["question"])
+    questions = df.to_dict(orient="records")
     q_fn = os.path.join(basedir, "questions.json")
     with open(q_fn, mode="w", encoding="utf-8") as f:
-        json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=4)
+        json.dump(questions, f, ensure_ascii=False, indent=4)
     print("Questions created in", q_fn)
+
+
+class RagSource:
+    SERVICE_PUBLIC = "service-public"
+    TRAVAIL_EMPLOI = "travail-emploi"
+
+    # At this point a sheet is an hyvrid dict data structure with with only a set of mandatory fields:
+    # - "sid" -> unique identifier
+    # - "title -> sheet title
+    # - "text" -> main payload
+    # - "context" -> successive subtitle (if structured=True)
+    # - "source" -> The source of the sheet (service-public, vie-publique, legifrance, etc)
+    # - "url" -> URL of the source
+    # Depending on the source, they can have many more attribute...
+
+    @classmethod
+    def is_valid(cls, source):
+        return source in cls.__dict__.values()
+
+    @classmethod
+    def get_sheets(
+        cls, sources: Union[str, List[str]], structured: bool = False, path: Optional[str] = None
+    ):
+        if isinstance(sources, str):
+            sources = [sources]
+
+        for source in sources:
+            if not cls.is_valid(source):
+                raise ValueError("This RAG source is not known: %s" % source)
+
+        sheets = []
+        for source in sources:
+            if source == cls.SERVICE_PUBLIC:
+                sheets.extend(_parse_xml(path, "text", structured=structured))
+            elif source == cls.TRAVAIL_EMPLOI:
+                sheets.extend(_parse_travailEmploi(structured=structured))
+            else:
+                raise NotImplementedError("Rag source unknown")
+
+        return sheets

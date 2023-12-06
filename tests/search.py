@@ -1,13 +1,21 @@
-from app.config import (ELASTICSEARCH_CREDS, ELASTICSEARCH_IX_VER,
-                        ELASTICSEARCH_URL, QDRANT_IX_VER, QDRANT_URL,
-                        collate_ix_name)
-from app.core.embeddings import make_embeddings
+#!/bin/python
+import sys
+from pprint import pprint
+
+sys.path.append(".")
+
 from elasticsearch import Elasticsearch
 from qdrant_client import QdrantClient
 from qdrant_client import models as QdrantModels
 
+from api.app.config import (ELASTICSEARCH_CREDS, ELASTICSEARCH_IX_VER,
+                            ELASTICSEARCH_URL, QDRANT_IX_VER, QDRANT_URL,
+                            collate_ix_name)
 
-def search_indexes(name, query, limit, similarity, institution, sources):
+# from api.app.core.embeddings import make_embeddings
+
+
+def search(name, query, limit, similarity, institution, sources):
     if name == "experiences":
         retrieves = [
             "id_experience",
@@ -136,3 +144,9 @@ def search_indexes(name, query, limit, similarity, institution, sources):
             hits = [hits[i] for i in keep_idx][: limit // 5]
 
     return hits
+
+
+if __name__ == "__main__":
+    hits = search("chunks", "test", 3, "bm25", None, None)
+
+    pprint(hits)

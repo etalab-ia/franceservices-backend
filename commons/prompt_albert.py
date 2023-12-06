@@ -47,7 +47,7 @@ class AlbertLightPrompter(Prompter):
         #    hits[1], hits[2] = hits[2], hits[1]
         chunks = [
             f'{x["url"]} : {x["title"] + (" (" + x["context"] + ")") if x["context"] else ""}\n{x["text"]}'
-            for x in hits
+            for i, x in enumerate(hits)
         ]
         chunks = "\n\n".join(chunks)
         prompt.append(f"{chunks}")

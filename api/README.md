@@ -90,9 +90,10 @@ mkdir -p _data/data.gouv
 wget https://lecomarquage.service-public.fr/vdd/3.3/part/zip/vosdroits-latest.zip -O _data/data.gouv/vosdroits-latest.zip
 cd _data/data.gouv
 unzip vosdroits-latest.zip -d vos-droits-et-demarche
+wget https://github.com/SocialGouv/fiches-travail-data/raw/master/data/fiches-travail.json -O _data/fiches-travail.json
 ```
 
-3. Build the chunks (can be ignored if `_data/xmlfiles_as_chunks.json` already exists):
+3. Build the chunks (can be ignored if `_data/sheets_as_chunks.json` already exists):
 ```
 ./gpt.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche
 ```
@@ -105,7 +106,7 @@ unzip vosdroits-latest.zip -d vos-droits-et-demarche
 ./gpt.py index chunks --index-type bm25
 
 # Embeddings indexes (aka collections)
-# @WARNING: requires the file _data/embeddings_e5_experiences.npy and _data/embeddings_e5_chunks.npy which is built outside for now as its convenient to run it in a GPU (in a colab notebook).
+# @WARNING: requires data to be generated in _data/embeddings/ which is built outside for now as its convenient to run it in a GPU (in a colab notebook).
 # see notebooks/bootstrap_embeddings.ipynb or run: ./gpt.py make_embeddings
 ./gpt.py index experiences --index-type e5
 ./gpt.py index chunks --index-type e5
