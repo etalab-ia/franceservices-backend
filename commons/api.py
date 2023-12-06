@@ -5,16 +5,18 @@ import requests
 
 # @IMPROVE: commons & app.config unification (relative imports...)
 try:
-    from app.config import (API_LIA_URL, FIRST_ADMIN_PASSWORD,
+    from app.config import (API_LIA_URL, API_ROUTE_VER, FIRST_ADMIN_PASSWORD,
                             FIRST_ADMIN_USERNAME)
 except ModuleNotFoundError as e:
-    from api.app.config import (API_LIA_URL, FIRST_ADMIN_PASSWORD,
-                                FIRST_ADMIN_USERNAME)
+    from api.app.config import (API_LIA_URL, API_ROUTE_VER,
+                                FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME)
 
 
 def get_legacy_client():
     return ApiClient(
-        API_LIA_URL.rstrip("/") + "/api/v2", FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD
+        API_LIA_URL.rstrip("/") + "/" + API_ROUTE_VER.strip("/"),
+        FIRST_ADMIN_USERNAME,
+        FIRST_ADMIN_PASSWORD,
     )
 
 
@@ -63,13 +65,16 @@ class ApiClient:
         response = self._signed_in_fetch("POST", "/embeddings", json_data=json_data)
         return response.json()
 
-    def search(self, index_name, query, limit=10, similarity="bm25", institution=None):
+    def search(
+        self, index_name, query, limit=10, similarity="bm25", institution=None, sources=None
+    ):
         json_data = {
             "name": index_name,
             "query": query,
             "limit": limit,
             "similarity": similarity,
             "institution": institution,
+            "sources": sources,
         }
         response = self._signed_in_fetch("POST", "/indexes", json_data=json_data)
         return response.json()

@@ -1,7 +1,7 @@
 from .login import SignInForm, ResetPasswordForm, SendResetPasswordEmailForm
 from .others import Embedding, Index
 from .stream import Stream, StreamCreate, StreamWithRelationships
-from .user import ConfirmUser, User, UserCreate, UserWithRelationships
+from .user import ConfirmUser, User, UserCreate, UserWithRelationships, ContactForm
 
 StreamWithRelationships.model_rebuild()
 UserWithRelationships.model_rebuild()

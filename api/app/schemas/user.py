@@ -1,11 +1,25 @@
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import BaseModel, EmailStr, Extra, constr
-
 from app.config import PASSWORD_PATTERN
+from pydantic import BaseModel, EmailStr, Extra, constr
 
 if TYPE_CHECKING:
     from .stream import Stream
+
+# ********
+# * Misc *
+# ********
+
+
+class ContactForm(BaseModel):
+    subject: str
+    text: str
+    institution: str | None = None
+
+
+# ********
+# * Auth *
+# ********
 
 
 class ConfirmUser(BaseModel):

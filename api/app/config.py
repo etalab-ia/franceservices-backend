@@ -44,6 +44,7 @@ CONTACT_EMAIL = "albert-contact@data.gouv.fr"
 
 ELASTICSEARCH_IX_VER = "v3"
 QDRANT_IX_VER = "v3"
+API_ROUTE_VER = "/api/v2"
 SHEET_SOURCES = ["service-public", "travail-emploi"]
 EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
 EMBEDDING_BOOTSTRAP_PATH = os.path.join("_data", "embeddings", EMBEDDING_MODEL.split("/")[-1])
