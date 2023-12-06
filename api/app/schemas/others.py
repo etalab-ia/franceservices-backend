@@ -2,17 +2,6 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-# ********
-# * Misc *
-# ********
-
-
-class ContactForm(BaseModel):
-    subject: str
-    text: str
-    institution: str | None = None
-
-
 # **************
 # * Embeddings *
 # **************
@@ -38,6 +27,11 @@ class IndexSimilarity(str, Enum):
     e5 = "e5"
 
 
+class IndexSource(str, Enum):
+    service_public = "service-public"
+    travail_emploi = "travail-emploi"
+
+
 class Index(BaseModel):
     name: IndexName = Field(description="The name of the index or collection to search within.")
     query: str = Field(description="The text search query.")
@@ -46,6 +40,6 @@ class Index(BaseModel):
         default=IndexSimilarity.bm25, description="The similarity algorithm to use for the search."
     )
     institution: str | None = None
-    sources: list[str] | None = Field(
+    sources: list[IndexSource] | None = Field(
         default=None, description="Restrict the list of source to search within."
     )

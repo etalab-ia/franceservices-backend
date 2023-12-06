@@ -76,10 +76,10 @@ def confirm_user(
 
 @router.post("/user/contact")
 def contact_user(
-    form: schemas.ContactForm,
+    form_data: schemas.ContactForm,
     current_user: models.User = Depends(get_current_user),
 ):
     mailjet_client = MailjetClient()
-    mailjet_client.send_contact_email(current_user, form.subject, form.text, form.institution)
+    mailjet_client.send_contact_email(current_user, form_data.subject, form_data.text, form_data.institution)
     return {"msg": "Contact form email sent"}
 

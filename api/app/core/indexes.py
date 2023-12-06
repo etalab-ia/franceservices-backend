@@ -31,6 +31,7 @@ def search_indexes(name, query, limit, similarity, institution, sources):
     elif name == "chunks" or (similarity in ["e5"] and name == "sheets"):
         retrieves = [
             "hash",
+            "sid",
             "title",
             "url",
             "introduction",

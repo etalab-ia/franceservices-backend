@@ -153,6 +153,7 @@ def create_bm25_index(index_name, add_doc=True):
                 "theme": {"type": "text", "index": False},
                 "surtitre": {"type": "text", "index": False},
                 "url": {"type": "keyword", "index": False},
+                "sid": {"type": "keyword", "index": False},
                 "hash": {"type": "keyword", "index": False},
                 "related_questions": {
                     "type": "nested",

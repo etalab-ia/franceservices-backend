@@ -63,13 +63,16 @@ class ApiClient:
         response = self._signed_in_fetch("POST", "/embeddings", json_data=json_data)
         return response.json()
 
-    def search(self, index_name, query, limit=10, similarity="bm25", institution=None):
+    def search(
+        self, index_name, query, limit=10, similarity="bm25", institution=None, sources=None
+    ):
         json_data = {
             "name": index_name,
             "query": query,
             "limit": limit,
             "similarity": similarity,
             "institution": institution,
+            "sources": sources,
         }
         response = self._signed_in_fetch("POST", "/indexes", json_data=json_data)
         return response.json()
