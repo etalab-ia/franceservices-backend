@@ -2,6 +2,16 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+# ********
+# * Misc *
+# ********
+
+
+class ContactForm(BaseModel):
+    subject: str
+    text: str
+    institution: str | None = None
+
 
 # **************
 # * Embeddings *

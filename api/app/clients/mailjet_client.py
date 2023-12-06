@@ -1,6 +1,6 @@
 from mailjet_rest import Client
 
-from app.config import FRONT_URL, MJ_API_KEY, MJ_API_SECRET
+from app.config import FRONT_URL, MJ_API_KEY, MJ_API_SECRET, CONTACT_EMAIL
 
 
 class MailjetClient:
@@ -19,6 +19,17 @@ class MailjetClient:
             "Text-part": text,
         }
         return self._send_create(data)
+
+    def send_contact_email(self, user, subject, text, institution=None):
+        to = CONTACT_EMAIL
+        text = f'''
+        username: {user.username}
+        email: {user.email}
+        institution: {institution}
+
+        {text}
+        '''
+        return self._send(to, subject, text)
 
     def send_create_user_me_email(self, to):
         subject = "Welcome!"
