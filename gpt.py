@@ -16,7 +16,7 @@ Commands:
     download_directory  Download official directorier to build whitelists. Files are stored under _data/directory/.
     make_chunks     Parse les fichiers XML issue de data.gouv (fiches service publique), situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
                     Chaque élement Json correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
-                    Chunks are created under _data/xmlfiles_as_chunks.json.
+                    Chunks are created under _data/sheets_as_chunks.json.
 
     make_questions  Create a corpus of questions from the XML SP sheets.
 
@@ -51,8 +51,8 @@ Examples:
     ./gpt.py make_questions _data/data.gouv/vos-droits-et-demarche/
     !make institutions          # Generate the french institution list
     ./gpt.py index experiences  # assumes _data/export-expa-c-riences.json exists
-    ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ exists
-    ./gpt.py index chunks       # assumes _data/xmlfiles_as_chunks.json exists
+    ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ + _data/fiches-travail.json exist
+    ./gpt.py index chunks       # assumes _data/sheets_as_chunks.json + _data/fiches-travail.json exist
     ./gpt.py evaluate miaou v0  # Run the inference
     ./gpt.py evaluate miaou v0 --csv  # make an result table with inference file found in data/x/{model}-{version}
     ./gpt.py evaluate --merge albert-light-simple v0 --merge albert-light-rag v0 -o albert-light-v0
@@ -60,6 +60,11 @@ Examples:
 
 
 from docopt import docopt
+
+try:
+    from app.config import SHEET_SOURCES
+except ModuleNotFoundError as e:
+    from api.app.config import SHEET_SOURCES
 
 if __name__ == "__main__":
     # Parse CLI arguments
@@ -74,6 +79,7 @@ if __name__ == "__main__":
             structured=args["--structured"],
             chunk_size=int(args["--chunk-size"]),
             chunk_overlap=int(args["--chunk-overlap"]),
+            sources=SHEET_SOURCES,
         )
     elif args["make_questions"]:
         from xml_parsing import make_questions

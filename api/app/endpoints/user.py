@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-
 from app import crud, models, schemas
 from app.clients.mailjet_client import MailjetClient
 from app.config import FIRST_ADMIN_EMAIL
-from app.deps import get_db, get_current_user
+from app.deps import get_current_user, get_db
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
@@ -73,3 +72,14 @@ def confirm_user(
         mailjet_client = MailjetClient()
         mailjet_client.send_confirm_user_email(email)
     return {"msg": "Success"}
+
+
+@router.post("/user/contact")
+def contact_user(
+    form_data: schemas.ContactForm,
+    current_user: models.User = Depends(get_current_user),
+):
+    mailjet_client = MailjetClient()
+    mailjet_client.send_contact_email(current_user, form_data.subject, form_data.text, form_data.institution)
+    return {"msg": "Contact form email sent"}
+

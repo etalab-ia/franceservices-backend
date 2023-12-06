@@ -33,7 +33,7 @@ Le projet est structuré de la manière suivante :
 - `_data/` : dossier qui contient les données
 
   - `xml_files` : dossier qui contient les fichiers xml
-  - `xmlfiles_as_chunks.json` : dossier qui contient les chunks de fiches sous format json
+  - `sheets_as_chunks.json` : dossier qui contient les chunks de fiches sous format json
 
 Chaque fonctionnalité du projet est organisé dans un dossier qui contient les fichiers suivants :
 

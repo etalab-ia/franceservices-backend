@@ -40,9 +40,14 @@ QDRANT_URL = "http://127.0.0.1:6333"
 API_LIA_URL = "https://albert.etalab.gouv.fr"
 FRONT_URL = "https://albert.etalab.gouv.fr"
 #FRONT_URL = "http://171.33.114.210"
+CONTACT_EMAIL = "albert-contact@data.gouv.fr"
 
-ELASTICSEARCH_IX_VER = "v2"
-QDRANT_IX_VER = "v2"
+ELASTICSEARCH_IX_VER = "v3"
+QDRANT_IX_VER = "v3"
+API_ROUTE_VER = "/api/v2"
+SHEET_SOURCES = ["service-public", "travail-emploi"]
+EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
+EMBEDDING_BOOTSTRAP_PATH = os.path.join("_data", "embeddings", EMBEDDING_MODEL.split("/")[-1])
 
 
 def collate_ix_name(name, version):

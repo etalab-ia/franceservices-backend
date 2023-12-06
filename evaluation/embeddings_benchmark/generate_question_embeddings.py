@@ -20,9 +20,9 @@ Rédige une courte question en français dont ce texte contiendrait la réponse<
   return prompts
 
 # Opening JSON file
-f = open('xmlfiles_as_chunks.json')
+f = open('sheets_as_chunks.json')
 
-# returns JSON object as 
+# returns JSON object as
 # a dictionary
 data = json.load(f)
 texts = []

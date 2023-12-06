@@ -73,7 +73,7 @@ def start_stream(
     model_name = db_stream.model_name
     mode = db_stream.mode
     query = db_stream.query
-    # @DEBUG: This should be passed once a request time, and not saved (pass parameters to the first call to start_stream)
+    # @DEBUG: This should be passed once, when the stream start, and not saved (pass parameters to the first call to start_stream)
     limit = db_stream.limit
     user_text = db_stream.user_text
     context = db_stream.context

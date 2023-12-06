@@ -3,9 +3,9 @@ import torch.nn.functional as F
 from torch import Tensor
 from transformers import AutoModel, AutoTokenizer
 
-from app.config import DEVICE_MAP, WITH_GPU
+from app.config import DEVICE_MAP, WITH_GPU, EMBEDDING_MODEL
 
-_model_name_ebd = "intfloat/multilingual-e5-large"
+_model_name_ebd = EMBEDDING_MODEL
 tokenizer_ebd = AutoTokenizer.from_pretrained(_model_name_ebd)
 model_ebd = AutoModel.from_pretrained(_model_name_ebd, device_map=DEVICE_MAP)
 

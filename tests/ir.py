@@ -36,7 +36,7 @@ question = "qu'est ce que le JOAFE ?"
 # Tfidf feature extractions
 # --
 # Get documents from chunks
-with open("_data/xmlfiles_as_chunks.json") as f:
+with open("_data/sheets_as_chunks.json") as f:
     docs = json.load(f)
 
 documents = [x["text"] for x in docs][:1000]
