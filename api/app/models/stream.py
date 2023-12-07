@@ -1,8 +1,9 @@
+from app.db.base_class import Base
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from app.db.base_class import Base
+# from app.schemas.other import IndexSource
 
 
 class Stream(Base):
@@ -20,9 +21,18 @@ class Stream(Base):
     institution = Column(Text)
     links = Column(Text)
     temperature = Column(Integer, nullable=False, default=20)
+    sources = relationship("SourceEnum")
     # pylint: disable=not-callable
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     # pylint: enable=not-callable
 
     user = relationship("User", back_populates="streams")
+
+
+class SourceEnum(Base):
+    __tablename__ = "source_enum"
+    id = Column(Integer, primary_key=True)
+    # How to manage safely Enum values that would be update, or deleted in the future ?
+    # source_name = Column(Enum(IndexSource), unique=True)
+    source_name = Column(Text)
