@@ -504,6 +504,7 @@ ACRONYMS = [ {'symbol': 'ADR', 'text': 'Accompagnement au départ à la retraite
   { 'symbol': 'Cramif',
     'text': "Caisse régionale d'assurance maladie d'Île-de-France"},
   {'symbol': 'CMI', 'text': 'Carte mobilité inclusion'},
+  {'symbol': 'CNI', 'text': "Carte nationale d'identité"},
   {'symbol': 'CCE', 'text': 'Cellules-conseil aux entreprises'},
   { 'symbol': 'Casnav',
     'text': 'Centre académique pour la scolarisation des enfants allophones '
