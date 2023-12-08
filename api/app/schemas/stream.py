@@ -6,7 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 if TYPE_CHECKING:
     from .user import User
 
-from .other import IndexSource
+from .others import IndexSource
+
 
 class ModelName(str, Enum):
     fabrique_miaou = "fabrique-miaou"
