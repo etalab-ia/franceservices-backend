@@ -1,3 +1,5 @@
+# DO NOT EDIT
+
 INSTITUTIONS = [
     "115",
     "119",

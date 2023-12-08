@@ -31,6 +31,25 @@ download_travailemploie_sheets:
 institutions:
 	cat _data/export-expa-c-riences.json  | jq  'map(.intitule_typologie_1) | unique | map(select(. != null))' > _data/institutions.json
 
+acronyms_directory:
+	@# to  _data/acronyms.text
+	@# filter: Nantes, Montpellier, Toulouse, Secrétariat, Guangzhou, Fondatation
+	@rg '"nom"'  _data/directory/national_data_directory.json | grep ')",$$' | cut -d: -f 2 | grep -oP '(?<=\").*(?=\")' | grep -E '\([A-Z0-9][0-9a-zA-Z]{2,}\)' | sort | uniq
+
+acronyms_sp:
+	@find -iname "*.xml" | xargs xmllint --xpath "//*[name()='OuSAdresser']/Titre/text() | //Fiche//Titre/text()" 2>/dev/null | grep -oE '.*\([A-Z0-9][0-9a-zA-Z]{2,}\)' | sort | uniq
+
+acronyms: #acronyms_directory acronyms_sp
+	# filter lines with more than one acronym
+	cat acronyms_sp.txt acronyms_directory.txt > acronyms.txt
+	cat acronyms.txt | sort | uniq > acronyms.1.txt
+	grep -E '(.*\(.*){2,}' acronyms.1.txt > acronyms_dup.txt
+	grep -v -F -f acronyms_dup.txt acronyms.1.txt > _data/acronyms.txt
+	rm acronyms.txt acronyms.1.txt acronyms_dup.txt
+	rm acronyms_sp.txt acronyms_directory.txt
+	# @Warning: Duplicate have been process manually !
+	# ./script/acronyms_to_json.py
+
 sync_etalab_repo:
 	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@datascience-01.infra.data.gouv.fr:~/
 

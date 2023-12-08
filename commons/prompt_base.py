@@ -1,3 +1,13 @@
+import re
+
+try:
+    from app.core.acronyms import ACRONYMS
+except ModuleNotFoundError as e:
+    from api.app.core.acronyms import ACRONYMS
+
+ACRONYMS_KEYS = [acronym["symbol"].lower() for acronym in ACRONYMS]
+
+
 class Prompter:
     URL = "URL of the LLM API"
     SAMPLING_PARAMS = "dict of default sampling params fo a given child class"
@@ -10,15 +20,51 @@ class Prompter:
         # Eventually stores the sources returned by the last RAG prompt built
         self.sources = None
 
-    def make_prompt(self, **kwargs):
-        return
-
     def set_mode(self, mode):
         self.mode = mode
 
     @property
     def url(self):
         return self.URL
+
+    def make_prompt(self, **kwargs):
+        return
+
+    @staticmethod
+    def _expand_acronyms(prompt: str) -> str:
+        # Match potential acronyms
+        # --
+        # Terms that start by a number or maj, that contains at least 3 character, and that can be
+        # preceded by a space, but not if the first non-space character encountered backwards is a dot.
+        pattern = r"(?<!\S\. )[A-Z0-9][A-Za-z0-9]{2,}\b"
+        matches = [
+            (match.group(), match.start(), match.end()) for match in re.finditer(pattern, prompt)
+        ]
+
+        # Prevent extreme case (caps lock, list of items, etc)
+        if len(matches) > 10:
+            return prompt
+
+        # Expand acronyms
+        for match, start, end in matches:
+            try:
+                i = ACRONYMS_KEYS.index(match.lower())
+            except ValueError:
+                continue
+
+            acronym = ACRONYMS[i]
+            look_around = 100
+            text_span = (
+                prompt[max(0, start - look_around) : start] + " " + prompt[end : end + look_around]
+            )
+            if not acronym["text"].lower() in text_span.lower():
+                # I suppose we go here most of the time...
+                # but I also suppose the test should fast enough to be negligible.
+                prompt
+                expanded = " (" + acronym["text"] + ")"
+                prompt = prompt[:end] + expanded + prompt[end:]
+
+        return prompt
 
 
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
