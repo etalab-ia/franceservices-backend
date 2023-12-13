@@ -11,7 +11,6 @@ class Stream(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     is_streaming = Column(Boolean)
-    user_id = Column(Integer, ForeignKey("users.id"))
     model_name = Column(Text)
     mode = Column(Text)
     query = Column(Text)
@@ -21,17 +20,21 @@ class Stream(Base):
     institution = Column(Text)
     links = Column(Text)
     temperature = Column(Integer, nullable=False, default=20)
-    sources = relationship("SourceEnum")
     # pylint: disable=not-callable
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     # pylint: enable=not-callable
 
     user = relationship("User", back_populates="streams")
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    sources = relationship("SourceEnum")
+    source_id = Column(Integer, ForeignKey("source_enum.id"))
 
 
 class SourceEnum(Base):
     __tablename__ = "source_enum"
+
     id = Column(Integer, primary_key=True)
     # How to manage safely Enum values that would be update, or deleted in the future ?
     # source_name = Column(Enum(IndexSource), unique=True)

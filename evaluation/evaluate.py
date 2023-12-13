@@ -46,14 +46,14 @@ class EVAL(object):
             "url": "http://localhost:8081",
             "prompt_maker": "_make_prompt_3",
             "prompt_args": {"mode": "rag"},
-            "sampling_args": {"temperature": 30, "max_tokens": 1024},
+            "sampling_args": {"temperature": 30, "max_tokens": 2048},
             "type": "chat",
         },
         "albert-light-simple": {
             "url": "http://localhost:8081",
             "prompt_maker": "_make_prompt_3",
             "prompt_args": {"mode": "simple"},
-            "sampling_args": {"temperature": 30, "max_tokens": 1024},
+            "sampling_args": {"temperature": 30, "max_tokens": 2048},
             "type": "chat",
         },
     }
