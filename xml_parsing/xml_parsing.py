@@ -74,7 +74,7 @@ def _get_xml_files(path):
                     # "fiches thème", "fiches dossier".
                     fullpath = os.path.join(root, file)
                     xml_files.append(fullpath)
-    return xml_files
+    return sorted(xml_files)
 
 
 def _get_metadata(soup):
