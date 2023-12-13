@@ -43,6 +43,11 @@ def make_embeddings():
     def embed(tokenizer, model, texts, batch_size=1):  # 4 on colab GPU...
         # Sentence transformers for E5 like model
         embeddings = []
+
+        # e5 query/passage logics
+        for i, text in enumerate(texts):
+            texts[i] = "passage: " + text
+
         for i in range(0, len(texts), batch_size):
             batch_dict = tokenizer(
                 texts[i : i + batch_size],
