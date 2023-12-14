@@ -22,7 +22,7 @@ def get_legacy_client():
 
 class ApiClient:
     def __init__(self, url, username, password):
-        self.url = url
+        self.url = url.rstrip("/")
         self.username = username
         self.password = password
 
