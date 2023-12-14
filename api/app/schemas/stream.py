@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 if TYPE_CHECKING:
     from .user import User
 
+from .others import IndexSource
+
 
 class ModelName(str, Enum):
     fabrique_miaou = "fabrique-miaou"
@@ -30,7 +32,13 @@ class StreamBase(BaseModel):
     # Sampling params
     temperature: int = Field(20, ge=0, le=100)
 
+    # Optionnal RAG sources
+    sources: list[IndexSource] | None = Field(
+        default=None, description="Restrict the list of source to search within in RAG mode."
+    )
+
     # TODO: add other checks
+    # --
     @model_validator(mode="after")
     def validate_model(self):
         if self.model_name == ModelName.fabrique_miaou:

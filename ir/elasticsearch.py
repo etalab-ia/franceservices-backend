@@ -90,6 +90,7 @@ def create_bm25_index(index_name, add_doc=True):
                     "properties": {
                         "question": {"type": "text"},
                         "sid": {"type": "keyword"},
+                        "url": {"type": "keyword"},
                     },
                 },
                 "web_services": {
@@ -161,6 +162,7 @@ def create_bm25_index(index_name, add_doc=True):
                     "properties": {
                         "question": {"type": "text"},
                         "sid": {"type": "keyword"},
+                        "url": {"type": "keyword"},
                     },
                 },
                 "web_services": {

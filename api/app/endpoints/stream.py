@@ -80,6 +80,9 @@ def start_stream(
     institution = db_stream.institution
     links = db_stream.links
     temperature = db_stream.temperature
+    sources = None
+    if db_stream.sources:
+        sources = [source.source_name for source in db_stream.sources]
 
     # TODO: turn into async
     # Streaming case
@@ -95,6 +98,7 @@ def start_stream(
             links=links,
             query=query,
             limit=limit,
+            sources=sources,
         )
 
         if (
