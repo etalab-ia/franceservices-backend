@@ -22,14 +22,15 @@ class MailjetClient:
 
     def send_contact_email(self, user, subject, text, institution=None):
         to = CONTACT_EMAIL
-        text = f'''
-        username: {user.username}
-        email: {user.email}
-        institution: {institution}
+        msg = "---\n"
+        msg += f"username: {user.username}\n"
+        msg += f"email: {user.email}\n"
+        msg += f"institution: {institution}\n"
+        msg += "---\n\n"
 
-        {text}
-        '''
-        return self._send(to, subject, text)
+        msg += text
+
+        return self._send(to, subject, msg)
 
     def send_create_user_me_email(self, to):
         subject = "Welcome!"

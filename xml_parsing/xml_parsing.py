@@ -74,7 +74,7 @@ def _get_xml_files(path):
                     # "fiches thème", "fiches dossier".
                     fullpath = os.path.join(root, file)
                     xml_files.append(fullpath)
-    return xml_files
+    return sorted(xml_files)
 
 
 def _get_metadata(soup):
@@ -315,9 +315,20 @@ def _parse_xml_text(xml_file, structured=False) -> dict:
 
         return keeps
 
+    def sp_url_encoder(sid, audience):
+        audience_to_uri = {
+            "Associations": "associations",
+            "Particuliers": "particuliers",
+            "Professionnels": "professionnels-entreprises",
+        }
+        # Do not fail silently
+        audience_uri = audience_to_uri[audience]
+        return f"https://www.service-public.fr/{audience_uri}/vosdroits/{sid}"
+
     # Get related questions
     questions = [
-        {"question": get_text(q), "sid": q["ID"]} for q in soup.find_all("QuestionReponse")
+        {"question": get_text(q), "sid": q["ID"], "url": sp_url_encoder(q["ID"], q["audience"])}
+        for q in soup.find_all("QuestionReponse")
     ]
     questions = drop_duplicates(questions, "question")
     doc["related_questions"] = questions

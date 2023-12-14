@@ -48,4 +48,5 @@ def _make_embeddings(texts, batch_size=1):
 
 
 def make_embeddings(query):
+    query = "query: " + query
     return _make_embeddings([query])[0]

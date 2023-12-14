@@ -3,12 +3,7 @@ from commons.prompt_fabrique import FabriquePrompter, FabriqueReferencePrompter
 
 
 def get_prompter(model_name: str, mode: str | None = None):
-    # All prompter classes derived from the following abstract class
-    #
-    # class Prompter:
-    #
-    #    def make_prompt(**kwargs):
-    #        return
+    # All prompter classes derived from the Prompter abstract class.
 
     if model_name == "fabrique-miaou":
         return FabriquePrompter()
