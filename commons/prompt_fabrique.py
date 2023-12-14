@@ -44,7 +44,15 @@ class FabriqueReferencePrompter(Prompter):
         else:
             raise ValueError("prompt mode unknown: %s" % self.mode)
 
-    def make_prompt(self, **kwargs):
+    @classmethod
+    def preprocess_prompt(cls, prompt: str) -> str:
+        new_prompt = cls._expand_acronyms(prompt)
+        return new_prompt
+
+    def make_prompt(self, expand_acronyms=True, **kwargs):
+        if expand_acronyms and "experience" in kwargs:
+            kwargs["experience"] = self.preprocess_prompt(kwargs["experience"])
+
         if self.mode == "simple":
             return self._make_prompt_simple(**kwargs)
         elif self.mode == "experience":
@@ -91,7 +99,9 @@ class FabriqueReferencePrompter(Prompter):
         limit = 1 if limit is None else limit
         if skip_first:
             limit += 1
-        hits = client.search("experiences", experience, limit=limit, similarity="e5", institution=institution)
+        hits = client.search(
+            "experiences", experience, limit=limit, similarity="e5", institution=institution
+        )
         if skip_first:
             hits = hits[1:]
         self.sources = [x["id_experience"] for x in hits]
@@ -127,7 +137,9 @@ class FabriqueReferencePrompter(Prompter):
         n_exp = 1
         if skip_first:
             n_exp = 2
-        hits = client.search("experiences", experience, limit=n_exp, similarity="e5", institution=institution)
+        hits = client.search(
+            "experiences", experience, limit=n_exp, similarity="e5", institution=institution
+        )
         if skip_first:
             hits = hits[1:]
         rep1 = hits[0]["description"]
