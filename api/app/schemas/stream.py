@@ -57,6 +57,9 @@ class StreamBase(BaseModel):
             if self.mode is None:
                 self.mode = "rag"  # default
 
+        if not self.sources:
+            self.sources = []
+
         return self
 
 

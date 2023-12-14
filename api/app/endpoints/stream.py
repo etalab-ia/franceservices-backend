@@ -27,7 +27,7 @@ def read_streams(
     current_user: models.User = Depends(get_current_user),
 ):
     streams = crud.stream.get_streams(db, current_user.id, skip=skip, limit=limit)
-    return streams
+    return [stream.to_dict() for stream in streams]
 
 
 @router.post("/stream", response_model=schemas.Stream)
@@ -36,7 +36,7 @@ def create_stream(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    return crud.stream.create_stream(db, stream, current_user.id)
+    return crud.stream.create_stream(db, stream, current_user.id).to_dict()
 
 
 @router.get("/stream/{stream_id}", response_model=schemas.Stream)
@@ -52,7 +52,7 @@ def read_stream(
     if db_stream.user_id != current_user.id:
         raise HTTPException(403, detail="Forbidden")
 
-    return db_stream
+    return db_stream.to_dict()
 
 
 # TODO: turn into async
@@ -164,4 +164,4 @@ def stop_stream(
         raise HTTPException(403, detail="Forbidden")
 
     crud.stream.set_is_streaming(db, db_stream, False)
-    return db_stream
+    return db_stream.to_dict()
