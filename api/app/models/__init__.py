@@ -1,3 +1,3 @@
 from .login import BlacklistToken, PasswordResetToken
-from .stream import Stream
+from .stream import Stream, SourceEnum
 from .user import User
