@@ -149,3 +149,4 @@ deploy-api-vllm-albert-recette:
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker pull $CI_REGISTRY_IMAGE/api_vllm_albert:latest"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-vllm-albert || true"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run --restart="always" --gpus all --network="host" -d -p 8082:8082 --name miaou-api-vllm-albert -v /var/lib/huggingface:/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm_albert:latest"
+
