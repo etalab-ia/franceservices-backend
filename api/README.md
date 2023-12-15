@@ -16,9 +16,8 @@ huggingface-cli login --token $HF_ACCESS_TOKEN
 ```
 
 Download a model:
-```
-python -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-miaou')"
-```
+- Fabrique model `python -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-reference-2')"`
+- Albert model python -c `"from vllm import LLM; LLM(model='etalab-ia/albert-light')"`
 
 
 # Test
@@ -47,7 +46,7 @@ python test.py
 
 If GPU is available, the vllm API is run separately with:
 ```
-python vllm_api.py --model etalab-ia/fabrique-miaou  --tensor-parallel-size 1 --gpu-memory-utilization 0.4 --port 8000
+python vllm_api.py --model etalab-ia/albert-light  --tensor-parallel-size 1 --gpu-memory-utilization 0.4 --port 8000
 ```
 
 Run the public API:

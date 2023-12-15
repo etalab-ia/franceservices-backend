@@ -1,6 +1,5 @@
-from sqlalchemy.orm import Session
-
 from app import models, schemas
+from sqlalchemy.orm import Session
 
 
 def get_streams(db: Session, user_id: str, skip: int = 0, limit: int = 100):
@@ -15,11 +14,21 @@ def get_streams(db: Session, user_id: str, skip: int = 0, limit: int = 100):
 
 
 def create_stream(db: Session, stream: schemas.StreamCreate, user_id: int, commit=True):
+    stream = stream.model_dump()
+
+    # @DEBUG: How to not have to that manually while avoiding the following exception:
+    # AttributeError: 'str' object has no attribute '_sa_instance_state'
+    if stream["sources"]:
+        stream["sources"] = [
+            models.SourceEnum(source_name=source_name) for source_name in stream["sources"]
+        ]
+
     db_stream = models.Stream(
-        **stream.model_dump(),
+        **stream,
         is_streaming=False,
         user_id=user_id,
     )
+
     db.add(db_stream)
     if commit:
         db.commit()
