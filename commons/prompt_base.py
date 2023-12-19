@@ -5,11 +5,6 @@ try:
 except ModuleNotFoundError as e:
     from api.app.core.acronyms import ACRONYMS
 
-try:
-    from app.core.operators_fs import OPERATORS
-except ModuleNotFoundError as e:
-    from api.app.core.operators_fs import OPERATORS
-
 
 ACRONYMS_KEYS = [acronym["symbol"].lower() for acronym in ACRONYMS]
 
