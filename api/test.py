@@ -23,6 +23,7 @@ headers = {
 data = {
     "user_text": "Merci pour le service Service-Public+. Bien à vous.",
     "query": "Quel est la limite d'age pour voter en france, et quelle sont les échances électorales ?",
+    #"query": "Qu'est ce que la DITP et la DINUM ?",
     "model_name": "albert-light",
     #"sources": ["travail-emploi"],
     #"should_sids": ["F35789"],
