@@ -39,6 +39,12 @@ class StreamBase(BaseModel):
     sources: list[IndexSource] | None = Field(
         default=None, description="Restrict the list of source to search within in RAG mode."
     )
+    should_sids: list[str] | None = Field(
+        default=None, description="Add document that should match, in RAG mode."
+    )
+    must_not_sids: list[str] | None = Field(
+        default=None, description="Filter out documents that must not match, in RAG mode."
+    )
 
     # TODO: add other checks
     # --
@@ -60,6 +66,7 @@ class StreamBase(BaseModel):
             if self.mode is None:
                 self.mode = "rag"  # default
 
+        # For SQLAlchemy relationship compatibility
         if not self.sources:
             self.sources = []
 
