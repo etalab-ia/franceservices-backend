@@ -98,6 +98,7 @@ def create_vector_index(index_name, add_doc=True):
                     vector=vector.tolist(),
                     payload={
                         "source": documents[i]["source"],
+                        "sid": documents[i]["sid"],
                         # "color": "red", "rand_number": idx % 10,
                     },
                 )

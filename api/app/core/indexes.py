@@ -7,7 +7,9 @@ from qdrant_client import QdrantClient
 from qdrant_client import models as QdrantModels
 
 
-def search_indexes(name, query, limit, similarity, institution, sources):
+def search_indexes(
+    name, query, limit, similarity, institution, sources, should_sids=None, must_not_sids=None
+):
     if name == "experiences":
         retrieves = [
             "id_experience",
@@ -51,16 +53,25 @@ def search_indexes(name, query, limit, similarity, institution, sources):
     hits = None
     if similarity == "bm25":
         client = Elasticsearch(ELASTICSEARCH_URL, basic_auth=ELASTICSEARCH_CREDS)
+        must_filter = [{"multi_match": {"query": query, "fuzziness": "AUTO"}}]
+        must_not_filter = []
+        should_filter = []
         query_filter = []
         if institution:
             query_filter.append({"term": {"intitule_typologie_1": institution}})
         if sources:
             query_filter.append({"terms": {"source": sources}})
+        if should_sids:
+            should_filter.append({"ids": {"values": should_sids, "boost": 100}})
+        if must_not_sids:
+            must_not_filter.append({"ids": {"values": must_not_sids}})
 
         body = {
             "query": {
                 "bool": {
-                    "must": [{"multi_match": {"query": query, "fuzziness": "AUTO"}}],
+                    "must": must_filter,
+                    "must_not": must_not_filter,
+                    "should": should_filter,
                     "filter": query_filter,
                 }
             },
@@ -79,22 +90,22 @@ def search_indexes(name, query, limit, similarity, institution, sources):
         embeddings = make_embeddings(query)
         client = QdrantClient(url=QDRANT_URL, grpc_port=6334, prefer_grpc=True)
         # Eventually set filters
-        query_filter = None
+        must_filter = []
+        should_filter = []
+        must_not_filter = []
         if institution:
-            query_filter = QdrantModels.Filter(
-                must=[
-                    QdrantModels.FieldCondition(
-                        key="intitule_typologie_1",
-                        match=QdrantModels.MatchValue(
-                            value=institution,
-                        ),
-                    )
-                ]
+            must_filter.append(
+                QdrantModels.FieldCondition(
+                    key="intitule_typologie_1",
+                    match=QdrantModels.MatchValue(
+                        value=institution,
+                    ),
+                )
             )
         if sources:
-            # @debug: institution and sources are two independant filters (one for experinces, the others for sheets/chunks)
-            query_filter = QdrantModels.Filter(
-                should=[
+            # Equivalent to must_filter+MatchAny
+            should_filter.extend(
+                [
                     QdrantModels.FieldCondition(
                         key="source",
                         match=QdrantModels.MatchValue(
@@ -104,6 +115,32 @@ def search_indexes(name, query, limit, similarity, institution, sources):
                     for source in sources
                 ]
             )
+        if should_sids:
+            # @debug: Qdrant has a different "should" semantic than elasticsearch.
+            # Qdrant should is a strict OR condition.
+            must_filter.append(
+                QdrantModels.FieldCondition(
+                    key="sid",
+                    match=QdrantModels.MatchAny(
+                        any=should_sids,
+                    ),
+                )
+            )
+        if must_not_sids:
+            must_not_filter.append(
+                QdrantModels.FieldCondition(
+                    key="sid",
+                    match=QdrantModels.MatchAny(
+                        any=must_not_sids,
+                    ),
+                )
+            )
+
+        query_filter = QdrantModels.Filter(
+            must=must_filter,
+            should=should_filter,
+            must_not=must_not_filter,
+        )
 
         res = client.search(
             collection_name=collate_ix_name(name, QDRANT_IX_VER),

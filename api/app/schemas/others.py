@@ -43,3 +43,9 @@ class Index(BaseModel):
     sources: list[IndexSource] | None = Field(
         default=None, description="Restrict the list of source to search within."
     )
+    should_sids: list[str] | None = Field(
+        default=None, description="Add document that should match."
+    )
+    must_not_sids: list[str] | None = Field(
+        default=None, description="Filter out documents that must not match."
+    )

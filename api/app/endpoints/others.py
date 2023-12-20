@@ -58,6 +58,13 @@ def get_indexes(
         query = Prompter._expand_acronyms(index.query)
 
     hits = search_indexes(
-        index.name, query, index.limit, index.similarity, index.institution, index.sources
+        index.name,
+        query,
+        index.limit,
+        index.similarity,
+        index.institution,
+        index.sources,
+        index.should_sids,
+        index.must_not_sids,
     )
     return JSONResponse(hits)
