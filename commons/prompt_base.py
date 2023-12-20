@@ -47,7 +47,7 @@ class Prompter:
             return prompt
 
         # Expand acronyms
-        for match, start, end in matches:
+        for match, start, end in matches[::-1]:
             try:
                 i = ACRONYMS_KEYS.index(match.lower())
             except ValueError:
@@ -60,8 +60,7 @@ class Prompter:
             )
             if not acronym["text"].lower() in text_span.lower():
                 # I suppose we go here most of the time...
-                # but I also suppose the test should fast enough to be negligible.
-                prompt
+                # but I also suppose the test should be fast enough to be negligible.
                 expanded = " (" + acronym["text"] + ")"
                 prompt = prompt[:end] + expanded + prompt[end:]
 
