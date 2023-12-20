@@ -1,11 +1,30 @@
+import json
+
 from app import schemas
 from app.db.base_class import Base
-from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Integer, Table,
-                        Text)
+from sqlalchemy import (JSON, Boolean, Column, DateTime, ForeignKey, Integer,
+                        String, Table, Text)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.types import TypeDecorator
 
 # from app.schemas.other import IndexSource
+
+
+# @obsolete ewith JSON type
+class JsonEncoder(TypeDecorator):
+    impl = String
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = json.loads(value)
+        return value
+
 
 stream_source_association = Table(
     "stream_source",
@@ -33,6 +52,9 @@ class Stream(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     # pylint: enable=not-callable
+
+    should_sids = Column(JSON, nullable=True)
+    must_not_sids = Column(JSON, nullable=True)
 
     # one-to-many
     user = relationship("User", back_populates="streams")

@@ -24,7 +24,9 @@ data = {
     "user_text": "Merci pour le service Service-Public+. Bien à vous.",
     "query": "Quel est la limite d'age pour voter en france, et quelle sont les échances électorales ?",
     "model_name": "albert-light",
-    # "sources": ["travail-emploi"],
+    #"sources": ["travail-emploi"],
+    #"should_sids": ["F35789"],
+    #"must_not_sids": ["F35789"],
 }
 response = requests.post(f"{url}/stream", json=data, headers=headers)
 
