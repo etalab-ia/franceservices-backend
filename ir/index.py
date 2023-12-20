@@ -46,7 +46,8 @@ def make_embeddings():
 
         # e5 query/passage logics
         for i, text in enumerate(texts):
-            texts[i] = "passage: " + text
+            # Using "query" prefix instea of "passage" seems to give more stable results for our case...
+            texts[i] = "query: " + text
 
         for i in range(0, len(texts), batch_size):
             batch_dict = tokenizer(
@@ -130,7 +131,7 @@ def make_embeddings():
             doc["context"] = " > ".join(doc["context"])
 
     texts = [
-        " ".join([x["title"], x["introduction"], x["text"], x.get("context", "")])
+        "\n".join([x["title"], x.get("context", ""), x["introduction"], x["text"]])
         for x in documents
     ]
     embeddings = embed(tokenizer, model, texts, batch_size=4)
