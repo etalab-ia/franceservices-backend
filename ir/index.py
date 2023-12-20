@@ -4,7 +4,7 @@ except ModuleNotFoundError as e:
     from api.app.config import EMBEDDING_BOOTSTRAP_PATH, EMBEDDING_MODEL
 
 
-def create_index(index_type, index_name, add_doc=True):
+def create_index(index_type, index_name, add_doc=True, recreate=False):
     if index_type == "bucket":
         from .meilisearch import create_bucket_index
 
@@ -14,12 +14,12 @@ def create_index(index_type, index_name, add_doc=True):
         from .elasticsearch import create_bm25_index
 
         print("Creating Elasticsearch index...")
-        return create_bm25_index(index_name, add_doc)
+        return create_bm25_index(index_name, add_doc, recreate)
     elif index_type == "e5":
         from .qdrant import create_vector_index
 
         print("Creating Qdrant index...")
-        return create_vector_index(index_name, add_doc)
+        return create_vector_index(index_name, add_doc, recreate)
     else:
         raise NotImplementedError
 

@@ -20,7 +20,7 @@ def get_unique_color(string):
     return "#" + color
 
 
-def create_vector_index(index_name, add_doc=True):
+def create_vector_index(index_name, add_doc=True, recreate=False):
     """Add vector to qdrant collection.
     The payload, if present is useful to get back a data and filter a search.
     """
@@ -36,13 +36,18 @@ def create_vector_index(index_name, add_doc=True):
         with open("_data/export-expa-c-riences.json") as f:
             documents = json.load(f)
 
-        # Create collection
-        client.recreate_collection(
-            collection_name=collection_name,
-            vectors_config=models.VectorParams(
-                size=embeddings.shape[1], distance=models.Distance.COSINE
-            ),
-        )
+        # Get or reCreate collection
+        try:
+            if recreate:
+                raise Exception
+            client.get_collection(collection_name)
+        except Exception:
+            client.recreate_collection(
+                collection_name=collection_name,
+                vectors_config=models.VectorParams(
+                    size=embeddings.shape[1], distance=models.Distance.COSINE
+                ),
+            )
 
         client.upsert(
             collection_name=collection_name,
@@ -82,13 +87,18 @@ def create_vector_index(index_name, add_doc=True):
         with open("_data/sheets_as_chunks.json") as f:
             documents = json.load(f)
 
-        # Create collection
-        client.recreate_collection(
-            collection_name=collection_name,
-            vectors_config=models.VectorParams(
-                size=embeddings.shape[1], distance=models.Distance.COSINE
-            ),
-        )
+        # Get or reCreate collection
+        try:
+            if recreate:
+                raise Exception
+            client.get_collection(collection_name)
+        except Exception:
+            client.recreate_collection(
+                collection_name=collection_name,
+                vectors_config=models.VectorParams(
+                    size=embeddings.shape[1], distance=models.Distance.COSINE
+                ),
+            )
 
         client.upsert(
             collection_name=collection_name,
