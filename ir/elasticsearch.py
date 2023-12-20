@@ -10,7 +10,7 @@ except ModuleNotFoundError as e:
                                 collate_ix_name)
 
 
-def create_bm25_index(index_name, add_doc=True):
+def create_bm25_index(index_name, add_doc=True, recreate=False):
     # Connect to Elasticsearch
     client = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
 
@@ -44,6 +44,8 @@ def create_bm25_index(index_name, add_doc=True):
             },
         }
         # Create the index
+        if recreate:
+            client.indices.delete(index=ix_name)
         client.indices.create(index=ix_name, mappings=mappings, settings=settings, ignore=400)
 
         if add_doc:
@@ -105,6 +107,8 @@ def create_bm25_index(index_name, add_doc=True):
             },
         }
         # Create the index
+        if recreate:
+            client.indices.delete(index=ix_name)
         client.indices.create(index=ix_name, mappings=mappings, settings=settings, ignore=400)
 
         if add_doc:
@@ -177,6 +181,8 @@ def create_bm25_index(index_name, add_doc=True):
             },
         }
         # Create the index
+        if recreate:
+            client.indices.delete(index=ix_name)
         client.indices.create(index=ix_name, mappings=mappings, settings=settings, ignore=400)
 
         if add_doc:

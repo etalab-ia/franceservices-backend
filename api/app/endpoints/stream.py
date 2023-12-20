@@ -80,6 +80,8 @@ def start_stream(
     institution = db_stream.institution
     links = db_stream.links
     temperature = db_stream.temperature
+    should_sids = db_stream.should_sids
+    must_not_sids = db_stream.must_not_sids
     sources = None
     if db_stream.sources:
         sources = [source.source_name for source in db_stream.sources]
@@ -99,6 +101,8 @@ def start_stream(
             query=query,
             limit=limit,
             sources=sources,
+            should_sids=should_sids,
+            must_not_sids=must_not_sids,
         )
 
         if (

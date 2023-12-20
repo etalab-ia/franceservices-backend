@@ -39,7 +39,9 @@ class AlbertLightPrompter(Prompter):
     def _make_prompt_simple(self, query=None, **kwargs):
         return query
 
-    def _make_prompt_rag(self, query=None, limit=4, sources=None, **kwargs):
+    def _make_prompt_rag(
+        self, query=None, limit=4, sources=None, should_sids=None, must_not_sids=None, **kwargs
+    ):
         prompt = []
         prompt.append(
             "Utilisez les éléments de contexte à votre disposition ci-dessous pour répondre à la question finale. Si vous ne connaissez pas la réponse, dites simplement que vous ne savez pas, n'essayez pas d'inventer une réponse."
@@ -48,7 +50,15 @@ class AlbertLightPrompter(Prompter):
         # Rag
         client = get_legacy_client()
         limit = 4 if limit is None else limit
-        hits = client.search("chunks", query, limit=limit, similarity="e5", sources=sources)
+        hits = client.search(
+            "chunks",
+            query,
+            limit=limit,
+            similarity="e5",
+            sources=sources,
+            should_sids=should_sids,
+            must_not_sids=must_not_sids,
+        )
         self.sources = [x["url"] for x in hits]
         # if len(hits) == 3:
         #    # LLM Lost in the middle
