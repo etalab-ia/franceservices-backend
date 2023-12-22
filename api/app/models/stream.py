@@ -68,7 +68,6 @@ class Stream(Base):
 
     # one-to-one / use use_list=False ?
     feedback = relationship("Feedback", back_populates="stream")
-    feedback_id = Column(Integer, ForeignKey("feedbacks.id"), nullable=True)
 
     # one-to-many
     user = relationship("User", back_populates="streams")

@@ -7,8 +7,14 @@ def read_chats(client: TestClient, token):
     return client.get("/chats", headers={"Authorization": f"Bearer {token}"})
 
 
-def create_chat(client: TestClient, token):
-    return client.post("/chat", headers={"Authorization": f"Bearer {token}"})
+def create_chat(client: TestClient, token, chat_type):
+    return client.post(
+        "/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "chat_type": chat_type,
+        },
+    )
 
 
 def read_chat(client: TestClient, token, chat_id):

@@ -13,6 +13,7 @@ from app.tests.utils.stream import (
     start_stream,
     stop_stream,
 )
+from app.tests.utils.feedback import create_feedback
 
 
 class TestEndpointsStream(TestClass):
@@ -59,13 +60,17 @@ class TestEndpointsStream(TestClass):
         assert response.status_code == 200
 
         # Create Chat:
-        response = create_chat(client, token)
+        response = create_chat(client, token, "meeting")
         assert response.status_code == 200
         chat_id = response.json()["id"]
 
         # Create Chat Stream:
         response = create_chat_stream(
-            client, token, chat_id, "fabrique-miaou", "Merci pour le service Service-Public+. Bien à vous."
+            client,
+            token,
+            chat_id,
+            "fabrique-miaou",
+            "Merci pour le service Service-Public+. Bien à vous.",
         )
         assert response.status_code == 200
         stream_id = response.json()["id"]
@@ -79,4 +84,25 @@ class TestEndpointsStream(TestClass):
 
         # Stop Stream:
         response = stop_stream(client, token, stream_id)
+        assert response.status_code == 200
+
+        # Send feedbacks
+        response = create_feedback(
+            client,
+            token,
+            stream_id,
+            {
+                "is_good": True,
+            },
+        )
+        assert response.status_code == 200
+
+        response = create_feedback(
+            client,
+            token,
+            stream_id,
+            {
+                "message": "that is excelent !",
+            },
+        )
         assert response.status_code == 200

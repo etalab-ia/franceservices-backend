@@ -22,3 +22,4 @@ class Feedback(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
 
     stream = relationship("Stream", back_populates="feedback")
+    stream_id = Column(Integer, ForeignKey("streams.id"))

@@ -22,7 +22,7 @@ class FeedbackBase(BaseModel):
 
     @model_validator(mode="after")
     def validate_model(self):
-        if not all([x is None for x in [self.is_good, self.message, self.reason]]):
+        if all([x is None for x in [self.is_good, self.message, self.reason]]):
             raise ValueError("Empty feedback is not allowed.")
         return self
 

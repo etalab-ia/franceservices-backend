@@ -21,7 +21,7 @@ class TestEndpointsChat(TestClass):
         assert response.status_code == 200
 
         # Create Chat:
-        response = create_chat(client, token)
+        response = create_chat(client, token, "qa")
         assert response.status_code == 200
         chat_id = response.json()["id"]
 

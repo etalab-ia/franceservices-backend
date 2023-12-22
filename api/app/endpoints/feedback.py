@@ -19,14 +19,17 @@ def read_feedbacks(
     return feedbacks
 
 
-@router.post("/feedback/{chat_id}/{stream_id}", response_model=schemas.Feedback)
+@router.post("/feedback/add/{stream_id}", response_model=schemas.Feedback)
 def create_feedback(
-    chat_id: int, # not used / @obsolete
     stream_id: int,
-    feedback: schemas.FeedbackCreate
+    feedback: schemas.FeedbackCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    db_stream = crud.stream.get_stream(db, stream_id)
+    if db_stream is None:
+        raise HTTPException(404, detail="Stream not found")
+
     return crud.feedback.create_feedback(db, feedback, user_id=current_user.id, stream_id=stream_id)
 
 
