@@ -80,7 +80,8 @@ class StreamCreate(StreamBase):
 class Stream(StreamBase):
     id: int
     is_streaming: bool
-    user_id: int
+    user_id: int | None
+    chat_id: int | None
 
     class Config:
         orm_mode = True

@@ -9,7 +9,7 @@ def read_streams(client: TestClient, token):
     return client.get("/streams", headers={"Authorization": f"Bearer {token}"})
 
 
-def create_stream(
+def create_user_stream(
     client: TestClient,
     token,
     model_name,
@@ -21,6 +21,31 @@ def create_stream(
 ):
     return client.post(
         "/stream",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "model_name": model_name,
+            "user_text": user_text,
+            "context": context,
+            "institution": institution,
+            "links": links,
+            "temperature": temperature,
+        },
+    )
+
+
+def create_chat_stream(
+    client: TestClient,
+    token,
+    chat_id,
+    model_name,
+    user_text,
+    context="",
+    institution="",
+    links="",
+    temperature=20,
+):
+    return client.post(
+        f"/stream/chat/{chat_id}",
         headers={"Authorization": f"Bearer {token}"},
         json={
             "model_name": model_name,

@@ -6,7 +6,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.config import ENV, BACKEND_CORS_ORIGINS
 from app.db.init_db import init_db
-from app.endpoints import login, others, stream, user
+from app.endpoints import chat, login, others, stream, user
 from app.mockups import install_mockups
 
 if ENV in ("unittest", "dev"):
@@ -26,6 +26,7 @@ if BACKEND_CORS_ORIGINS:
     )
 
 api_router = APIRouter()
+api_router.include_router(chat.router, tags=["chat"])
 api_router.include_router(login.router, tags=["login"])
 api_router.include_router(others.router, tags=["others"])
 api_router.include_router(stream.router, tags=["stream"])
