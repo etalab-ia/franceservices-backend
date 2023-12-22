@@ -25,6 +25,7 @@ class ChatCreate(ChatBase):
 class Chat(ChatBase):
     id: int
     user_id: int
+    chat_name: str | None
 
     class Config:
         orm_mode = True

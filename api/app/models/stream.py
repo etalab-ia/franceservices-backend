@@ -18,7 +18,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
 
-# from app.schemas.other import IndexSource
+# from app.schemas.search import IndexSource
 
 
 # @obsolete ewith JSON type
@@ -66,6 +66,10 @@ class Stream(Base):
     should_sids = Column(JSON, nullable=True)
     must_not_sids = Column(JSON, nullable=True)
 
+    # one-to-one / use use_list=False ?
+    feedback = relationship("Feedback", back_populates="stream")
+    feedback_id = Column(Integer, ForeignKey("feedbacks.id"), nullable=True)
+
     # one-to-many
     user = relationship("User", back_populates="streams")
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -107,3 +111,4 @@ class SourceEnum(Base):
     # source_name = Column(Enum(IndexSource), unique=True)
     source_name = Column(Text)
     streams = relationship("Stream", secondary=stream_source_association, back_populates="sources")
+

@@ -27,4 +27,5 @@ class User(Base):
 
     chats = relationship("Chat", back_populates="user")
     streams = relationship("Stream", back_populates="user")
+    feedbacks = relationship("Feedback", back_populates="user")
     password_reset_token = relationship("PasswordResetToken", back_populates="user")

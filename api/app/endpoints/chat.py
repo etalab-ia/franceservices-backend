@@ -15,17 +15,17 @@ def read_chats(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    chats = crud.chat.get_chats(db, current_user.id, skip=skip, limit=limit)
+    chats = crud.chat.get_chats(db, user_id=current_user.id, skip=skip, limit=limit)
     return chats
 
 
 @router.post("/chat", response_model=schemas.Chat)
 def create_chat(
-    chat: schemas.ChatCreate
+    chat: schemas.ChatCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    return crud.chat.create_chat(db, chat, current_user.id)
+    return crud.chat.create_chat(db, chat, user_id=current_user.id)
 
 
 @router.get("/chat/{chat_id}", response_model=schemas.Chat)
@@ -34,7 +34,7 @@ def read_chat(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    db_chat = crud.chat.get_chat(db, chat_id)
+    db_chat = crud.chat.get_chat(db, chat_id=chat_id)
     if db_chat is None:
         raise HTTPException(404, detail="Chat not found")
 

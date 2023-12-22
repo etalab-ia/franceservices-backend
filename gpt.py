@@ -64,7 +64,7 @@ from docopt import docopt
 
 try:
     from app.config import SHEET_SOURCES
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.config import SHEET_SOURCES
 
 if __name__ == "__main__":
