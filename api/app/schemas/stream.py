@@ -84,7 +84,7 @@ class Stream(StreamBase):
     chat_id: int | None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class StreamWithRelationships(Stream):

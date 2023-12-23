@@ -28,7 +28,7 @@ class Chat(ChatBase):
     chat_name: str | None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ChatWithRelationships(Chat):
