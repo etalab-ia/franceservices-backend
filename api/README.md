@@ -42,9 +42,13 @@ and in another terminal:
 
 # Alembic
 
-Create a new alembic template version:
+Create a new alembic (enpty) template version:
 
-    alembic revision -m  "vXXX
+    PYTHONPATH=. alembic revision -m  "vXXX
+
+Autogenerate a new alembic upgrade version script:
+
+    PYTHONPATH=. alembic revision --autogenerate -m "vXXX"
 
 Upgrade a database according to alemic revision:
 
