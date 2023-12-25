@@ -1,24 +1,41 @@
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator, Field
 
 if TYPE_CHECKING:
     from .user import User
 
 
 class ReasonType(str, Enum):
-    qa = "qa"
-    meeting = "meeting"
+    # Good
+    reliable_sources = "reliable_sources"
+    consistent = "consistent"
+    concise = "concise"
+    clear = "clear"
+    # Bad
+    lack_of_sources = "lack_of_sources"
+    hallucinations = "hallucinations"
+    inconsistent = "inconsistent"
+    too_long = "too_long"
+    grammar_errors = "grammar_errors"
 
 
 class FeedbackBase(BaseModel):
     # Pydantic configuration:
     model_config = ConfigDict(use_enum_values=True)
 
-    is_good: bool | None = None
-    message: str | None = None
-    reason: ReasonType | None = None
+    is_good: bool | None = Field(
+        default=None,
+        description="True means a +1 or positive feedback, while False means a -1 or negative feedback.",
+    )
+    message: str | None = Field(
+        default=None, description="A free text feedback provided by an user."
+    )
+    reason: ReasonType | None = Field(
+        default=None,
+        description="A reason for positive or negative feedback in a given set possible values (enum).",
+    )
 
     @model_validator(mode="after")
     def validate_model(self):
