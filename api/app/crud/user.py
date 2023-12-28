@@ -24,7 +24,7 @@ def get_pending_users(db: Session):
     )
 
 
-def create_user(db: Session, user: schemas.UserCreate, commit=True):
+def create_user(db: Session, user: schemas.UserCreate, commit=True) -> models.User:
     db_user = models.User(
         username=user.username,
         email=user.email,
@@ -37,15 +37,15 @@ def create_user(db: Session, user: schemas.UserCreate, commit=True):
     return db_user
 
 
-def get_user(db: Session, user_id: int):
+def get_user(db: Session, user_id: int) -> models.User:
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def get_user_by_username(db: Session, username: str):
+def get_user_by_username(db: Session, username: str) -> models.User:
     return db.query(models.User).filter(models.User.username == username).first()
 
 
-def get_user_by_email(db: Session, email: EmailStr):
+def get_user_by_email(db: Session, email: EmailStr) -> models.User:
     return db.query(models.User).filter(models.User.email == email).first()
 
 
