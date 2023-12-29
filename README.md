@@ -13,7 +13,7 @@ The complete documentation can be view with the command:
 
 The process to build the data, and their corresponding `pyalbert` subcommands (checked if integrated to the CLI) are summarized below
 
-1. [~] fetching the French data corpus -- `pyalbert download ...`
+1. [x] fetching the French data corpus -- `pyalbert download ...`
 2. [x] pre-processing and formatting the data corpus -- `pyalbert make_chunks`
 3. [x] feed the <index/vector> search engines -- `pyalbert index ...`
 3. [ ] fine-tuning the LLMs. Independents script located in the folder `finetuning/`.
