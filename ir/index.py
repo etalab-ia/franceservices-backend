@@ -51,7 +51,7 @@ def make_embeddings():
         for i in range(0, len(texts), batch_size):
             batch_dict = tokenizer(
                 texts[i : i + batch_size],
-                max_length=512,
+                max_length=512, # 512 is the max length of e5-multilingual-large
                 padding=True,
                 truncation=True,
                 return_tensors="pt",
