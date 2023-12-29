@@ -1,6 +1,6 @@
 try:
     from app.config import EMBEDDING_BOOTSTRAP_PATH, EMBEDDING_MODEL
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.config import EMBEDDING_BOOTSTRAP_PATH, EMBEDDING_MODEL
 
 
@@ -32,7 +32,7 @@ def make_embeddings():
     import numpy as np
     import torch
     import torch.nn.functional as F
-    from sentence_transformers import SentenceTransformer
+    #from sentence_transformers import SentenceTransformer
     from torch import Tensor
     from transformers import AutoModel, AutoTokenizer
 

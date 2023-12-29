@@ -5,7 +5,7 @@ from elasticsearch import Elasticsearch, helpers
 
 try:
     from app.config import ELASTICSEARCH_IX_VER, SHEET_SOURCES, collate_ix_name
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.config import (ELASTICSEARCH_IX_VER, SHEET_SOURCES,
                                 collate_ix_name)
 

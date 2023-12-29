@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 if TYPE_CHECKING:
     from .user import User
 
-from .others import IndexSource
+from .search import IndexSource
 
 
 class ModelName(str, Enum):
@@ -80,10 +80,11 @@ class StreamCreate(StreamBase):
 class Stream(StreamBase):
     id: int
     is_streaming: bool
-    user_id: int
+    user_id: int | None
+    chat_id: int | None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class StreamWithRelationships(Stream):
