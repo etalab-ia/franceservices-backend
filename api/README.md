@@ -127,3 +127,5 @@ Alternatively with docker only
     ./pyalbert.py index experiences --index-type e5
     ./pyalbert.py index chunks --index-type e5
 
+
+The search API and the RAG should now be ready to be used.

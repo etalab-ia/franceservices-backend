@@ -7,7 +7,8 @@ It is a conversational agent that uses official French data sources to answer th
 ## PyAlbert
 
 `pyalbert` is a CLI tool that help build the sources and the model needed for the API.
-The complete documentation can be view with the command:
+
+Once installed, the complete documentation can be view with the command:
 
     ./albert.py --help
 
@@ -20,6 +21,11 @@ The process to build the data, and their corresponding `pyalbert` subcommands (c
 4. [x] evaluating the models -- `pyalbert evaluate ...`
 
 NOTE: note that step 2 hides a step which consists of building the embeddings from pieces of text (chunks). This step requires a GPU and can be achieves with the command `pyalbert make_embeddings`. This command will create the data used by `pyalbert index --index-type e5 ...`.
+
+### Install 
+
+    pip install requirements.txt
+
 
 ## Albert APIs
 
