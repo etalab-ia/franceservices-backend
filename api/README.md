@@ -3,11 +3,11 @@
     pip install -r requirements.txt
 
 
-### GPT4all quantized model (for CPUs)
+### Gpt4all quantized model (for CPUs)
 
 To run the quantized model, the model `"{model-name}.bin"` needs to be imported/copied in `api/app`.
 
-### vllm model (for GPUs)
+### Vllm model (for GPUs)
 
 You must be registered with `huggingface-cli` to download private models:
 
@@ -41,7 +41,7 @@ and in another terminal:
     python test.py
 
 
-# Alembic
+# Alembic
 
 Create a new alembic (enpty) template version:
 
@@ -77,7 +77,7 @@ Run the public API:
 
 **Launch the reverse proxy**
 
-This allow to route the incoming connection of the server. You can adapt the configuration file provided in `[here](/contrib/nginx/)`.
+This allow to route the incoming connection of the server. You can adapt the configuration file provided in [contrib/nginx](/contrib/nginx/).
 
 
 **Launch the API database**
