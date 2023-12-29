@@ -3,15 +3,15 @@
 """ Manage the Legal Information Assistant.
 
 Usage:
-    gpt.py download_corpus
-    gpt.py download_directory
-    gpt.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
-    gpt.py make_questions DIRECTORY
-    gpt.py make_embeddings
-    gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE] [--recreate]
-    gpt.py finetune MODEL VERSION
-    gpt.py evaluate MODEL VERSION [-n N] [-y] [--csv]
-    gpt.py evaluate -o OUTPUT (--merge MODEL VERSION)...
+    pyalbert.py download_corpus
+    pyalbert.py download_directory
+    pyalbert.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
+    pyalbert.py make_questions DIRECTORY
+    pyalbert.py make_embeddings
+    pyalbert.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE] [--recreate]
+    pyalbert.py finetune MODEL VERSION
+    pyalbert.py evaluate MODEL VERSION [-n N] [-y] [--csv]
+    pyalbert.py evaluate -o OUTPUT (--merge MODEL VERSION)...
 
 Commands:
     download            Download the given source of data. Downloaded data should consitute the inputs for the further processing steps.
@@ -50,17 +50,17 @@ Options:
 
 
 Examples:
-    ./gpt.py download_directory
-    ./gpt.py make_chunks --chunk-size 500 --chunk-overlap 20 _data/data.gouv/vos-droits-et-demarche/
-    ./gpt.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche/
-    ./gpt.py make_questions _data/data.gouv/vos-droits-et-demarche/
+    ./pyalbert.py download_directory
+    ./pyalbert.py make_chunks --chunk-size 500 --chunk-overlap 20 _data/data.gouv/vos-droits-et-demarche/
+    ./pyalbert.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche/
+    ./pyalbert.py make_questions _data/data.gouv/vos-droits-et-demarche/
     !make institutions          # Generate the french institution list
-    ./gpt.py index experiences  # assumes _data/export-expa-c-riences.json exists
-    ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ + _data/fiches-travail.json exist
-    ./gpt.py index chunks       # assumes _data/sheets_as_chunks.json + _data/fiches-travail.json exist
-    ./gpt.py evaluate miaou v0  # Run the inference
-    ./gpt.py evaluate miaou v0 --csv  # make an result table with inference file found in data/x/{model}-{version}
-    ./gpt.py evaluate --merge albert-light-simple v0 --merge albert-light-rag v0 -o albert-light-v0
+    ./pyalbert.py index experiences  # assumes _data/export-expa-c-riences.json exists
+    ./pyalbert.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ + _data/fiches-travail.json exist
+    ./pyalbert.py index chunks       # assumes _data/sheets_as_chunks.json + _data/fiches-travail.json exist
+    ./pyalbert.py evaluate miaou v0  # Run the inference
+    ./pyalbert.py evaluate miaou v0 --csv  # make an result table with inference file found in data/x/{model}-{version}
+    ./pyalbert.py evaluate --merge albert-light-simple v0 --merge albert-light-rag v0 -o albert-light-v0
 """
 
 
