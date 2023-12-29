@@ -14,11 +14,11 @@ Once installed, the complete documentation can be view with the command:
 
 The process to build the data, and their corresponding `pyalbert` subcommands (checked if integrated to the CLI) are summarized below
 
-1. [x] fetching the French data corpus -- `pyalbert download ...`
-2. [x] pre-processing and formatting the data corpus -- `pyalbert make_chunks`
-3. [x] feed the <index/vector> search engines -- `pyalbert index ...`
+1. [x] fetching the French data corpus -- `pyalbert download`.
+2. [x] pre-processing and formatting the data corpus -- `pyalbert make_chunks`.
+3. [x] feed the <index/vector> search engines -- `pyalbert index`
 3. [ ] fine-tuning the LLMs. Independents script located in the folder `finetuning/`.
-4. [x] evaluating the models -- `pyalbert evaluate ...`
+4. [x] evaluating the models -- `pyalbert evaluate`.
 
 NOTE: note that step 2 hides a step which consists of building the embeddings from pieces of text (chunks). This step requires a GPU and can be achieves with the command `pyalbert make_embeddings`. This command will create the data used by `pyalbert index --index-type e5 ...`.
 
