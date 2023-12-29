@@ -7,7 +7,7 @@ Usage:
     gpt.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
     gpt.py make_questions DIRECTORY
     gpt.py make_embeddings
-    gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE]
+    gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE] [--recreate]
     gpt.py finetune MODEL VERSION
     gpt.py evaluate MODEL VERSION [-n N] [-y] [--csv]
     gpt.py evaluate -o OUTPUT (--merge MODEL VERSION)...
@@ -42,6 +42,7 @@ Options:
     --output OUTPUT, -o OUTPUT    A ouput name, to save result to.
     --yes, -y                assumes yes for every user input question.
     --csv                    Make a csv table
+    --recreate               Force collection/index recreation
 
 
 Examples:
@@ -63,7 +64,7 @@ from docopt import docopt
 
 try:
     from app.config import SHEET_SOURCES
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.config import SHEET_SOURCES
 
 if __name__ == "__main__":
@@ -103,7 +104,7 @@ if __name__ == "__main__":
         indexes = ["experiences", "chunks", "sheets"]
         for name in indexes:
             if name in args and args[name]:
-                create_index(args["--index-type"], name)
+                create_index(args["--index-type"], name, recreate=args["--recreate"])
     elif args["finetune"]:
         raise NotImplementedError
     elif args["evaluate"]:

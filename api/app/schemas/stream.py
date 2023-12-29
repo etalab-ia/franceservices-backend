@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 if TYPE_CHECKING:
     from .user import User
 
-from .others import IndexSource
+from .search import IndexSource
 
 
 class ModelName(str, Enum):
@@ -39,6 +39,12 @@ class StreamBase(BaseModel):
     sources: list[IndexSource] | None = Field(
         default=None, description="Restrict the list of source to search within in RAG mode."
     )
+    should_sids: list[str] | None = Field(
+        default=None, description="Add document that should match, in RAG mode."
+    )
+    must_not_sids: list[str] | None = Field(
+        default=None, description="Filter out documents that must not match, in RAG mode."
+    )
 
     # TODO: add other checks
     # --
@@ -60,6 +66,7 @@ class StreamBase(BaseModel):
             if self.mode is None:
                 self.mode = "rag"  # default
 
+        # For SQLAlchemy relationship compatibility
         if not self.sources:
             self.sources = []
 
@@ -73,10 +80,11 @@ class StreamCreate(StreamBase):
 class Stream(StreamBase):
     id: int
     is_streaming: bool
-    user_id: int
+    user_id: int | None
+    chat_id: int | None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class StreamWithRelationships(Stream):

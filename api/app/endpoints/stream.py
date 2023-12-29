@@ -19,6 +19,7 @@ router = APIRouter()
 # TODO: add update / delete endpoints
 
 
+# TODO: add chat_id
 @router.get("/streams", response_model=list[schemas.Stream])
 def read_streams(
     skip: int = 0,
@@ -31,12 +32,29 @@ def read_streams(
 
 
 @router.post("/stream", response_model=schemas.Stream)
-def create_stream(
+def create_user_stream(
     stream: schemas.StreamCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    return crud.stream.create_stream(db, stream, current_user.id).to_dict()
+    return crud.stream.create_stream(db, stream, user_id=current_user.id).to_dict()
+
+
+@router.post("/stream/chat/{chat_id}")
+def create_chat_stream(
+    chat_id: int,
+    stream: schemas.StreamCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    db_chat = crud.chat.get_chat(db, chat_id)
+    if db_chat is None:
+        raise HTTPException(404, detail="Chat not found")
+
+    if db_chat.user_id != current_user.id:
+        raise HTTPException(403, detail="Forbidden")
+
+    return crud.stream.create_stream(db, stream, chat_id=chat_id)
 
 
 @router.get("/stream/{stream_id}", response_model=schemas.Stream)
@@ -49,7 +67,7 @@ def read_stream(
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
 
-    if db_stream.user_id != current_user.id:
+    if current_user.id not in (db_stream.user_id, getattr(db_stream.chat, "user_id", None)):
         raise HTTPException(403, detail="Forbidden")
 
     return db_stream.to_dict()
@@ -66,7 +84,7 @@ def start_stream(
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
 
-    if db_stream.user_id != current_user.id:
+    if current_user.id not in (db_stream.user_id, getattr(db_stream.chat, "user_id", None)):
         raise HTTPException(403, detail="Forbidden")
 
     stream_id = db_stream.id
@@ -80,6 +98,8 @@ def start_stream(
     institution = db_stream.institution
     links = db_stream.links
     temperature = db_stream.temperature
+    should_sids = db_stream.should_sids
+    must_not_sids = db_stream.must_not_sids
     sources = None
     if db_stream.sources:
         sources = [source.source_name for source in db_stream.sources]
@@ -99,6 +119,8 @@ def start_stream(
             query=query,
             limit=limit,
             sources=sources,
+            should_sids=should_sids,
+            must_not_sids=must_not_sids,
         )
 
         if (
@@ -160,7 +182,7 @@ def stop_stream(
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
 
-    if db_stream.user_id != current_user.id:
+    if current_user.id not in (db_stream.user_id, getattr(db_stream.chat, "user_id", None)):
         raise HTTPException(403, detail="Forbidden")
 
     crud.stream.set_is_streaming(db, db_stream, False)

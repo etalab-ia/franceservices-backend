@@ -2,7 +2,7 @@ from app import models, schemas
 from sqlalchemy.orm import Session
 
 
-def get_streams(db: Session, user_id: str, skip: int = 0, limit: int = 100):
+def get_streams(db: Session, user_id: str, skip: int = 0, limit: int = 100) -> list[models.Stream]:
     return (
         db.query(models.Stream)
         .filter(models.Stream.user_id == user_id)
@@ -13,7 +13,13 @@ def get_streams(db: Session, user_id: str, skip: int = 0, limit: int = 100):
     )
 
 
-def create_stream(db: Session, stream: schemas.StreamCreate, user_id: int, commit=True):
+def create_stream(
+    db: Session,
+    stream: schemas.StreamCreate,
+    user_id: int | None = None,
+    chat_id: int | None = None,
+    commit=True,
+) -> models.Stream:
     stream = stream.model_dump()
 
     # @DEBUG: How to not have to that manually while avoiding the following exception:
@@ -27,6 +33,7 @@ def create_stream(db: Session, stream: schemas.StreamCreate, user_id: int, commi
         **stream,
         is_streaming=False,
         user_id=user_id,
+        chat_id=chat_id,
     )
 
     db.add(db_stream)
@@ -36,7 +43,7 @@ def create_stream(db: Session, stream: schemas.StreamCreate, user_id: int, commi
     return db_stream
 
 
-def get_stream(db: Session, stream_id: int):
+def get_stream(db: Session, stream_id: int) -> models.Stream:
     return db.query(models.Stream).filter(models.Stream.id == stream_id).first()
 
 

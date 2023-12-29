@@ -1,10 +1,10 @@
 try:
     from app.config import EMBEDDING_BOOTSTRAP_PATH, EMBEDDING_MODEL
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.config import EMBEDDING_BOOTSTRAP_PATH, EMBEDDING_MODEL
 
 
-def create_index(index_type, index_name, add_doc=True):
+def create_index(index_type, index_name, add_doc=True, recreate=False):
     if index_type == "bucket":
         from .meilisearch import create_bucket_index
 
@@ -14,12 +14,12 @@ def create_index(index_type, index_name, add_doc=True):
         from .elasticsearch import create_bm25_index
 
         print("Creating Elasticsearch index...")
-        return create_bm25_index(index_name, add_doc)
+        return create_bm25_index(index_name, add_doc, recreate)
     elif index_type == "e5":
         from .qdrant import create_vector_index
 
         print("Creating Qdrant index...")
-        return create_vector_index(index_name, add_doc)
+        return create_vector_index(index_name, add_doc, recreate)
     else:
         raise NotImplementedError
 
@@ -32,7 +32,7 @@ def make_embeddings():
     import numpy as np
     import torch
     import torch.nn.functional as F
-    from sentence_transformers import SentenceTransformer
+    #from sentence_transformers import SentenceTransformer
     from torch import Tensor
     from transformers import AutoModel, AutoTokenizer
 
@@ -46,7 +46,8 @@ def make_embeddings():
 
         # e5 query/passage logics
         for i, text in enumerate(texts):
-            texts[i] = "passage: " + text
+            # Using "query" prefix instea of "passage" seems to give more stable results for our case...
+            texts[i] = "query: " + text
 
         for i in range(0, len(texts), batch_size):
             batch_dict = tokenizer(
@@ -130,7 +131,7 @@ def make_embeddings():
             doc["context"] = " > ".join(doc["context"])
 
     texts = [
-        " ".join([x["title"], x["introduction"], x["text"], x.get("context", "")])
+        "\n".join([x["title"], x.get("context", ""), x["introduction"], x["text"]])
         for x in documents
     ]
     embeddings = embed(tokenizer, model, texts, batch_size=4)

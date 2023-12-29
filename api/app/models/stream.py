@@ -1,11 +1,40 @@
+import json
+
 from app import schemas
 from app.db.base_class import Base
-from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Integer, Table,
-                        Text)
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+    CheckConstraint,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.types import TypeDecorator
 
-# from app.schemas.other import IndexSource
+# from app.schemas.search import IndexSource
+
+
+# @obsolete ewith JSON type
+class JsonEncoder(TypeDecorator):
+    impl = String
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = json.loads(value)
+        return value
+
 
 stream_source_association = Table(
     "stream_source",
@@ -34,9 +63,24 @@ class Stream(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     # pylint: enable=not-callable
 
+    should_sids = Column(JSON, nullable=True)
+    must_not_sids = Column(JSON, nullable=True)
+
+    # one-to-one / use use_list=False ?
+    feedback = relationship("Feedback", back_populates="stream")
+
     # one-to-many
     user = relationship("User", back_populates="streams")
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    chat = relationship("Chat", back_populates="streams")
+    chat_id = Column(Integer, ForeignKey("chats.id"), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "(user_id IS NULL OR chat_id IS NULL) AND (user_id IS NOT NULL OR chat_id IS NOT NULL)",  # pylint: disable=line-too-long
+            name="_streams_user_id_chat_id_cc",
+        ),
+    )
 
     # many-to-many
     sources = relationship(
@@ -66,3 +110,4 @@ class SourceEnum(Base):
     # source_name = Column(Enum(IndexSource), unique=True)
     source_name = Column(Text)
     streams = relationship("Stream", secondary=stream_source_association, back_populates="sources")
+
