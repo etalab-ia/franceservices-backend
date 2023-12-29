@@ -65,9 +65,8 @@ If GPU is available, the vllm API is run separately with:
 
 Run the public API:
 
-    gunicorn -w 2 -b 127.0.0.1:8090 app_spp:app --timeout 120
-    # or
     uvicorn app.main:app --host 0.0.0.0 --port 8090 # --root-path /api/v2
+    #gunicorn app.main:app  -w 2 -b 127.0.0.1:8090 --timeout 120
 
 
 
@@ -77,21 +76,21 @@ Run the public API:
 
 **Launch the reverse proxy**
 
-This allow to route the incoming connection of the server. You can adapt the configuration file provided in [contrib/nginx](/contrib/nginx/).
+This allows to route the incoming connections of the server. You can adapt the configuration file provided in [contrib/nginx](/contrib/nginx/).
 
 
 **Launch the API database**
 
-    # Launch postgres:
+    # Launch postgres
     docker-compose -f contrib/postgres/docker-compose up
 
 
 **Launch the search engine services**
 
-    # Launch elasticsearch:
+    # Launch elasticsearch
     docker-compose -f contrib/docker/elasticsearch/docker-compose.yml up
 
-    # Launch qdrant:
+    # Launch qdrant
     docker-compose -f contrib/docker/qdrant/docker-compose.yml up
 
 Alternatively with docker only
@@ -108,7 +107,7 @@ Alternatively with docker only
 
 **build the chunks**
 
-    ./pyalbert.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche
+    ./pyalbert.py make_chunks --structured _data/data.gouv/
 
 
 **build the embeddings matrix**
@@ -129,3 +128,4 @@ Alternatively with docker only
 
 
 The search API and the RAG should now be ready to be used.
+
