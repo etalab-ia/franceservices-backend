@@ -69,7 +69,7 @@ def download_directory(PATH: str = "_data/directory"):
                 os.path.join(f"{PATH}", "national_data_directory.json"),
             )
 
-    print("\nFiles successfuly downloaded")
+    print("\nDirectoty files successfuly downloaded")
 
 
 def create_whitelist(PATH: str = "_data/directory"):

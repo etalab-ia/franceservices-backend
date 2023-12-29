@@ -4,7 +4,7 @@ import time
 
 import pandas as pd
 
-from retrieving.retrieving import ContextRetriever
+from _retrieving import ContextRetriever
 
 from .llm_generation import AnswerQuestionGenerator, QuestionGenerator
 from .params import GENERATED_QUESTIONS, QUESTION_NB, XML_PARSED_PATH

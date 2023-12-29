@@ -46,7 +46,8 @@ def make_embeddings():
 
         # e5 query/passage logics
         for i, text in enumerate(texts):
-            # Using "query" prefix instea of "passage" seems to give more stable results for our case...
+            # Using "query" prefix instead of "passage" seems to give more stable results for our case...
+            # more information at: https://huggingface.co/intfloat/multilingual-e5-large
             texts[i] = "query: " + text
 
         for i in range(0, len(texts), batch_size):

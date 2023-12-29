@@ -1,8 +1,9 @@
 #!/bin/python
 
-""" Manage the legal information assistant.
+""" Manage the Legal Information Assistant.
 
 Usage:
+    gpt.py download_corpus
     gpt.py download_directory
     gpt.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
     gpt.py make_questions DIRECTORY
@@ -13,7 +14,10 @@ Usage:
     gpt.py evaluate -o OUTPUT (--merge MODEL VERSION)...
 
 Commands:
+    download            Download the given source of data. Downloaded data should consitute the inputs for the further processing steps.
+
     download_directory  Download official directorier to build whitelists. Files are stored under _data/directory/.
+
     make_chunks     Parse les fichiers XML issue de data.gouv (fiches service publique), situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
                     Chaque élement Json correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
                     Chunks are created under _data/sheets_as_chunks.json.
@@ -72,8 +76,17 @@ if __name__ == "__main__":
     args = docopt(__doc__, version="0")
 
     # Run command
-    if args["make_chunks"]:
-        from xml_parsing import make_chunks
+    if args["download_corpus"]:
+        from sourcing import download_corpus
+
+        download_corpus()
+    elif args["download_directory"]:
+        from sourcing import create_whitelist, download_directory
+
+        download_directory()
+        create_whitelist()
+    elif args["make_chunks"]:
+        from sourcing import make_chunks
 
         make_chunks(
             args["DIRECTORY"],
@@ -83,20 +96,13 @@ if __name__ == "__main__":
             sources=SHEET_SOURCES,
         )
     elif args["make_questions"]:
-        from xml_parsing import make_questions
+        from sourcing import make_questions
 
         make_questions(args["DIRECTORY"])
     elif args["make_embeddings"]:
         from ir import make_embeddings
 
         make_embeddings()
-
-    elif args["download_directory"]:
-        from evaluation.download_directory import (create_whitelist,
-                                                   download_directory)
-
-        download_directory()
-        create_whitelist()
 
     elif args["index"]:
         from ir import create_index

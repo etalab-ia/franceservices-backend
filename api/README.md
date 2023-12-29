@@ -16,7 +16,7 @@ You must be registered with `huggingface-cli` to download private models:
 
 Download a model:
 - Fabrique model `python -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-reference-2')"`
-- Albert model python -c `"from vllm import LLM; LLM(model='etalab-ia/albert-light')"`
+- Albert model `python -c "from vllm import LLM; LLM(model='etalab-ia/albert-light')"`
 
 
 # Test
@@ -34,6 +34,7 @@ Run unit tests:
 Test the app locally:
 
     uvicorn app.main:app --reload
+
 
 and in another terminal:
 
@@ -69,55 +70,60 @@ Run the public API:
     uvicorn app.main:app --host 0.0.0.0 --port 8090 # --root-path /api/v2
 
 
-# Launching search engine services
+
+# Deploy
 
 > En se placant à la racine du projet.
 
+**Launch the reverse proxy**
+
+This allow to route the incoming connection of the server. You can adapt the configuration file provided in `[here](/contrib/nginx/)`.
+
+
+**Launch the API database**
+
+    # Launch postgres:
+    docker-compose -f contrib/postgres/docker-compose up
+
+
+**Launch the search engine services**
+
     # Launch elasticsearch:
-    docker-compose -f docker/elasticsearch/docker-compose.yml up
+    docker-compose -f contrib/docker/elasticsearch/docker-compose.yml up
 
     # Launch qdrant:
-    docker-compose -f docker/qdrant/docker-compose.yml up
+    docker-compose -f contrib/docker/qdrant/docker-compose.yml up
 
 Alternatively with docker only
 
     docker run --name elasticsearch -p 9202:9200 -p 9302:9300 -e discovery.type="single-node" -e xpack.security.enabled="false" -e ES_JAVA_OPTS="-Xms2g -Xmx2g" --mount source=vol-elasticsearch,target=/var/lib/elasticsearch/data -d docker.elastic.co/elasticsearch/elasticsearch:8.9.1
     docker run --name qdrant -p 6333:6333 -p 6334:6334 --mount source=vol-qdrant,target=/qdrant/storage -d qdrant/qdrant:v1.5.0
 
-# Build the indexes
 
-> En se placant à la racine du projet.
+**download the corpus**
 
-1. Download the set of user experiences:
+    ./pyalbert.py download_corpus
+    ./pyalbert.py download_directory
 
-```sh
-wget https://opendata.plus.transformation.gouv.fr/api/explore/v2.1/catalog/datasets/export-expa-c-riences/exports/json -O _data/export-expa-c-riences.json
-```
 
-2. Download the sheets from `service-public.fr`:
-```sh
-mkdir -p _data/data.gouv
-wget https://lecomarquage.service-public.fr/vdd/3.3/part/zip/vosdroits-latest.zip -O _data/data.gouv/vosdroits-latest.zip
-cd _data/data.gouv
-unzip vosdroits-latest.zip -d vos-droits-et-demarche
-wget https://github.com/SocialGouv/fiches-travail-data/raw/master/data/fiches-travail.json -O _data/fiches-travail.json
-```
+**build the chunks**
 
-3. Build the chunks (can be ignored if `_data/sheets_as_chunks.json` already exists):
-```sh
-./gpt.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche
-```
+    ./pyalbert.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche
 
-4. Build the indexes:
-```sh
-# Elasticsearch indexes
-./gpt.py index experiences --index-type bm25
-./gpt.py index sheets --index-type bm25
-./gpt.py index chunks --index-type bm25
 
-# Embeddings indexes (aka collections)
-# @WARNING: requires data to be generated in _data/embeddings/ which is built outside for now as its convenient to run it in a GPU (in a colab notebook).
-# see notebooks/bootstrap_embeddings.ipynb or run: ./gpt.py make_embeddings
-./gpt.py index experiences --index-type e5
-./gpt.py index chunks --index-type e5
-```
+**build the embeddings matrix**
+
+    ./pyalbert.py make_embeddings
+
+
+**feed the search engines / build the indexes**
+
+    # Elasticsearch indexes
+    ./pyalbert.py index experiences --index-type bm25
+    ./pyalbert.py index sheets --index-type bm25
+    ./pyalbert.py index chunks --index-type bm25
+
+    # Qdrant indexes (aka collections)
+    ./pyalbert.py index experiences --index-type e5
+    ./pyalbert.py index chunks --index-type e5
+
