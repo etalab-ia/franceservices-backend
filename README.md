@@ -20,7 +20,7 @@ The process to build the data, and their corresponding `pyalbert` subcommands (c
 3. [ ] fine-tuning the LLMs. Independents script located in the folder `finetuning/`.
 4. [x] evaluating the models -- `pyalbert evaluate`.
 
-NOTE: note that step 2 hides a step which consists of building the embeddings from pieces of text (chunks). This step requires a GPU and can be achieves with the command `pyalbert make_embeddings`. This command will create the data used by `pyalbert index --index-type e5 ...`.
+**NOTE**: The step 3 hides a step which consists of building the embeddings from pieces of text (chunks). This step requires a GPU and can be achieves with the command `pyalbert make_embeddings`. This command will create the data required for vector indexes build with the option `pyalbert index --index-type e5`. You can see the [deploy section](/api/README.md#deploy) of the API Readme to see all the step involved in the build process.
 
 ### Install 
 
