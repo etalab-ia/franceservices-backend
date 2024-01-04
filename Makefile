@@ -76,18 +76,18 @@ convert_model_for_cpu:
 
 build_all_indexes: # not embeddings
 	# elasticsearch
-	python3 gpt.py index experiences --index-type bm25
-	python3 gpt.py index sheets --index-type bm25
-	python3 gpt.py index chunks --index-type bm25
+	python3 pyalbert.py index experiences --index-type bm25
+	python3 pyalbert.py index sheets --index-type bm25
+	python3 pyalbert.py index chunks --index-type bm25
 	# meilisearch
-	#python3 gpt.py index experiences --index-type bucket
+	#python3 pyalbert.py index experiences --index-type bucket
 	#sleep 3 # debug @async..
-	#python3 gpt.py index sheets --index-type bucket
+	#python3 pyalbert.py index sheets --index-type bucket
 	#sleep 3
-	#python3 gpt.py index chunks --index-type bucket
+	#python3 pyalbert.py index chunks --index-type bucket
 	# qdrant | requires _data/embeddings_*.npy
-	python3 gpt.py index experiences --index-type e5
-	python3 gpt.py index chunks --index-type e5
+	python3 pyalbert.py index experiences --index-type e5
+	python3 pyalbert.py index chunks --index-type e5
 
 clean_all_indexex: # not embeddings
 	# elasticsearch

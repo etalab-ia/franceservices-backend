@@ -1,119 +1,75 @@
-# ETALAB_CHATBOT
+# LIA - Legal Information Assistant
 
-## Installation
-
-Pour installer le projet, il suffit d'installer les dépendances avec la commande suivante :
-
-```bash
-python3 -m venv env
-source env/bin/activate
-pip install -r requirements.txt
-```
-
-Il faut ensuite copier le fichier .env.template en .env et remplir les variables d'environnement. Finalement, il faut ajouter les fichiers xml présents aux urls suivantes dans le dossier \_data/xml_files :
-
-- [Service Public FR - Guide vos droits et démarches particuliers](https://www.data.gouv.fr/fr/datasets/service-public-fr-guide-vos-droits-et-demarches-particuliers/)
-- [Service Public FR - Guide vos droits et démarches entreprendre](https://www.data.gouv.fr/fr/datasets/service-public-fr-guide-vos-droits-et-demarches-entreprendre/)
-- [Service Public FR - Guide vos droits et démarches associations](https://www.data.gouv.fr/fr/datasets/service-public-fr-guide-vos-droits-et-demarches-associations/)
-
-## Utilisation
-
-Le projet marche avec un argument parser défini dans le fichier commands.py. Pour visualiser les commandes disponibles, il suffit de lancer la commande suivante :
-
-```bash
-python main.py --help
-```
-
-## Struture
-
-Le projet est structuré de la manière suivante :
-
-- `main.py` : fichier principal qui lance les commandes
-- `commands.py` : fichier qui définit les commandes disponibles
-- `_data/` : dossier qui contient les données
-
-  - `xml_files` : dossier qui contient les fichiers xml
-  - `sheets_as_chunks.json` : dossier qui contient les chunks de fiches sous format json
-
-Chaque fonctionnalité du projet est organisé dans un dossier qui contient les fichiers suivants :
-
-- `params.py` : fichier qui contient les paramètres de la fonctionnalité
-- `_main.py` : fichier principal qui contient la logique pour exécuter la fonctionnalité
-
-Les fonctionnalités sont les suivantes :
+This project contains the source code of LIA: the **L**egal **I**nformation **A**ssistant, also known as Albert.
+It is a conversational agent that uses official French data sources to answer the agent questions.
 
 
-- `corpus_generation` : contient la logique pour générer des questions à partir des fiches sous format JSON et à répondre à ces questions via openai ou autres llm.
-- `fine_tuning` : permet d'entraîner un modèle XGEN de Salesforce via le Trainer d'HuggingFace. Le modèle est entraîné sur un corpus de questions / réponses générées par openai à partir des JSON.
+## PyAlbert
 
-## Corpus Generation
+`pyalbert` is a CLI tool that help build the sources and the model needed for the API.
 
-### Génération des questions
+Once installed, the complete documentation can be view with the command:
 
-La fonction qui génère les questions est generate_questions, dans le \_main.py du dossier corpus_generation.
+    ./albert.py --help
 
-Les prompts sont dans le fichier corpus_generation/gpt_generators/questions_generators.py voici le fonctionnement en détail
+The process to build the data, and their corresponding `pyalbert` subcommands (checked if integrated to the CLI) are summarized below
 
-#### Class GPTQuestionGnerator
+1. [x] fetching the French data corpus -- `pyalbert download`.
+2. [x] pre-processing and formatting the data corpus -- `pyalbert make_chunks`.
+3. [x] feed the <index/vector> search engines -- `pyalbert index`
+3. [ ] fine-tuning the LLMs. Independents script located in the folder `finetuning/`.
+4. [x] evaluating the models -- `pyalbert evaluate`.
 
-Les questions sont générées à partir des xml parsés en chunk. Pour générer les questions, on récupère une certaine quantité de chunks liés à une seule et même fiche. Une liste des mots clés est ensuite générée dans la fonction get_keywords.
-Ces keywords sont ensuite intégrée dans la fonction get_questions afin de récupérer n questions sur ces mots-clés. Il est spécifié de numéroter les questions parce qu'openai décide de le faire une fois sur deux sinon et ne respecte pas la consigne "Ne numérote pas les questions"
+**NOTE**: The step 3 hides a step which consists of building the embeddings from pieces of text (chunks). This step requires a GPU and can be achieves with the command `pyalbert make_embeddings`. This command will create the data required for vector indexes build with the option `pyalbert index --index-type e5`. You can see the [deploy section](/api/README.md#deploy) of the API Readme to see all the step involved in the build process.
 
-##### Class GPTQuestionReformulation
+### Install 
 
-La reformulation de questions se fait à partir d'une seule question en entrée.
-Celle-ci se verra alors transformée deux fois à la première personne et deux fois en langage familier.
-Les autres niveaux de langue ne sont pas utiles, openai s'exprimant déjà en langage courant et le langage soutenu ne changeant pas assez la question.
-
-##### Fonctionnement de generate_questions
-
-Après avoir ouvert le fichier contenant les xml parsés et crée le fichier qui va contenir les questions (tous deux modifiables dans params.py), il ne reste plus qu'à générer puis reformuler les questions avant de les insérer dans le csv de sortie.
-Pour choisir le nombre de questions à générer à partir d'un set de mots-clés, il faut modifier le paramètres
-
-### Génération des réponses
-
-Les questions doivent être stockées sous format csv, emplacement défini dans [corpus_generation.params.py](./corpus_generation/params.py). Un llm doit être choisi pour répondre à ces questions (actuellement possible : GPT-3.5-turbo ou XGEN) Pour générer les réponses, il faut lancer la commande suivante :
-
-```bash
-python main.py --xgen
-python main.py --gpt
-```
-
-Les réponses sont ajoutées au fur et à mesure dans le csv de sortie
-
-## fine-tuning
-
-Il est possible de lancer un fine_tuning sur un modèle XGEN de Salesforce. Pour cela, il faut lancer la commande suivante :
-
-```bash
-python main.py --fine_tune_model
-```
-
-Les paramètres du fine-tuning sont définis dans le fichier [fine_tuning.params.py](./fine_tuning/params.py). Un exemple de la forme du dataset est disponible dans le fichier [fine_tuning/data/training/dataset-test.csv](./fine_tuning/data/training/dataset-test.csv)
-
-## Retrieving
-
-Afin de répondre aux questions, un algorithme de retrieving appelé BM25 est indiqué dans [commands.py](./commands.py) dans la varialbe `context_retriever`. Il est possible de changer cet algorithme en utilisant une base de données vectorisée appelée Weaviate. Pour cela, il faut lancer la commande suivante :
-
-```bash
-python main.py --run_weaviate_migration
-```
-
-Et ensuite, changer la variable `context_retriever` dans [commands.py](./commands.py) par la classe `WeaviateRetriver` défini dans [retrieving/vector_db/retriever.py](./retrieving/vector_db/retriever.py)
-
-## API
-
-Une API de test, utilisant gpt4all permettant de faire tourner des modèle quantizé sur CPU, et ainsi faciliter les test et le développement d'interface, si situe dans le répertoire `api/`.
-Lancer l'API pour Service public + (fabrique de text) : 
-
-    cd api/
-    python api/app_spp.py
+    pip install requirements.txt
 
 
-## Ressources
+## Albert APIs
 
-Xgen
-- article: https://blog.salesforceairesearch.com/xgen/
-- huggingface: https://huggingface.co/Salesforce/xgen-7b-4k-base
+The API is built upon multiple services :
 
-LLama: see https://github.com/etalab-ia/legal-information-assistant/issues/2
+* The LLM API (GPU intensive): This API is managed by vllm, and the executable is located in `api_vllm/`.
+* A vector database (for semantic search), based on Qdrant.
+* A search-engine (for full-text search), based on ElasticSearch.
+* The main/exposed API: the app executable and configurations are located in the folder `api/`.
+
+See the dedicated [Readme](/api/README.md) for more information about the API configuration, testing, and  **deployment**.
+
+
+## Folder structure
+
+- \_data/: contains volatile and large data downloaded by pyalbert.
+- api/: the code of the main API.
+- api_vllm/: the code of the vllm API.
+- commons/: code shared by different modules, such as the Albert API client, and prompt encoder.
+- corpus_generation/: **Independent** scripts to generate Q/a or evaluation data using third party service (Mistral, Openai etc)
+- finetuning/: **Independents** fine-tuning scripts.
+- sourcing/: code behind `pyalbert download ...` and `pyalbert make_chunks`.
+- ir/: code behind `pyalbert index ...`
+- evaluation/: code behind `pyalbert evaluate ...`
+- scripts/: Various tests scripts, not integrated to pyalbert (yet).
+- tests/: Various util scripts, not integrated to pyalbert (yet).
+- contrib/: configuration files to deploy Albert.
+- notebooks/: Various notebooks used for testing, evaluation demo or fine-tuning.
+- docs/: documentation resources.
+- wiki/: wiki resources.
+
+
+## Contributing
+
+TODO
+
+
+## License
+
+TODO
+
+
+## Acknowledgements
+
+TODO
+
+
