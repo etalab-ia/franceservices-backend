@@ -1,16 +1,19 @@
-from app.config import (ELASTICSEARCH_CREDS, ELASTICSEARCH_IX_VER,
-                        ELASTICSEARCH_URL, QDRANT_IX_VER, QDRANT_URL,
-                        collate_ix_name)
+from app.config import (
+    ELASTICSEARCH_CREDS,
+    ELASTICSEARCH_IX_VER,
+    ELASTICSEARCH_URL,
+    QDRANT_IX_VER,
+    QDRANT_URL,
+    collate_ix_name,
+)
 from app.core.embeddings import make_embeddings
 from elasticsearch import Elasticsearch
 from qdrant_client import QdrantClient
 from qdrant_client import models as QdrantModels
 
 
-def search_indexes(
-    name, query, limit, similarity, institution, sources, should_sids=None, must_not_sids=None
-):
-    if name == "experiences":
+def _retrieves(index_name, similarity=None):
+    if index_name == "experiences":
         retrieves = [
             "id_experience",
             "titre",
@@ -18,7 +21,7 @@ def search_indexes(
             "intitule_typologie_1",
             "reponse_structure_1",
         ]
-    elif name == "sheets" and similarity not in ["e5"]:
+    elif index_name == "sheets" and similarity not in ["e5"]:
         retrieves = [
             "sid",
             "title",
@@ -30,7 +33,7 @@ def search_indexes(
             "related_questions",
             "web_services",
         ]
-    elif name == "chunks" or (similarity in ["e5"] and name == "sheets"):
+    elif index_name == "chunks" or (similarity in ["e5"] and index_name == "sheets"):
         retrieves = [
             "hash",
             "sid",
@@ -46,9 +49,33 @@ def search_indexes(
             "web_services",
         ]
     else:
-        raise NotImplementedError
+        raise NotImplementedError("Index unkown")
 
-    _extract = lambda x: dict((r, x[r]) for r in retrieves if r in x)
+    return retrieves
+
+
+def get_document(index_name, uid):
+    es = Elasticsearch(ELASTICSEARCH_URL, basic_auth=ELASTICSEARCH_CREDS)
+    _extract = lambda x: dict((r, x[r]) for r in _retrieves(index_name) if r in x)
+
+    if index_name == "sheets":
+        doc = _extract(
+            es.get(index=collate_ix_name(index_name, ELASTICSEARCH_IX_VER), id=uid)["_source"]
+        )
+    elif index_name == "chunks":
+        doc = _extract(
+            es.get(index=collate_ix_name(index_name, ELASTICSEARCH_IX_VER), id=uid)["_source"]
+        )
+    else:
+        raise NotImplementedError("Index unkown")
+
+    return doc
+
+
+def search_indexes(
+    name, query, limit, similarity, institution, sources, should_sids=None, must_not_sids=None
+):
+    _extract = lambda x: dict((r, x[r]) for r in _retrieves(name, similarity) if r in x)
 
     hits = None
     if similarity == "bm25":

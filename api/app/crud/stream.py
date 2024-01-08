@@ -51,3 +51,12 @@ def set_is_streaming(db: Session, db_stream: models.Stream, is_streaming: bool, 
     db_stream.is_streaming = is_streaming
     if commit:
         db.commit()
+
+
+def set_rag_output(
+    db: Session, db_stream: models.Stream, response: str, rag_sources: list[str], commit=True
+):
+    db_stream.response = response
+    db_stream.rag_sources = rag_sources
+    if commit:
+        db.commit()

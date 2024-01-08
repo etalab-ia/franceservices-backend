@@ -113,7 +113,7 @@ def create_bm25_index(index_name, add_doc=True, recreate=False):
 
         if add_doc:
             # Add documents
-            from xml_parsing import RagSource
+            from sourcing import RagSource
 
             documents = RagSource.get_sheets(
                 SHEET_SOURCES,

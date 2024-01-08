@@ -1,6 +1,6 @@
 from app import models, schemas
 from app.core.embeddings import make_embeddings
-from app.core.indexes import search_indexes
+from app.core.indexes import search_indexes, get_document
 from app.deps import get_current_user
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
@@ -29,6 +29,7 @@ def create_embeddings(
 # ***********
 
 
+# TODO: rename to /search !?
 @router.post("/indexes")
 def get_indexes(
     index: schemas.Index,
@@ -50,3 +51,21 @@ def get_indexes(
         index.must_not_sids,
     )
     return JSONResponse(hits)
+
+
+@router.get("/get_chunk/{chunkid}")
+def get_chunk(
+    chunkid: str,
+    current_user: models.User = Depends(get_current_user),  # noqa
+):
+    hit = get_document("chunks", chunkid)
+    return JSONResponse(hit)
+
+
+@router.get("/get_sheet/{sheetid}")
+def get_sheet(
+    sheetid: str,
+    current_user: models.User = Depends(get_current_user),  # noqa
+):
+    hit = get_document("sheets", sheetid)
+    return JSONResponse(hit)

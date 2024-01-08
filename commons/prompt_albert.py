@@ -59,7 +59,7 @@ class AlbertLightPrompter(Prompter):
             should_sids=should_sids,
             must_not_sids=must_not_sids,
         )
-        self.sources = [x["url"] for x in hits]
+        self.sources = [x["hash"] for x in hits]
         # if len(hits) == 3:
         #    # LLM Lost in the middle
         #    hits[1], hits[2] = hits[2], hits[1]
