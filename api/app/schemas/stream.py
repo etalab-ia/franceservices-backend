@@ -46,6 +46,12 @@ class StreamBase(BaseModel):
         default=None, description="Filter out documents that must not match, in RAG mode."
     )
 
+    # For archive reading / reload
+    response: str | None = None
+    rag_sources: list[str] | None = Field(
+        default=None, description="List of chunks used with a rag generation. The list of id can be used to retrieved a chunk on the route /get_chunk/{uid}"
+    )
+
     # TODO: add other checks
     # --
     @model_validator(mode="after")
