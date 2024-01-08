@@ -77,7 +77,7 @@ def get_chunks(
     current_user: models.User = Depends(get_current_user),  # noqa
 ):
     hits = []
-    for uid in uids:
+    for uid in uids.uids:
         hits.append(get_document("chunks", uid))
 
     return JSONResponse(hits)
@@ -89,7 +89,7 @@ def get_sheets(
     current_user: models.User = Depends(get_current_user),  # noqa
 ):
     hits = []
-    for uid in uids:
+    for uid in uids.uids:
         hits.append(get_document("sheets", uid))
 
     return JSONResponse(hits)
