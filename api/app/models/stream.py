@@ -63,6 +63,8 @@ class Stream(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     # pylint: enable=not-callable
 
+    response = Column(Text, nullable=True)
+    rag_sources = Column(JSON, nullable=True)
     should_sids = Column(JSON, nullable=True)
     must_not_sids = Column(JSON, nullable=True)
 

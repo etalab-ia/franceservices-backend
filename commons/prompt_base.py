@@ -2,7 +2,7 @@ import re
 
 try:
     from app.core.acronyms import ACRONYMS
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.core.acronyms import ACRONYMS
 
 

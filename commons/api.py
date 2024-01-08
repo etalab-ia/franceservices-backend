@@ -7,7 +7,7 @@ import requests
 try:
     from app.config import (API_LIA_URL, API_ROUTE_VER, FIRST_ADMIN_PASSWORD,
                             FIRST_ADMIN_USERNAME)
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.config import (API_LIA_URL, API_ROUTE_VER,
                                 FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME)
 
@@ -93,7 +93,7 @@ class ApiClient:
 # TODO: factorize with api/app/clients/api_vllm_client.py
 def generate(url, conf, text):
     """OpenAI-like completion API"""
-    headers = {"Content-Type": "application/json"}
+    #headers = {"Content-Type": "application/json"}
     c = conf.copy()
     c["prompt"] = text
     c["temperature"] = c["temperature"] / 100
