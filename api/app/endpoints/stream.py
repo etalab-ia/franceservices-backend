@@ -29,9 +29,6 @@ def read_streams(
     current_user: models.User = Depends(get_current_user),
 ):
     streams = crud.stream.get_streams(db, user_id=current_user.id, skip=skip, limit=limit, chat_id=chat_id)
-    print(skip)
-    print(limit)
-    print(chat_id)
     return [stream.to_dict() for stream in streams]
 
 
