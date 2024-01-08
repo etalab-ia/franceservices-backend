@@ -5,7 +5,7 @@ import meilisearch
 
 try:
     from app.config import SHEET_SOURCES
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.config import SHEET_SOURCES
 
 
@@ -87,7 +87,7 @@ def create_bucket_index(index_name, add_doc=True):
 
         if add_doc:
             # Add documents
-            from xml_parsing import RagSource
+            from sourcing import RagSource
 
             documents = RagSource.get_sheets(
                 SHEET_SOURCES,
