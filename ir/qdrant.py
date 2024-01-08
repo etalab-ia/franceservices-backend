@@ -8,7 +8,7 @@ from qdrant_client import QdrantClient, models
 try:
     from app.config import (EMBEDDING_BOOTSTRAP_PATH, QDRANT_IX_VER,
                             collate_ix_name)
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.config import (EMBEDDING_BOOTSTRAP_PATH, QDRANT_IX_VER,
                                 collate_ix_name)
 

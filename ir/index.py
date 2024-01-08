@@ -1,6 +1,6 @@
 try:
     from app.config import EMBEDDING_BOOTSTRAP_PATH, EMBEDDING_MODEL
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.config import EMBEDDING_BOOTSTRAP_PATH, EMBEDDING_MODEL
 
 
@@ -32,7 +32,7 @@ def make_embeddings():
     import numpy as np
     import torch
     import torch.nn.functional as F
-    from sentence_transformers import SentenceTransformer
+    #from sentence_transformers import SentenceTransformer
     from torch import Tensor
     from transformers import AutoModel, AutoTokenizer
 
@@ -46,13 +46,14 @@ def make_embeddings():
 
         # e5 query/passage logics
         for i, text in enumerate(texts):
-            # Using "query" prefix instea of "passage" seems to give more stable results for our case...
+            # Using "query" prefix instead of "passage" seems to give more stable results for our case...
+            # more information at: https://huggingface.co/intfloat/multilingual-e5-large
             texts[i] = "query: " + text
 
         for i in range(0, len(texts), batch_size):
             batch_dict = tokenizer(
                 texts[i : i + batch_size],
-                max_length=512,
+                max_length=512, # 512 is the max length of e5-multilingual-large
                 padding=True,
                 truncation=True,
                 return_tensors="pt",

@@ -11,7 +11,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString, Tag
 
-from retrieving.text_spliter import HybridSplitter
+from .text_spliter import HybridSplitter
 
 # *********
 # * Utils *

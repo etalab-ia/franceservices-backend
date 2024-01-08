@@ -3,6 +3,7 @@
  services:
    elasticsearch:
      image: docker.elastic.co/elasticsearch/elasticsearch:8.9.1
+     restart: always
      container_name: elasticsearch
      #mem_limit: 2GB
      ports:

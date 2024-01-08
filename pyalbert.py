@@ -1,19 +1,23 @@
 #!/bin/python
 
-""" Manage the legal information assistant.
+""" Manage the Legal Information Assistant.
 
 Usage:
-    gpt.py download_directory
-    gpt.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
-    gpt.py make_questions DIRECTORY
-    gpt.py make_embeddings
-    gpt.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE] [--recreate]
-    gpt.py finetune MODEL VERSION
-    gpt.py evaluate MODEL VERSION [-n N] [-y] [--csv]
-    gpt.py evaluate -o OUTPUT (--merge MODEL VERSION)...
+    pyalbert.py download_corpus
+    pyalbert.py download_directory
+    pyalbert.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
+    pyalbert.py make_questions DIRECTORY
+    pyalbert.py make_embeddings
+    pyalbert.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE] [--recreate]
+    pyalbert.py finetune MODEL VERSION
+    pyalbert.py evaluate MODEL VERSION [-n N] [-y] [--csv]
+    pyalbert.py evaluate -o OUTPUT (--merge MODEL VERSION)...
 
 Commands:
+    download            Download the given source of data. Downloaded data should consitute the inputs for the further processing steps.
+
     download_directory  Download official directorier to build whitelists. Files are stored under _data/directory/.
+
     make_chunks     Parse les fichiers XML issue de data.gouv (fiches service publique), situé dans le repertoir DIRECTORY pour les transformer en fiches sous format Json.
                     Chaque élement Json correspond à un bout de fiche d'une longueur de 1000 caractères appelé chunk, découpé en conservant les phrases intacts.
                     Chunks are created under _data/sheets_as_chunks.json.
@@ -46,17 +50,17 @@ Options:
 
 
 Examples:
-    ./gpt.py download_directory
-    ./gpt.py make_chunks --chunk-size 500 --chunk-overlap 20 _data/data.gouv/vos-droits-et-demarche/
-    ./gpt.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche/
-    ./gpt.py make_questions _data/data.gouv/vos-droits-et-demarche/
+    ./pyalbert.py download_directory
+    ./pyalbert.py make_chunks --chunk-size 500 --chunk-overlap 20 _data/data.gouv/vos-droits-et-demarche/
+    ./pyalbert.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche/
+    ./pyalbert.py make_questions _data/data.gouv/vos-droits-et-demarche/
     !make institutions          # Generate the french institution list
-    ./gpt.py index experiences  # assumes _data/export-expa-c-riences.json exists
-    ./gpt.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ + _data/fiches-travail.json exist
-    ./gpt.py index chunks       # assumes _data/sheets_as_chunks.json + _data/fiches-travail.json exist
-    ./gpt.py evaluate miaou v0  # Run the inference
-    ./gpt.py evaluate miaou v0 --csv  # make an result table with inference file found in data/x/{model}-{version}
-    ./gpt.py evaluate --merge albert-light-simple v0 --merge albert-light-rag v0 -o albert-light-v0
+    ./pyalbert.py index experiences  # assumes _data/export-expa-c-riences.json exists
+    ./pyalbert.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ + _data/fiches-travail.json exist
+    ./pyalbert.py index chunks       # assumes _data/sheets_as_chunks.json + _data/fiches-travail.json exist
+    ./pyalbert.py evaluate miaou v0  # Run the inference
+    ./pyalbert.py evaluate miaou v0 --csv  # make an result table with inference file found in data/x/{model}-{version}
+    ./pyalbert.py evaluate --merge albert-light-simple v0 --merge albert-light-rag v0 -o albert-light-v0
 """
 
 
@@ -64,7 +68,7 @@ from docopt import docopt
 
 try:
     from app.config import SHEET_SOURCES
-except ModuleNotFoundError as e:
+except ModuleNotFoundError:
     from api.app.config import SHEET_SOURCES
 
 if __name__ == "__main__":
@@ -72,8 +76,17 @@ if __name__ == "__main__":
     args = docopt(__doc__, version="0")
 
     # Run command
-    if args["make_chunks"]:
-        from xml_parsing import make_chunks
+    if args["download_corpus"]:
+        from sourcing import download_corpus
+
+        download_corpus()
+    elif args["download_directory"]:
+        from sourcing import create_whitelist, download_directory
+
+        download_directory()
+        create_whitelist()
+    elif args["make_chunks"]:
+        from sourcing import make_chunks
 
         make_chunks(
             args["DIRECTORY"],
@@ -83,20 +96,13 @@ if __name__ == "__main__":
             sources=SHEET_SOURCES,
         )
     elif args["make_questions"]:
-        from xml_parsing import make_questions
+        from sourcing import make_questions
 
         make_questions(args["DIRECTORY"])
     elif args["make_embeddings"]:
         from ir import make_embeddings
 
         make_embeddings()
-
-    elif args["download_directory"]:
-        from evaluation.download_directory import (create_whitelist,
-                                                   download_directory)
-
-        download_directory()
-        create_whitelist()
 
     elif args["index"]:
         from ir import create_index
