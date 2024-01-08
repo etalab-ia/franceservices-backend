@@ -129,6 +129,11 @@ def start_stream(
         ):
             raise HTTPException(413, detail="Prompt too large")
 
+        # Keep reference of rag used sources if any
+        rag_sources = []
+        if prompter.sources:
+            rag_sources = prompter.sources
+
         # Allow client to tune the sampling parameters.
         sampling_params = prompter.sampling_params
         for k in ["max_tokens", "temperature", "top_p"]:
@@ -148,8 +153,10 @@ def start_stream(
         crud.stream.set_is_streaming(db, db_stream, True)
         try:
             acc = []
+            raw_response = ""
             for t in generator:
                 acc.append(t)
+                raw_response += t
                 if t.endswith((" ", "\n")) or t.startswith((" ", "\n")):
                     yield "data: " + json.dumps("".join(acc)) + "\n\n"
                     acc = []
@@ -166,7 +173,8 @@ def start_stream(
             # has been garbage collected.
             _db_stream = crud.stream.get_stream(db, stream_id)
             db.refresh(_db_stream)
-            crud.stream.set_is_streaming(db, _db_stream, False)
+            crud.stream.set_is_streaming(db, _db_stream, False, commit=False)
+            crud.stream.set_rag_output(db, _db_stream, raw_response, rag_sources)
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
