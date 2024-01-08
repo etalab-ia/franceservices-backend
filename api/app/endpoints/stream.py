@@ -24,10 +24,11 @@ router = APIRouter()
 def read_streams(
     skip: int = 0,
     limit: int = 100,
+    chat_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    streams = crud.stream.get_streams(db, current_user.id, skip=skip, limit=limit)
+    streams = crud.stream.get_streams(db, current_user.id, skip=skip, limit=limit, chat_id=chat_id)
     return [stream.to_dict() for stream in streams]
 
 
