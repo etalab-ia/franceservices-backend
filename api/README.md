@@ -14,9 +14,16 @@ You must be registered with `huggingface-cli` to download private models:
     huggingface-cli login --token $HF_ACCESS_TOKEN
 
 
-Download a model:
-- Fabrique model `python -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-reference-2')"`
-- Albert model `python -c "from vllm import LLM; LLM(model='etalab-ia/albert-light')"`
+### Download a model
+
+#### Old version of deployment
+- Fabrique model `python -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-reference-2', download_dir='add_your_path')"`
+- Albert model `python -c "from vllm import LLM; LLM(model='etalab-ia/albert-light', download_dir='add_your_path')"`
+
+#### Newer version
+Open python console
+`python -c "from transformers import AutoTokenizer, AutoModel; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/fabrique-reference-2'); tokenizer.save_pretrained('add_your_path/fabrique-reference-2'); model=AutoModel.from_pretrained('etalab-ia/fabrique-reference-2'); model.save_pretrained('add_your_path/fabrique-reference-2') "`
+`python -c "from transformers import AutoTokenizer, AutoModel; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/albert-light'); tokenizer.save_pretrained('add_your_path/albert-light'); model=AutoModel.from_pretrained('etalab-ia/albert-light'); model.save_pretrained('add_your_path/albert-light') "`
 
 
 # Test
@@ -129,3 +136,8 @@ Alternatively with docker only
 
 The search API and the RAG should now be ready to be used.
 
+**set up the mail server**
+
+    To be completed
+
+**possibily migrate 
