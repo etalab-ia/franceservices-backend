@@ -49,3 +49,9 @@ class Index(BaseModel):
     must_not_sids: list[str] | None = Field(
         default=None, description="Filter out documents that must not match."
     )
+
+
+class QueryDocs(BaseModel):
+    uids: list[str] = Field(
+        description="List of documents ids. When searching in `sheets`, the uid are called sid. For `chunks` uid are called hash."
+    )
