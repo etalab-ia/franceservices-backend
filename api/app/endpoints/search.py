@@ -53,19 +53,43 @@ def get_indexes(
     return JSONResponse(hits)
 
 
-@router.get("/get_chunk/{chunkid}")
+@router.get("/get_chunk/{uid}")
 def get_chunk(
-    chunkid: str,
+    uid: str,
     current_user: models.User = Depends(get_current_user),  # noqa
 ):
-    hit = get_document("chunks", chunkid)
+    hit = get_document("chunks", uid)
     return JSONResponse(hit)
 
 
-@router.get("/get_sheet/{sheetid}")
+@router.get("/get_sheet/{uid}")
 def get_sheet(
-    sheetid: str,
+    uid: str,
     current_user: models.User = Depends(get_current_user),  # noqa
 ):
-    hit = get_document("sheets", sheetid)
+    hit = get_document("sheets", uid)
     return JSONResponse(hit)
+
+
+@router.post("/get_chunks")
+def get_chunks(
+    uids: schemas.QueryDocs,
+    current_user: models.User = Depends(get_current_user),  # noqa
+):
+    hits = []
+    for uid in uids.uids:
+        hits.append(get_document("chunks", uid))
+
+    return JSONResponse(hits)
+
+
+@router.post("/get_sheets")
+def get_sheets(
+    uids: schemas.QueryDocs,
+    current_user: models.User = Depends(get_current_user),  # noqa
+):
+    hits = []
+    for uid in uids.uids:
+        hits.append(get_document("sheets", uid))
+
+    return JSONResponse(hits)
