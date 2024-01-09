@@ -17,9 +17,11 @@ BACKEND_CORS_ORIGINS = [
     "http://localhost:4173",
     "http://localhost:8080",
     "http://albert.etalab.gouv.fr",
+    "http://franceservices.etalab.gouv.fr",
     "http://ia.etalab.gouv.fr",
     "https://albert.etalab.gouv.fr",
     "https://ia.etalab.gouv.fr",
+    "https://franceservices.etalab.gouv.fr",
 ]
 
 SECRET_KEY = os.environ["SECRET_KEY"]
