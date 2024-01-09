@@ -42,3 +42,21 @@ def read_chat(
         raise HTTPException(403, detail="Forbidden")
 
     return db_chat
+
+
+@router.post("/chat/{chat_id}", response_model=schemas.Chat)
+def update_chat(
+    chat_id: int,
+    chat_updates: schemas.ChatUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    db_chat = crud.chat.get_chat(db, chat_id=chat_id)
+    if db_chat is None:
+        raise HTTPException(404, detail="Chat not found")
+
+    if db_chat.user_id != current_user.id:
+        raise HTTPException(403, detail="Forbidden")
+
+    crud.chat.update_chat(db, db_chat, chat_updates)
+    return db_chat
