@@ -7,14 +7,14 @@ def get_streams(db: Session, user_id: str, skip: int = 0, limit: int = 100, chat
         return (
             db.query(models.Stream)
             .filter(models.Stream.chat_id == chat_id)
-            .order_by(models.Stream.id)
+            .order_by(models.Stream.id.desc())
             .all()
         )
     else:
         return (
             db.query(models.Stream)
             .filter(models.Stream.user_id == user_id)
-            .order_by(models.Stream.id)
+            .order_by(models.Stream.id.desc())
             .offset(skip)
             .limit(limit)
             .all()
