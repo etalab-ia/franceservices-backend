@@ -1,4 +1,5 @@
 from enum import Enum
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -49,7 +50,8 @@ class StreamBase(BaseModel):
     # For archive reading / reload
     response: str | None = None
     rag_sources: list[str] | None = Field(
-        default=None, description="List of chunks used with a rag generation. The list of id can be used to retrieved a chunk on the route /get_chunk/{uid}"
+        default=None,
+        description="List of chunks used with a rag generation. The list of id can be used to retrieved a chunk on the route /get_chunk/{uid}",
     )
 
     # TODO: add other checks
@@ -85,6 +87,8 @@ class StreamCreate(StreamBase):
 
 class Stream(StreamBase):
     id: int
+    created_at: datetime
+    updated_at: datetime
     is_streaming: bool
     user_id: int | None
     chat_id: int | None
