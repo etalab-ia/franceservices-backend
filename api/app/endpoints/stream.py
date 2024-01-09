@@ -55,7 +55,7 @@ def create_chat_stream(
     if db_chat.user_id != current_user.id:
         raise HTTPException(403, detail="Forbidden")
 
-    return crud.stream.create_stream(db, stream, chat_id=chat_id)
+    return crud.stream.create_stream(db, stream, chat_id=chat_id, user_id=current_user.id)
 
 
 @router.get("/stream/{stream_id}", response_model=schemas.Stream)

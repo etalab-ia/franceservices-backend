@@ -24,7 +24,7 @@ def get_streams(db: Session, user_id: str, skip: int = 0, limit: int = 100, chat
 def create_stream(
     db: Session,
     stream: schemas.StreamCreate,
-    user_id: int | None = None,
+    user_id: int,
     chat_id: int | None = None,
     commit=True,
 ) -> models.Stream:
