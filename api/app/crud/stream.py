@@ -53,10 +53,6 @@ def create_stream(
     return db_stream
 
 
-def get_stream(db: Session, stream_id: int) -> models.Stream:
-    return db.query(models.Stream).filter(models.Stream.id == stream_id).first()
-
-
 def set_is_streaming(db: Session, db_stream: models.Stream, is_streaming: bool, commit=True):
     db_stream.is_streaming = is_streaming
     if commit:
