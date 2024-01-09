@@ -1,9 +1,9 @@
-from .chat import Chat, ChatCreate, ChatWithRelationships
-from .login import SignInForm, ResetPasswordForm, SendResetPasswordEmailForm
-from .search import Embedding, Index, QueryDocs
-from .stream import Stream, StreamCreate, StreamWithRelationships
-from .feedback import Feedback, FeedbackCreate, FeedbackWithRelationships
-from .user import ConfirmUser, User, UserCreate, UserWithRelationships, ContactForm
+from .chat import Chat, ChatCreate, ChatUpdate, ChatWithRelationships # noqa
+from .login import SignInForm, ResetPasswordForm, SendResetPasswordEmailForm # noqa
+from .search import Embedding, Index, QueryDocs # noqa
+from .stream import Stream, StreamCreate, StreamWithRelationships # noqa
+from .feedback import Feedback, FeedbackCreate, FeedbackWithRelationships # noqa
+from .user import ConfirmUser, User, UserCreate, UserWithRelationships, ContactForm # noqa
 
 ChatWithRelationships.model_rebuild()
 StreamWithRelationships.model_rebuild()
