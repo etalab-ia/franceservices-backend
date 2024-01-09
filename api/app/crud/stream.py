@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 
 
 def get_streams(db: Session, user_id: str, skip: int = 0, limit: int = 100, chat_id: int | None = None) -> list[models.Stream]:
-    query = db.query(models.Stream).filter(models.Stream.user_id == user_id)
     if chat_id is not None:
-        query = query.filter(models.Stream.chat_id == chat_id)
+        query = db.query(models.Stream).filter(models.Stream.chat_id == chat_id)
+    else:
+        query = db.query(models.Stream).filter(models.Stream.user_id == user_id)
     return (
         query.order_by(models.Stream.id)
         .offset(skip)
