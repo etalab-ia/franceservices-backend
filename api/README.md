@@ -22,8 +22,8 @@ You must be registered with `huggingface-cli` to download private models:
 
 #### Newer version
 Open python console
-`python -c "from transformers import AutoTokenizer, AutoModel; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/fabrique-reference-2'); tokenizer.save_pretrained('add_your_path/fabrique-reference-2'); model=AutoModel.from_pretrained('etalab-ia/fabrique-reference-2'); model.save_pretrained('add_your_path/fabrique-reference-2') "`
-`python -c "from transformers import AutoTokenizer, AutoModel; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/albert-light'); tokenizer.save_pretrained('add_your_path/albert-light'); model=AutoModel.from_pretrained('etalab-ia/albert-light'); model.save_pretrained('add_your_path/albert-light') "`
+`python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/fabrique-reference-2'); tokenizer.save_pretrained('add_your_path/fabrique-reference-2'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/fabrique-reference-2'); model.save_pretrained('add_your_path/fabrique-reference-2') "`
+`python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/albert-light'); tokenizer.save_pretrained('add_your_path/albert-light'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/albert-light'); model.save_pretrained('add_your_path/albert-light') "`
 
 
 # Test
@@ -135,9 +135,3 @@ Alternatively with docker only
 
 
 The search API and the RAG should now be ready to be used.
-
-**set up the mail server**
-
-    To be completed
-
-**possibily migrate 
