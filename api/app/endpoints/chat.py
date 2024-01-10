@@ -61,3 +61,19 @@ def update_chat(
 
     crud.chat.update_chat(db, db_chat, chat_updates)
     return db_chat
+
+
+@router.get("/chat/archive/{chat_id}", response_model=schemas.ChatArchive)
+def read_chat_archive(
+    chat_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    db_chat = crud.chat.get_chat_archive(db, chat_id=chat_id)
+    if db_chat is None:
+        raise HTTPException(404, detail="Chat not found")
+
+    if db_chat.user_id != current_user.id:
+        raise HTTPException(403, detail="Forbidden")
+
+    return db_chat
