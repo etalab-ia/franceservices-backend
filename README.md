@@ -46,7 +46,7 @@ See the dedicated [Readme](/api/README.md) for more information about the API co
 - api_vllm/: the code of the vllm API.
 - commons/: code shared by different modules, such as the Albert API client, and prompt encoder.
 - corpus_generation/: **Independent** scripts to generate Q/a or evaluation data using third party service (Mistral, Openai etc)
-- finetuning/: **Independents** fine-tuning scripts.
+- finetuning/: **Independent** fine-tuning scripts.
 - sourcing/: code behind `pyalbert download ...` and `pyalbert make_chunks`.
 - ir/: code behind `pyalbert index ...`
 - evaluation/: code behind `pyalbert evaluate ...`

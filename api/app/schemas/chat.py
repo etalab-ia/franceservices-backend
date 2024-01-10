@@ -1,4 +1,5 @@
 from enum import Enum
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -24,11 +25,18 @@ class ChatCreate(ChatBase):
 
 class Chat(ChatBase):
     id: int
+    created_at: datetime
+    updated_at: datetime
     user_id: int
     chat_name: str | None
 
     class Config:
         from_attributes = True
+
+
+class ChatUpdate(BaseModel):
+    chat_name: str | None = None
+    chat_type: ChatType | None = None
 
 
 class ChatWithRelationships(Chat):
