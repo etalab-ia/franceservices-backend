@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 if TYPE_CHECKING:
     from .user import User
 
+from .stream import Stream
 
 class ChatType(str, Enum):
     qa = "qa"
@@ -37,6 +38,9 @@ class Chat(ChatBase):
 class ChatUpdate(BaseModel):
     chat_name: str | None = None
     chat_type: ChatType | None = None
+
+class ChatArchive(ChatBase):
+    streams: list[Stream]
 
 
 class ChatWithRelationships(Chat):
