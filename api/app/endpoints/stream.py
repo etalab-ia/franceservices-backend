@@ -24,11 +24,12 @@ def read_streams(
     skip: int = 0,
     limit: int = 100,
     chat_id: int | None = None,
+    desc: bool = False,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     streams = crud.stream.get_streams(
-        db, user_id=current_user.id, skip=skip, limit=limit, chat_id=chat_id
+        db, user_id=current_user.id, skip=skip, limit=limit, chat_id=chat_id, desc=desc
     )
     return [stream.to_dict() for stream in streams]
 
@@ -56,7 +57,7 @@ def create_chat_stream(
     if db_chat.user_id != current_user.id:
         raise HTTPException(403, detail="Forbidden")
 
-    return crud.stream.create_stream(db, stream, chat_id=chat_id, user_id=current_user.id)
+    return crud.stream.create_stream(db, stream, user_id=current_user.id, chat_id=chat_id)
 
 
 @router.get("/stream/{stream_id}", response_model=schemas.Stream)

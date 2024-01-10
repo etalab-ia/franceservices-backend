@@ -2,25 +2,26 @@ from app import models, schemas
 from sqlalchemy.orm import Session
 
 
-def get_streams(db: Session, user_id: str, skip: int = 0, limit: int | None = 100, chat_id: int | None = None) -> list[models.Stream]:
+def get_streams(
+    db: Session,
+    user_id: str,
+    skip: int = 0,
+    limit: int | None = 100,
+    chat_id: int | None = None,
+    desc: bool = False,
+) -> list[models.Stream]:
+    query = db.query(models.Stream).filter(models.Stream.user_id == user_id)
     if chat_id is not None:
-        query = (
-            db.query(models.Stream)
-            .filter(models.Stream.chat_id == chat_id)
-            .offset(skip)
-        )
-        if limit is not None:
-            query = query.limit(limit)
-        return query.order_by(models.Stream.id.desc()).all()
+        query = query.filter(models.Stream.chat_id == chat_id)
+    if desc:
+        query = query.order_by(models.Stream.id.desc())
     else:
-        return (
-            db.query(models.Stream)
-            .filter(models.Stream.user_id == user_id)
-            .order_by(models.Stream.id.desc())
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        query = query.order_by(models.Stream.id.asc())
+    query = query.offset(skip)
+    if limit is not None:
+        query = query.limit(limit)
+
+    return query.all()
 
 
 def create_stream(
