@@ -11,7 +11,7 @@ from commons import get_prompter
 prompter = get_prompter("albert-light", mode="rag")
 
 while 1:
-    query = input(">>> Dit moi quelque chose: ")
+    query = input(">>> Dis-moi quelque chose : ")
     # Prompter
     # --
     # limit: the max number of hit the RAG should return

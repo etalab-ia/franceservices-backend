@@ -1,7 +1,8 @@
 # Install
 
-    pip install -r requirements.txt
-
+```bash
+pip install -r requirements.txt
+```
 
 ### Gpt4all quantized model (for CPUs)
 
@@ -11,46 +12,59 @@ To run the quantized model, the model `"{model-name}.bin"` needs to be imported/
 
 You must be registered with `huggingface-cli` to download private models:
 
-    huggingface-cli login --token $HF_ACCESS_TOKEN
-
+```bash
+huggingface-cli login --token $HF_ACCESS_TOKEN
+```
 
 ### Download a model
 
 #### Old version of deployment
-- Fabrique model `python -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-reference-2', download_dir='add_your_path')"`
-- Albert model `python -c "from vllm import LLM; LLM(model='etalab-ia/albert-light', download_dir='add_your_path')"`
+- Fabrique model
+```bash
+python -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-reference-2', download_dir='add_your_path')"
+```
+- Albert model
+```bash
+python -c "from vllm import LLM; LLM(model='etalab-ia/albert-light', download_dir='add_your_path')"
+```
 
 #### Newer version
 Open python console
-`python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/fabrique-reference-2'); tokenizer.save_pretrained('add_your_path/fabrique-reference-2'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/fabrique-reference-2'); model.save_pretrained('add_your_path/fabrique-reference-2') "`
-`python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/albert-light'); tokenizer.save_pretrained('add_your_path/albert-light'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/albert-light'); model.save_pretrained('add_your_path/albert-light') "`
+```bash
+python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/fabrique-reference-2'); tokenizer.save_pretrained('add_your_path/fabrique-reference-2'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/fabrique-reference-2'); model.save_pretrained('add_your_path/fabrique-reference-2') "
+```
+
+```bash
+python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/albert-light'); tokenizer.save_pretrained('add_your_path/albert-light'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/albert-light'); model.save_pretrained('add_your_path/albert-light') "
+```
+
 
 
 # Test
 
 Install dev packages:
-
-    pip install -r requirements_dev.txt
-
+```bash
+pip install -r requirements_dev.txt
+```
 
 Run unit tests:
-
-    pytest --cov=app --cov-report=html --cov-report=term-missing app/tests
-
+```bash
+pytest --cov=app --cov-report=html --cov-report=term-missing app/tests
+```
 
 Test the app locally:
-
-    uvicorn app.main:app --reload
-
+```bash
+uvicorn app.main:app --reload
+```
 
 and in another terminal:
-
-    python test.py
-
+```bash
+python test.py
+```
 
 # Alembic
 
-Create a new alembic (enpty) template version:
+Create a new alembic (empty) template version:
 
     PYTHONPATH=. alembic revision -m  "vXXX
 
@@ -66,15 +80,15 @@ Upgrade a database according to alemic revision:
 # Production
 
 If GPU is available, the vllm API is run separately with:
-
-    python vllm_api.py --model etalab-ia/albert-light  --tensor-parallel-size 1 --gpu-memory-utilization 0.4 --port 8000
-
+```bash
+python vllm_api.py --model etalab-ia/albert-light  --tensor-parallel-size 1 --gpu-memory-utilization 0.4 --port 8000
+```
 
 Run the public API:
-
-    uvicorn app.main:app --host 0.0.0.0 --port 8090 # --root-path /api/v2
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8090 # --root-path /api/v2
     #gunicorn app.main:app  -w 2 -b 127.0.0.1:8090 --timeout 120
-
+```
 
 
 # Deploy
@@ -90,29 +104,42 @@ To deploy over a https domain, you will need to :
 - install lestencrypt/certbot: `sudo apt install certbot python3-certbot-nginx`
 - run certbot to create and link the certificate to the server: 
 
-    `sudo certbot -v --nginx --redirect -d ia.etalab.gouv.fr -d albert.etalab.gouv.fr --email language_model@data.gouv.fr`
+```bash
+sudo certbot -v --nginx --redirect -d ia.etalab.gouv.fr -d albert.etalab.gouv.fr --email language_model@data.gouv.fr
+```
 
 NOTE: If there is a firewall, certbot will struggle to complete the challenge to create the certificates as it requires a lestencript communication with the server (http).
 
 
 **Launch the API database**
 
-    # Launch postgres
-    docker-compose -f contrib/postgres/docker-compose up
+Launch Postgres container with:
+```bash
+docker-compose -f contrib/postgres/docker-compose up
+```
 
 
 **Launch the search engine services**
 
-    # Launch elasticsearch
-    docker-compose -f contrib/docker/elasticsearch/docker-compose.yml up
+Launch Elasticsearch
+```bash
+docker-compose -f contrib/docker/elasticsearch/docker-compose.yml up
+```
 
-    # Launch qdrant
-    docker-compose -f contrib/docker/qdrant/docker-compose.yml up
+Launch qdrant
+```bash
+docker-compose -f contrib/docker/qdrant/docker-compose.yml up
+```
 
-Alternatively with docker only
+Alternatively, with Docker only:
 
-    docker run --name elasticsearch -p 9202:9200 -p 9302:9300 -e discovery.type="single-node" -e xpack.security.enabled="false" -e ES_JAVA_OPTS="-Xms2g -Xmx2g" --mount source=vol-elasticsearch,target=/var/lib/elasticsearch/data -d docker.elastic.co/elasticsearch/elasticsearch:8.9.1
-    docker run --name qdrant -p 6333:6333 -p 6334:6334 --mount source=vol-qdrant,target=/qdrant/storage -d qdrant/qdrant:v1.5.0
+```bash
+docker run --name elasticsearch -p 9202:9200 -p 9302:9300 -e discovery.type="single-node" -e xpack.security.enabled="false" -e ES_JAVA_OPTS="-Xms2g -Xmx2g" --mount source=vol-elasticsearch,target=/var/lib/elasticsearch/data -d docker.elastic.co/elasticsearch/elasticsearch:8.9.1
+```
+and
+```bash
+docker run --name qdrant -p 6333:6333 -p 6334:6334 --mount source=vol-qdrant,target=/qdrant/storage -d qdrant/qdrant:v1.5.0
+```
 
 
 **download the corpus**
