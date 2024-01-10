@@ -24,7 +24,7 @@ The process to build the data, and their corresponding `pyalbert` subcommands (c
 
 ### Install 
 
-    pip install requirements.txt
+    pip install -r requirements.txt
 
 
 ## Albert APIs
