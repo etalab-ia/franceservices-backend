@@ -92,6 +92,7 @@ class Stream(StreamBase):
     is_streaming: bool
     user_id: int | None
     chat_id: int | None
+    search_sids: list[str] | None
 
     class Config:
         from_attributes = True
