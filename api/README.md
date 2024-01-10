@@ -85,6 +85,15 @@ Run the public API:
 
 This allows to route the incoming connections of the server. You can adapt the configuration file provided in [contrib/nginx](/contrib/nginx/).
 
+To deploy over a https domain, you will need to : 
+- adapt the hostnames to match yours in the conifg files (nginx config and app/config.py:CORS) and the following commands
+- install lestencrypt/certbot: `sudo apt install certbot python3-certbot-nginx`
+- run certbot to create and link the certificate to the server: 
+
+    `sudo certbot -v --nginx --redirect -d ia.etalab.gouv.fr -d albert.etalab.gouv.fr --email language_model@data.gouv.fr`
+
+NOTE: If there is a firewall, certbot will struggle to complete the challenge to create the certificates as it requires a lestencript communication with the server (http).
+
 
 **Launch the API database**
 
@@ -135,3 +144,9 @@ Alternatively with docker only
 
 
 The search API and the RAG should now be ready to be used.
+
+**set up the mail server**
+
+    To be completed
+
+**possibily migrate 

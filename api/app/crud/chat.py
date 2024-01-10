@@ -7,15 +7,15 @@ def get_chat(db: Session, chat_id: int) -> models.Chat:
     return db.query(models.Chat).filter(models.Chat.id == chat_id).first()
 
 
-def get_chats(db: Session, user_id: str, skip: int = 0, limit: int = 100) -> list[models.Chat]:
-    return (
-        db.query(models.Chat)
-        .filter(models.Chat.user_id == user_id)
-        .order_by(models.Chat.id)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+def get_chats(
+    db: Session, user_id: str, skip: int = 0, limit: int = 100, desc: bool = False
+) -> list[models.Chat]:
+    query = db.query(models.Chat).filter(models.Chat.user_id == user_id)
+    if desc:
+        query = query.order_by(models.Chat.id.desc())
+    else:
+        query = query.order_by(models.Chat.id.asc())
+    return query.offset(skip).limit(limit).all()
 
 
 def create_chat(db: Session, chat: schemas.ChatCreate, user_id: int, commit=True) -> models.Chat:

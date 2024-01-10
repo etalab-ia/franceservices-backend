@@ -49,6 +49,9 @@ class Index(BaseModel):
     must_not_sids: list[str] | None = Field(
         default=None, description="Filter out documents that must not match."
     )
+    stream_id: str | None = Field(
+        default=None, description="A related stream_id use to search results information that can be used get stream/chat archive."
+    )
 
 
 class QueryDocs(BaseModel):

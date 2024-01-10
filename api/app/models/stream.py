@@ -12,7 +12,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
-    CheckConstraint,
+    #CheckConstraint,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -67,6 +67,7 @@ class Stream(Base):
     rag_sources = Column(JSON, nullable=True)
     should_sids = Column(JSON, nullable=True)
     must_not_sids = Column(JSON, nullable=True)
+    search_sids = Column(JSON, nullable=True)
 
     # one-to-one / use use_list=False ?
     feedback = relationship("Feedback", back_populates="stream")
@@ -77,12 +78,12 @@ class Stream(Base):
     chat = relationship("Chat", back_populates="streams")
     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=True)
 
-    __table_args__ = (
-        CheckConstraint(
-            "(user_id IS NULL OR chat_id IS NULL) AND (user_id IS NOT NULL OR chat_id IS NOT NULL)",  # pylint: disable=line-too-long
-            name="_streams_user_id_chat_id_cc",
-        ),
-    )
+    #__table_args__ = (
+    #    CheckConstraint(
+    #        "(user_id IS NULL OR chat_id IS NULL) AND (user_id IS NOT NULL OR chat_id IS NOT NULL)",  # pylint: disable=line-too-long
+    #        name="_streams_user_id_chat_id_cc",
+    #    ),
+    #)
 
     # many-to-many
     sources = relationship(
