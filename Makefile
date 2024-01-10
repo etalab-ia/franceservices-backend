@@ -59,6 +59,9 @@ sync_etalab_repo:
 sync_etalab_repo_outscale_prod:
 	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@171.33.114.210:~/
 
+sync_etalab_repo_outscale_prod_2:
+	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@142.44.51.104:~/
+
 sync_etalab_repo_outscale_sand:
 	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@217.75.171.132:~/
 
