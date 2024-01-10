@@ -2,6 +2,10 @@ from app import models, schemas
 from sqlalchemy.orm import Session
 
 
+def get_stream(db: Session, stream_id: int) -> models.Stream:
+    return db.query(models.Stream).filter(models.Stream.id == stream_id).first()
+
+
 def get_streams(
     db: Session,
     user_id: str,
