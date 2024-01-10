@@ -27,9 +27,13 @@ class StreamBase(BaseModel):
         default="",
         description='The user query. It the query exceed a certain size wich depends on the contextual window of the model, the model will return an  HTTPException(413, detail="Prompt too large")',
     )
+    # @obselete: replace user_text (use by fabrique model) by query and remove this entry (db copy user_text->query)
+    user_text: str = Field(
+        default="",
+        description='The user query. It the query exceed a certain size wich depends on the contextual window of the model, the model will return an  HTTPException(413, detail="Prompt too large")',
+    )
     limit: int | None = None
     # For instruct/fabrique like prompt.
-    user_text: str
     context: str = ""
     institution: str = ""
     links: str = ""
