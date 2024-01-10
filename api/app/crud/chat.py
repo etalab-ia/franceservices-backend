@@ -1,10 +1,19 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
 
 
 def get_chat(db: Session, chat_id: int) -> models.Chat:
     return db.query(models.Chat).filter(models.Chat.id == chat_id).first()
+
+
+def get_chat_archive(db: Session, chat_id: int) -> models.Chat:
+    return (
+        db.query(models.Chat)
+        .filter(models.Chat.id == chat_id)
+        .options(joinedload(models.Chat.streams))
+        .first()
+    )
 
 
 def get_chats(
