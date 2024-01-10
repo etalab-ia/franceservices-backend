@@ -34,11 +34,11 @@ def download_corpus(PATH: str = "_data/"):
     for corpus in corpus_data:
         print(f"Dowloading '{corpus['nameid']}'...\n")
         last_name = corpus["url"].split("/")[-1]
-        if corpus["nameid"] in ["travail"]:
-            wget.download(corpus["url"], f"{PATH}/temp_{last_name}")
         try:
             shutil.unpack_archive(f"{PATH}/temp_{last_name}", f"{PATH}/{corpus['output']}")
         except (ValueError, shutil.ReadError):
-            shutil.move(f"{PATH}/temp_{last_name}", f"{PATH}/{corpus['output']}")
+            if not os.path.exists(f"{PATH}/{corpus['output']}"):
+                wget.download(corpus["url"], f"{PATH}/temp_{last_name}")
+                shutil.move(f"{PATH}/temp_{last_name}", f"{PATH}/{corpus['output']}")
 
     print("\nCorpus files successfuly downloaded")
