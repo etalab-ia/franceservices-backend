@@ -12,10 +12,11 @@ router = APIRouter()
 def read_chats(
     skip: int = 0,
     limit: int = 100,
+    desc: bool = False,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    chats = crud.chat.get_chats(db, user_id=current_user.id, skip=skip, limit=limit)
+    chats = crud.chat.get_chats(db, user_id=current_user.id, skip=skip, limit=limit, desc=desc)
     return chats
 
 

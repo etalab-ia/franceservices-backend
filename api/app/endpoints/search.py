@@ -1,9 +1,10 @@
-from app import models, schemas
+from app import crud, models, schemas
 from app.core.embeddings import make_embeddings
 from app.core.indexes import search_indexes, get_document
-from app.deps import get_current_user
-from fastapi import APIRouter, Depends
+from app.deps import get_current_user, get_db
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
 
 from commons.prompt_base import Prompter
 
@@ -17,8 +18,7 @@ router = APIRouter()
 
 @router.post("/embeddings")
 def create_embeddings(
-    embedding: schemas.Embedding,
-    current_user: models.User = Depends(get_current_user),  # noqa
+    embedding: schemas.Embedding, current_user: models.User = Depends(get_current_user)
 ):
     embeddings = make_embeddings(embedding.text)
     return JSONResponse(embeddings.tolist())
@@ -31,9 +31,10 @@ def create_embeddings(
 
 # TODO: rename to /search !?
 @router.post("/indexes")
-def get_indexes(
+def search(
     index: schemas.Index,
-    current_user: models.User = Depends(get_current_user),  # noqa
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     query = index.query
     expand_acronyms = True
@@ -50,6 +51,18 @@ def get_indexes(
         index.should_sids,
         index.must_not_sids,
     )
+
+    if index.stream_id:
+        db_stream = crud.stream.get_stream(db, index.stream_id)
+        if db_stream is None:
+            raise HTTPException(404, detail="Stream not found")
+
+        if current_user.id not in (db_stream.user_id, getattr(db_stream.chat, "user_id", None)):
+            raise HTTPException(403, detail="Forbidden")
+        # Save the sheets references in the given stream
+        search_sids = [h["sid"] for h in hits]
+        crud.stream.set_search_sids(db, db_stream, search_sids)
+
     return JSONResponse(hits)
 
 

@@ -67,6 +67,7 @@ class Stream(Base):
     rag_sources = Column(JSON, nullable=True)
     should_sids = Column(JSON, nullable=True)
     must_not_sids = Column(JSON, nullable=True)
+    search_sids = Column(JSON, nullable=True)
 
     # one-to-one / use use_list=False ?
     feedback = relationship("Feedback", back_populates="stream")
