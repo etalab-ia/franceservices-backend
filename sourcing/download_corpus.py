@@ -23,6 +23,7 @@ def download_corpus(PATH: str = "_data/"):
             "nameid": "vdd",
             "url": "https://lecomarquage.service-public.fr/vdd/3.3/part/zip/vosdroits-latest.zip",
             "output": "data.gouv/",
+            "format": "zip",
         },
         {
             "nameid": "travail",
@@ -31,14 +32,18 @@ def download_corpus(PATH: str = "_data/"):
         },
     ]
 
+    if not os.path.exists(f"{PATH}/data.gouv"):
+        os.makedirs(f"{PATH}/data.gouv")
+
     for corpus in corpus_data:
         print(f"Dowloading '{corpus['nameid']}'...\n")
         last_name = corpus["url"].split("/")[-1]
-        try:
-            shutil.unpack_archive(f"{PATH}/temp_{last_name}", f"{PATH}/{corpus['output']}")
-        except (ValueError, shutil.ReadError):
-            if not os.path.exists(f"{PATH}/{corpus['output']}"):
-                wget.download(corpus["url"], f"{PATH}/temp_{last_name}")
-                shutil.move(f"{PATH}/temp_{last_name}", f"{PATH}/{corpus['output']}")
+        target = f"{PATH}/{corpus['output']}"
+        wget.download(corpus["url"], f"{PATH}/temp_{last_name}")
+        if corpus.get("format"):
+            shutil.unpack_archive(f"{PATH}/temp_{last_name}", extract_dir=target, format=corpus["format"])
+        else:
+            shutil.move(f"{PATH}/temp_{last_name}", target)
+        print()
 
     print("\nCorpus files successfuly downloaded")

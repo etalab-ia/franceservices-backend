@@ -5,10 +5,10 @@
 Usage:
     pyalbert.py download_corpus
     pyalbert.py download_directory
-    pyalbert.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] DIRECTORY
-    pyalbert.py make_questions DIRECTORY
+    pyalbert.py make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] [DIRECTORY]
+    pyalbert.py make_questions [DIRECTORY]
     pyalbert.py make_embeddings
-    pyalbert.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE] [--recreate]
+    pyalbert.py index (experiences | sheets | chunks) [--index-type=INDEX_TYPE] [--recreate] [DIRECTORY]
     pyalbert.py finetune MODEL VERSION
     pyalbert.py evaluate MODEL VERSION [-n N] [-y] [--csv]
     pyalbert.py evaluate -o OUTPUT (--merge MODEL VERSION)...
@@ -51,12 +51,12 @@ Options:
 
 Examples:
     ./pyalbert.py download_directory
-    ./pyalbert.py make_chunks --chunk-size 500 --chunk-overlap 20 _data/data.gouv/vos-droits-et-demarche/
-    ./pyalbert.py make_chunks --structured _data/data.gouv/vos-droits-et-demarche/
-    ./pyalbert.py make_questions _data/data.gouv/vos-droits-et-demarche/
+    ./pyalbert.py make_chunks --chunk-size 500 --chunk-overlap 20
+    ./pyalbert.py make_chunks --structured
+    ./pyalbert.py make_questions _data/data.gouv/
     !make institutions          # Generate the french institution list
     ./pyalbert.py index experiences  # assumes _data/export-expa-c-riences.json exists
-    ./pyalbert.py index sheets       # assumes _data/data.gouv/vos-droits-et-demarche/ + _data/fiches-travail.json exist
+    ./pyalbert.py index sheets       # assumes _data/data.gouv/ + _data/fiches-travail.json exist
     ./pyalbert.py index chunks       # assumes _data/sheets_as_chunks.json + _data/fiches-travail.json exist
     ./pyalbert.py evaluate miaou v0  # Run the inference
     ./pyalbert.py evaluate miaou v0 --csv  # make an result table with inference file found in data/x/{model}-{version}
@@ -74,6 +74,9 @@ except ModuleNotFoundError:
 if __name__ == "__main__":
     # Parse CLI arguments
     args = docopt(__doc__, version="0")
+
+    if not args["DIRECTORY"]:
+        args["DIRECTORY"] = "_data/data.gouv/"
 
     # Run command
     if args["download_corpus"]:
@@ -110,7 +113,12 @@ if __name__ == "__main__":
         indexes = ["experiences", "chunks", "sheets"]
         for name in indexes:
             if name in args and args[name]:
-                create_index(args["--index-type"], name, recreate=args["--recreate"])
+                create_index(
+                    args["--index-type"],
+                    name,
+                    recreate=args["--recreate"],
+                    directory=args["DIRECTORY"],
+                )
     elif args["finetune"]:
         raise NotImplementedError
     elif args["evaluate"]:

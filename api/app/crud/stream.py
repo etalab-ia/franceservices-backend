@@ -37,7 +37,7 @@ def create_stream(
 ) -> models.Stream:
     stream = stream.model_dump()
 
-    # @DEBUG: How to not have to that manually while avoiding the following exception:
+    # @DEBUG/HELP1: How to not have to that manually while avoiding the following exception:
     # AttributeError: 'str' object has no attribute '_sa_instance_state'
     if stream["sources"]:
         stream["sources"] = [

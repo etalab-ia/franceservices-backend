@@ -10,7 +10,7 @@ except ModuleNotFoundError:
                                 collate_ix_name)
 
 
-def create_bm25_index(index_name, add_doc=True, recreate=False):
+def create_bm25_index(index_name, add_doc=True, recreate=False, directory=None):
     # Connect to Elasticsearch
     client = Elasticsearch("http://localhost:9202", basic_auth=("elastic", "changeme"))
 
@@ -118,7 +118,7 @@ def create_bm25_index(index_name, add_doc=True, recreate=False):
             documents = RagSource.get_sheets(
                 SHEET_SOURCES,
                 structured=False,
-                path="_data/data.gouv/vos-droits-et-demarche/",
+                path=directory,
             )
             documents = [d for d in documents if d["text"][0]]
 

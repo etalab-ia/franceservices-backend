@@ -4,17 +4,17 @@ except ModuleNotFoundError:
     from api.app.config import EMBEDDING_BOOTSTRAP_PATH, EMBEDDING_MODEL
 
 
-def create_index(index_type, index_name, add_doc=True, recreate=False):
+def create_index(index_type, index_name, add_doc=True, recreate=False, directory=None):
     if index_type == "bucket":
         from .meilisearch import create_bucket_index
 
         print("Creating Meilisearch index...")
-        return create_bucket_index(index_name, add_doc)
+        return create_bucket_index(index_name, add_doc, directory=directory)
     elif index_type == "bm25":
         from .elasticsearch import create_bm25_index
 
         print("Creating Elasticsearch index...")
-        return create_bm25_index(index_name, add_doc, recreate)
+        return create_bm25_index(index_name, add_doc, recreate, directory=directory)
     elif index_type == "e5":
         from .qdrant import create_vector_index
 
