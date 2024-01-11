@@ -39,6 +39,7 @@ class Index(BaseModel):
     similarity: IndexSimilarity = Field(
         default=IndexSimilarity.bm25, description="The similarity algorithm to use for the search."
     )
+    expand_acronyms: bool = Field(default=True, description="If true, an acronym detection algorithm will try to detect and expand implicit acronyms used by the French services in the query.")
     institution: str | None = None
     sources: list[IndexSource] | None = Field(
         default=None, description="Restrict the list of source to search within."
