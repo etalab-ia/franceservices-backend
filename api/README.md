@@ -3,6 +3,8 @@
 ```bash
 pip install -r requirements.txt
 ```
+...or using `pyproject.toml` via a modern Python manager like [pip-tools](https://github.com/jazzband/pip-tools), [PDM](https://pdm.fming.dev/), [Poetry](https://python-poetry.org/docs/cli/#export) or [hatch](https://hatch.pypa.io/)
+
 
 ### Gpt4all quantized model (for CPUs)
 
@@ -177,3 +179,21 @@ The search API and the RAG should now be ready to be used.
     To be completed
 
 **possibily migrate 
+
+
+### Export pinned dependencies from pyproject.toml to requirements.txt
+
+Using [PDM](https://pdm.fming.dev/)
+```bash
+pdm export --output requirements.txt --production --without-hashes
+```
+
+Using [Poetry](https://python-poetry.org/docs/cli/#export)
+```bash
+poetry export --without-hashes -f requirements.txt -o requirements.txt
+```
+
+Using [pip-tools](https://github.com/jazzband/pip-tools)
+```bash
+pip-compile --output-file requirements.txt requirements.in
+```
