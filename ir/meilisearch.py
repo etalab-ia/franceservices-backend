@@ -9,7 +9,7 @@ except ModuleNotFoundError:
     from api.app.config import SHEET_SOURCES
 
 
-def create_bucket_index(index_name, add_doc=True):
+def create_bucket_index(index_name, add_doc=True, directory=None):
     client = meilisearch.Client("http://localhost:7700", "masterKey")
 
     if index_name == "experiences":
@@ -92,7 +92,7 @@ def create_bucket_index(index_name, add_doc=True):
             documents = RagSource.get_sheets(
                 SHEET_SOURCES,
                 structured=False,
-                path="_data/data.gouv/vos-droits-et-demarche/",
+                path=directory,
             )
             documents = [d for d in documents if d["text"][0]]
 
