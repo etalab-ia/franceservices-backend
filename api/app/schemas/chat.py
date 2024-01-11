@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 from .stream import Stream
 
+
 class ChatType(str, Enum):
     qa = "qa"
     meeting = "meeting"
@@ -38,6 +39,7 @@ class Chat(ChatBase):
 class ChatUpdate(BaseModel):
     chat_name: str | None = None
     chat_type: ChatType | None = None
+
 
 class ChatArchive(Chat):
     streams: list[Stream]
