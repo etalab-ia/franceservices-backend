@@ -37,8 +37,9 @@ def search(
     current_user: models.User = Depends(get_current_user),
 ):
     query = index.query
-    expand_acronyms = True
-    if expand_acronyms:
+
+    if index.expand_acronyms:
+        # Detect and expand implicit acronyms
         query = Prompter._expand_acronyms(index.query)
 
     hits = search_indexes(
@@ -53,13 +54,14 @@ def search(
     )
 
     if index.stream_id:
+        # Save the sheets references in the given stream
         db_stream = crud.stream.get_stream(db, index.stream_id)
         if db_stream is None:
             raise HTTPException(404, detail="Stream not found")
 
         if current_user.id not in (db_stream.user_id, getattr(db_stream.chat, "user_id", None)):
             raise HTTPException(403, detail="Forbidden")
-        # Save the sheets references in the given stream
+
         search_sids = [h["sid"] for h in hits]
         crud.stream.set_search_sids(db, db_stream, search_sids)
 

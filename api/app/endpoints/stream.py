@@ -76,7 +76,7 @@ def read_stream(
     return db_stream.to_dict()
 
 
-# TODO: turn into async
+# TODO: turn into async ?
 @router.get("/stream/{stream_id}/start", response_class=StreamingResponse)
 def start_stream(
     stream_id: int,

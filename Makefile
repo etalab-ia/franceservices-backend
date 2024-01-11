@@ -113,3 +113,26 @@ list_indexes:
 	# qdrant
 	curl -X GET "http://localhost:6333/collections" | jq 
 
+list_vms:
+	@osc-cli api ReadVms --profile "default" | jq ".Vms | .[] | { VmId, State, Tags }"
+
+VMID="i-3fcd96ff" # Usage: make get_vm VMID=i-bb5568c0
+get_vm:
+	@osc-cli api ReadVms --profile "default" \
+			--Filters "{\
+			\"VmIds\": [\"$(VMID)\"],\
+		}" | jq ".Vms | .[] | { VmId, State, Tags }"
+
+start_vm:
+	@osc-cli api StartVms --profile "default" --VmIds "[\"$(VMID)\"]"
+
+stop_vm:
+	@read -p "Please confirm to STOP this VM ($(VMID))? (y/n) " answer;\
+	answer=$$(echo $$answer | tr '[:upper:]' '[:lower:]'); \
+	if [ "$$answer" = "y" ] || [ "$$answer" = "yes" ]; then \
+			echo "You answered yes. Continuing..."; \
+	else \
+			echo "You answered no. Stopping..."; exit 1; \
+	fi
+	@osc-cli api StopVms --profile "default" --VmIds "[\"$(VMID)\"]"
+
