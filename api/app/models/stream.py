@@ -12,7 +12,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
-    #CheckConstraint,
+    # CheckConstraint,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -78,12 +78,12 @@ class Stream(Base):
     chat = relationship("Chat", back_populates="streams")
     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=True)
 
-    #__table_args__ = (
+    # __table_args__ = (
     #    CheckConstraint(
     #        "(user_id IS NULL OR chat_id IS NULL) AND (user_id IS NOT NULL OR chat_id IS NOT NULL)",  # pylint: disable=line-too-long
     #        name="_streams_user_id_chat_id_cc",
     #    ),
-    #)
+    # )
 
     # many-to-many
     sources = relationship(
@@ -92,6 +92,7 @@ class Stream(Base):
 
     def to_dict(self):
         # For serialisation purpose
+        # @DEBUG/HELP1: AttributeError: 'str' object has no attribute '_sa_instance_state'
 
         # This raise an exception due to relationship !
         # result = schemas.Stream.from_orm(self)
@@ -113,4 +114,3 @@ class SourceEnum(Base):
     # source_name = Column(Enum(IndexSource), unique=True)
     source_name = Column(Text)
     streams = relationship("Stream", secondary=stream_source_association, back_populates="sources")
-
