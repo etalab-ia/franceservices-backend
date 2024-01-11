@@ -8,12 +8,16 @@ def get_chat(db: Session, chat_id: int) -> models.Chat:
 
 
 def get_chat_archive(db: Session, chat_id: int) -> models.Chat:
-    return (
+    db_chat = (
         db.query(models.Chat)
         .filter(models.Chat.id == chat_id)
         .options(joinedload(models.Chat.streams))
         .first()
     )
+    for stream in db_chat.streams:
+        stream.sources = [source.source_name for source in stream.sources]
+
+    return db_chat
 
 
 def get_chats(
