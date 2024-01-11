@@ -76,4 +76,4 @@ def read_chat_archive(
     if db_chat.user_id != current_user.id:
         raise HTTPException(403, detail="Forbidden")
 
-    return db_chat
+    return db_chat.to_dict()

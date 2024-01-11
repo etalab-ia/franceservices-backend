@@ -42,7 +42,7 @@ class ChatUpdate(BaseModel):
 
 
 class ChatArchive(Chat):
-    streams: list[Stream]
+    streams: list[Stream] | None = None
 
 
 class ChatWithRelationships(Chat):

@@ -14,8 +14,6 @@ def get_chat_archive(db: Session, chat_id: int) -> models.Chat:
         .options(joinedload(models.Chat.streams))
         .first()
     )
-    for stream in db_chat.streams:
-        stream.sources = [source.source_name for source in stream.sources]
 
     return db_chat
 
