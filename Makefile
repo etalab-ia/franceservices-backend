@@ -124,6 +124,9 @@ get_vm:
 		}" | jq ".Vms | .[] | { VmId, State, Tags }"
 
 start_vm:
+	@osc-cli api StartVms --profile "default" --VmIds "[\"$(VMID)\"]"
+
+stop_vm:
 	@read -p "Please confirm to STOP this VM ($(VMID))? (y/n) " answer;\
 	answer=$$(echo $$answer | tr '[:upper:]' '[:lower:]'); \
 	if [ "$$answer" = "y" ] || [ "$$answer" = "yes" ]; then \
@@ -131,8 +134,5 @@ start_vm:
 	else \
 			echo "You answered no. Stopping..."; exit 1; \
 	fi
-	@osc-cli api StartVms --profile "default" --VmIds "[\"$(VMID)\"]"
-
-stop_vm:
 	@osc-cli api StopVms --profile "default" --VmIds "[\"$(VMID)\"]"
 
