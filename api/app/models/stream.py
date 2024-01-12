@@ -70,7 +70,7 @@ class Stream(Base):
     search_sids = Column(JSON, nullable=True)
 
     # one-to-one / use use_list=False ?
-    feedback = relationship("Feedback", back_populates="stream")
+    feedback = relationship("Feedback", back_populates="stream", uselist=False)
 
     # one-to-many
     user = relationship("User", back_populates="streams")
@@ -104,7 +104,8 @@ class Stream(Base):
 
         # Relations
         result.sources = [source.source_name for source in self.sources]
-        result.feedback = self.feedback.to_dict()
+        if self.feedback:
+            result.feedback = self.feedback.to_dict()
 
         return result
 

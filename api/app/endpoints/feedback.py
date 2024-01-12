@@ -30,7 +30,15 @@ def create_feedback(
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
 
-    return crud.feedback.create_feedback(db, feedback, user_id=current_user.id, stream_id=stream_id)
+    # Upsert feedback
+    if not db_stream.feedback:
+        db_feedback = crud.feedback.create_feedback(
+            db, feedback, user_id=current_user.id, stream_id=stream_id
+        )
+    else:
+        db_feedback = crud.feedback.update_feedback(db, db_stream.feedback, feedback)
+
+    return db_feedback
 
 
 @router.get("/feedback/{feedback_id}", response_model=schemas.Feedback)
@@ -50,7 +58,7 @@ def read_feedback(
 
 
 @router.delete("/feedback/delete/{feedback_id}", response_model=schemas.Feedback)
-def delete_item(
+def delete_feedback(
     feedback_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),

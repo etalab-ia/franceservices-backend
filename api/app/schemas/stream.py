@@ -98,7 +98,7 @@ class Stream(StreamBase):
     user_id: int | None
     chat_id: int | None
     search_sids: list[str] | None
-    feedback: Feedback | None
+    feedback: Feedback | None = None
 
     class Config:
         from_attributes = True
