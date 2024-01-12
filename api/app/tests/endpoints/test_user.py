@@ -39,13 +39,13 @@ class TestEndpointsUser(TestClass):
         response = create_user_me(client, "jean.dupont", "jean.dupont@test.fr", "Abcde")
         assert response.status_code == 422
 
-        response = create_user_me(client, "jean.dupont", "jean.dupont@test.fr", "A" * 21)
+        response = create_user_me(client, "jean.dupont", "jean.dupont@test.fr", "A" * 129)
         assert response.status_code == 422
 
-        response = create_user_me(client, "jean.dupont", "jean.dupont@test.fr", "Abcdef@123456#")
+        response = create_user_me(client, "jean.dupont", "jean.dupont@test.fr", "Abcdef123456)")
         assert response.status_code == 422
 
-        response = create_user_me(client, "jean.dupont", "jean.dupont@test.fr", "Abcdef123456#")
+        response = create_user_me(client, "jean.dupont", "jean.dupont@test.fr", "Abcdef123456#+=._-@")
         assert response.status_code == 200
 
     def test_confirm_user(self, client: TestClient):

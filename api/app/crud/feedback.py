@@ -30,3 +30,23 @@ def create_feedback(
         db.commit()
         db.refresh(db_feedback)
     return db_feedback
+
+
+def update_feedback(
+    db: Session, db_feedback: models.Feedback, feedback_updates: schemas.FeedbackCreate, commit=True
+) -> models.Feedback:
+    feedback_updates = feedback_updates.model_dump()
+    for k, v in feedback_updates.items():
+        setattr(db_feedback, k, v) if v is not None else None
+
+    if commit:
+        db.commit()
+
+    return db_feedback
+
+
+def delete_feedback(db: Session, feedback_id: int, commit=True):
+    result = db.query(models.Feedback).filter(models.Feedback.id == feedback_id).delete()
+    if commit:
+        db.commit()
+    return result

@@ -70,7 +70,7 @@ class Stream(Base):
     search_sids = Column(JSON, nullable=True)
 
     # one-to-one / use use_list=False ?
-    feedback = relationship("Feedback", back_populates="stream")
+    feedback = relationship("Feedback", back_populates="stream", uselist=False)
 
     # one-to-many
     user = relationship("User", back_populates="streams")
@@ -100,9 +100,13 @@ class Stream(Base):
         column_names = [column.name for column in self.__table__.columns]
         # Or equivalently
         # column_names = [c.key for c in sqlalchemy.inspect(self).mapper.column_attrs]
-
         result = schemas.Stream(**{k: getattr(self, k) for k in column_names})
+
+        # Relations
         result.sources = [source.source_name for source in self.sources]
+        if self.feedback:
+            result.feedback = self.feedback.to_dict()
+
         return result
 
 

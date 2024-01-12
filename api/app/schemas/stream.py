@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from .user import User
 
 from .search import IndexSource
+from .feedback import Feedback
 
 
 class ModelName(str, Enum):
@@ -97,6 +98,7 @@ class Stream(StreamBase):
     user_id: int | None
     chat_id: int | None
     search_sids: list[str] | None
+    feedback: Feedback | None = None
 
     class Config:
         from_attributes = True

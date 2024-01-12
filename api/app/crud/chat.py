@@ -44,7 +44,9 @@ def update_chat(
 ) -> models.Chat:
     chat_updates = chat_updates.model_dump()
     for k, v in chat_updates.items():
-        setattr(db_chat, k, v) if v else None
+        setattr(db_chat, k, v) if v is not None else None
 
     if commit:
         db.commit()
+
+    return db_chat
