@@ -34,7 +34,7 @@ class MailjetClient:
 
     def send_create_user_me_email(self, to):
         subject = "[Albert] Bienvenue !"
-        text = "Un administrateur va examiner la création de votre compte"
+        text = "Un administrateur va examiner la création de votre compte."
         return self._send(to, subject, text)
 
     def send_create_user_me_notify_admin_email(self, to, email):
@@ -44,7 +44,7 @@ class MailjetClient:
 
     def send_confirm_user_email(self, to):
         subject = "[Albert] Compte créé"
-        text = "Votre compte a été validé, vous pouvez maintenant vous connecter."
+        text = f"Votre compte a été validé, vous pouvez maintenant vous connecter à l'addresse suivante : {FRONT_URL}"
         return self._send(to, subject, text)
 
     def send_reset_password_email(self, to, token, app):
