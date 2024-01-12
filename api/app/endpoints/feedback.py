@@ -47,3 +47,21 @@ def read_feedback(
         raise HTTPException(403, detail="Forbidden")
 
     return db_feedback
+
+
+@router.delete("/feedback/delete/{feedback_id}", response_model=schemas.Feedback)
+def delete_item(
+    feedback_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    db_feedback = crud.feedback.get_feedback(db, feedback_id=feedback_id)
+    if db_feedback is None:
+        raise HTTPException(404, detail="Feedback not found")
+
+    if db_feedback.user_id != current_user.id:
+        raise HTTPException(403, detail="Forbidden")
+
+    crud.feedback.delete_feedback(db, feedback_id)
+
+    return db_feedback
