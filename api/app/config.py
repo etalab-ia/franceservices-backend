@@ -32,7 +32,7 @@ MJ_API_KEY = os.environ["MJ_API_KEY"]
 MJ_API_SECRET = os.environ["MJ_API_SECRET"]
 POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
 
-PASSWORD_PATTERN = r"^[A-Za-z\d$!%*+?&#_-]{8,20}$"
+PASSWORD_PATTERN = r"^[A-Za-z\d$!%*+?&#_-=.,:;@]{8,20}$"
 
 # @obsolete: use HOST instead of URL, this is confusing
 API_VLLM_URL = "http://127.0.0.1:8081"  # default
