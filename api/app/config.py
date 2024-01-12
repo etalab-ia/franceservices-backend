@@ -36,8 +36,8 @@ FIRST_ADMIN_PASSWORD = os.environ["FIRST_ADMIN_PASSWORD"]
 POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
 
 # Email
-MJ_API_KEY = os.getenv["MJ_API_KEY"]
-MJ_API_SECRET = os.getenv["MJ_API_SECRET"]
+MJ_API_KEY = os.getenv("MJ_API_KEY")
+MJ_API_SECRET = os.getenv("MJ_API_SECRET")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL")
 
 # Urls
