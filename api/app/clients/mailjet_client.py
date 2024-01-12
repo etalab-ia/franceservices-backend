@@ -26,6 +26,7 @@ class MailjetClient:
         msg += f"username: {user.username}\n"
         msg += f"email: {user.email}\n"
         msg += f"institution: {institution}\n"
+        msg += f"server: {FRONT_URL}\n"
         msg += "---\n\n"
 
         msg += text
@@ -39,7 +40,8 @@ class MailjetClient:
 
     def send_create_user_me_notify_admin_email(self, to, email):
         subject = "New user"
-        text = f"Account email: {email}"
+        text = f"Account email: {email}\n"
+        text += f"Server: {FRONT_URL}\n"
         return self._send(to, subject, text)
 
     def send_confirm_user_email(self, to):
