@@ -15,7 +15,7 @@ publish-api:
     - docker:dind
   script:
     - cp $ENV_FILE api/app/.env
-    - docker build -t $CI_REGISTRY_IMAGE/api-v2:latest -f api/Dockerfile .
+    - docker build -t $CI_REGISTRY_IMAGE/api-v2:latest -f api/Dockerfile --build-arg API_URL=$SERVER_URL --build-arg FRONT_URL=$SERVER_URL .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE/api-v2:latest
 
@@ -58,7 +58,7 @@ publish-api-recette:
     - docker:dind
   script:
     - cp $ENV_FILE api/app/.env
-    - docker build -t $CI_REGISTRY_IMAGE/api-v2-recette:latest -f api/Dockerfile .
+    - docker build -t $CI_REGISTRY_IMAGE/api-v2-recette:latest -f api/Dockerfile --build-arg API_URL=$SERVER_RECETTE_URL --build-arg FRONT_URL=$SERVER_RECETTE_URL .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE/api-v2-recette:latest
 
