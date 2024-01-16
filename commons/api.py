@@ -5,16 +5,16 @@ import requests
 
 # @IMPROVE: commons & app.config unification (relative imports...)
 try:
-    from app.config import (API_LIA_URL, API_ROUTE_VER, FIRST_ADMIN_PASSWORD,
+    from app.config import (API_URL, API_ROUTE_VER, FIRST_ADMIN_PASSWORD,
                             FIRST_ADMIN_USERNAME)
 except ModuleNotFoundError:
-    from api.app.config import (API_LIA_URL, API_ROUTE_VER,
+    from api.app.config import (API_URL, API_ROUTE_VER,
                                 FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME)
 
 
 def get_legacy_client():
     return ApiClient(
-        API_LIA_URL.rstrip("/") + "/" + API_ROUTE_VER.strip("/"),
+        API_URL.rstrip("/") + "/" + API_ROUTE_VER.strip("/"),
         FIRST_ADMIN_USERNAME,
         FIRST_ADMIN_PASSWORD,
     )

@@ -33,7 +33,9 @@ class Chat(Base):
         column_names = [column.name for column in self.__table__.columns]
         # Or equivalently
         # column_names = [c.key for c in sqlalchemy.inspect(self).mapper.column_attrs]
-
         result = schemas.ChatArchive(**{k: getattr(self, k) for k in column_names})
+
+        # Relations
         result.streams = [stream.to_dict() for stream in self.streams]
+
         return result
