@@ -64,7 +64,7 @@ institution: string : Filter the search with the given institution (correspond t
 Returns: A Json list of result object ->  
 
 For index=experiences:
-```
+```json
 {
     "title" : "Title of the experience",
     "description" : "The user experience",
@@ -74,7 +74,7 @@ For index=experiences:
 ```
 
 For index=sheets
-```
+```json
 {
     "title" : "Title of the sheet",
     "url" : "Url of the sheet",
@@ -83,7 +83,7 @@ For index=sheets
 ```
 
 For index=chunks
-```
+```json
 {
     "title" : "Title of the sheet",
     "url" : "Url of the sheet",

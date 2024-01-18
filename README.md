@@ -24,8 +24,28 @@ The process to build the data, and their corresponding `pyalbert` subcommands (c
 
 ### Install 
 
-    pip install requirements.txt
+```bash
+pip install -r requirements.txt
+```
+...or using `pyproject.toml` via a modern Python manager like [pip-tools](https://github.com/jazzband/pip-tools), [PDM](https://pdm.fming.dev/), [Poetry](https://python-poetry.org/docs/cli/#export) or [hatch](https://hatch.pypa.io/)
 
+
+### Export pinned dependencies from pyproject.toml to requirements.txt
+
+Using [PDM](https://pdm.fming.dev/
+```bash
+pdm export --output requirements.txt --production --without-hashes
+```
+
+Using [Poetry](https://python-poetry.org/docs/cli/#export)
+```bash
+poetry export --without-hashes -f requirements.txt -o requirements.txt
+```
+
+Using [pip-tools](https://github.com/jazzband/pip-tools)
+```bash
+pip-compile --output-file requirements.txt requirements.in
+```
 
 ## Albert APIs
 
@@ -71,5 +91,3 @@ TODO
 ## Acknowledgements
 
 TODO
-
-
