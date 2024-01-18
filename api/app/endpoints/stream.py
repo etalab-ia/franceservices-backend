@@ -5,10 +5,11 @@ from app.clients.api_vllm_client import ApiVllmClient
 from app.config import WITH_GPU
 from app.deps import get_current_user, get_db
 
+from app.core.llm import auto_set_chat_name
 if not WITH_GPU:
     from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -47,6 +48,7 @@ def create_user_stream(
 def create_chat_stream(
     chat_id: int,
     stream: schemas.StreamCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -57,7 +59,11 @@ def create_chat_stream(
     if db_chat.user_id != current_user.id:
         raise HTTPException(403, detail="Forbidden")
 
-    return crud.stream.create_stream(db, stream, user_id=current_user.id, chat_id=chat_id)
+    db_stream = crud.stream.create_stream(db, stream, user_id=current_user.id, chat_id=chat_id)
+    if not db_chat.streams:
+        background_tasks.add_task(auto_set_chat_name, chat_id, stream)
+
+    return db_stream.to_dict()
 
 
 @router.get("/stream/{stream_id}", response_model=schemas.Stream)
