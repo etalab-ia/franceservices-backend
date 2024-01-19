@@ -12,7 +12,7 @@ def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | None
         query = " ".join(stream.query.split(" ")[:512])  # 512 words should be sufficient to title the query # fmt: skip
 
         # Build prompt
-        query = f"Synthétise la demande suivante en un court titre de quelque mots (pas plus de 8 mots) permettant d'identifier la thématique. Le titre doit être cour, clair et accrocheur:\n\n{query}"
+        query = f"Synthétise la demande suivante en un court titre de quelque mots (pas plus de 8 mots) permettant d'identifier la thématique. Le titre doit être court, clair et accrocheur:\n\n{query}"
         prompter = get_prompter(model_name, "simple")
         prompt = prompter.make_prompt(query=query)
 
