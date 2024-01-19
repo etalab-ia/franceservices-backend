@@ -27,7 +27,7 @@ Paramètres conseillés lors de la création d'une VM compatible avec une GPU A1
 ![](https://storage.gra.cloud.ovh.net/v1/AUTH_0f20d409cb2a4c9786c769e2edec0e06/padnumerique/uploads/8331a0c8-18c0-401c-a8c1-ab49485dac67.png)
 
 Si besoin d'installer les drivers nvidia sur cette image d'Ubuntu 22.04, les commandes sont 
-```
+```bash
 sudo apt update
 sudo apt install -y nvidia-driver-535
 sudo apt install -y nvidia-cuda-toolkit nvidia-cuda-toolkit-gcc
@@ -56,7 +56,7 @@ Lien de la documentation de l'API : https://docs.outscale.com/api#3ds-outscale-a
 La première étape est de configurer votre profil osc-cli (a priori dans ~/.osc/config.json) en y ajoutant notamment un "access key" et un "secret key".
 
 Commande (à compléter) pour créer une VM depuis le terminal
-```
+```bash
 osc-cli api CreateVms \
 ` --profile default \
   --ImageId ami-cd8d714e" \
@@ -67,7 +67,7 @@ osc-cli api CreateVms \
 ```
 
 Création d'une carte GPU
-```
+```bash
 osc-cli api CreateFlexibleGpu --profile "default" \
   --ModelName "nvidia-a100" \
   --Generation "v6" \
@@ -76,14 +76,14 @@ osc-cli api CreateFlexibleGpu --profile "default" \
 ```
 
 Attacher la carte GPU
-```
+```bash
 osc-cli api LinkFlexibleGpu --profile "default" \
   --FlexibleGpuId "enter it" \
   --VmId "enter it"
 ```
 
 Détacher la carte GPU (ne pas oublier !)
-```
+```bash
 osc-cli api UnlinkFlexibleGpu --profile "default" \
   --FlexibleGpuId "enter it"
 ```

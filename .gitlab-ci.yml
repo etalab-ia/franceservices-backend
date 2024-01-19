@@ -1,8 +1,8 @@
 stages:
   - publish
-  - publish-recette
+  - publish-fs
   - deploy
-  - deploy-recette
+  - deploy-fs
 
 publish-api:
   rules:
@@ -46,49 +46,6 @@ publish-api-vllm-albert:
     - cd api_vllm && docker build -t $CI_REGISTRY_IMAGE/api_vllm_albert:latest --build-arg VLLM_MODEL=/var/lib/huggingface/albert-light --build-arg VLLM_PORT=8082 .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE/api_vllm_albert:latest
-
-publish-api-recette:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
-      when: manual
-      allow_failure: true  # to avoid blocked state
-  image: docker:latest
-  stage: publish-recette
-  services:
-    - docker:dind
-  script:
-    - cp $ENV_FILE api/app/.env
-    - docker build -t $CI_REGISTRY_IMAGE/api-v2-recette:latest -f api/Dockerfile --build-arg API_URL=$SERVER_RECETTE_URL --build-arg FRONT_URL=$SERVER_RECETTE_URL .
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE/api-v2-recette:latest
-
-publish-api-vllm-fabrique-recette:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
-      when: manual
-      allow_failure: true  # to avoid blocked state
-  image: docker:latest
-  stage: publish-recette
-  services:
-    - docker:dind
-  script:
-    - cd api_vllm && docker build -t $CI_REGISTRY_IMAGE/api_vllm_fabrique-recette:latest --build-arg VLLM_MODEL=/var/lib/huggingface/fabrique-reference-2 --build-arg VLLM_PORT=8081 .
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE/api_vllm_fabrique-recette:latest
-
-publish-api-vllm-albert-recette:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
-      when: manual
-      allow_failure: true  # to avoid blocked state
-  image: docker:latest
-  stage: publish-recette
-  services:
-    - docker:dind
-  script:
-    - cd api_vllm && docker build -t $CI_REGISTRY_IMAGE/api_vllm_albert-recette:latest --build-arg VLLM_MODEL=/var/lib/huggingface/albert-light --build-arg VLLM_PORT=8082 .
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE/api_vllm_albert-recette:latest
 
 
 deploy-api:
@@ -144,54 +101,57 @@ deploy-api-vllm-albert:
 
 
 
-deploy-api-recette:
+deploy-api-fs:
   rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
   image: alpine:latest
-  stage: deploy-recette
+  stage: deploy-fs
   environment:
-    name: recette
+    name: fs
   script:
     - chmod og= $ID_RSA
     - apk update && apk add openssh-client
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker pull $CI_REGISTRY_IMAGE/api-v2-recette:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker pull $CI_REGISTRY_IMAGE/api-v2:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-v2 || true"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-v2-recette || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2-recette $CI_REGISTRY_IMAGE/api-v2-recette:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
 
-deploy-api-vllm-fabrique-recette:
+deploy-api-vllm-fabrique-fs:
   rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
   image: alpine:latest
-  stage: deploy-recette
+  stage: deploy-fs
   environment:
-    name: recette
+    name: fs
   script:
     - chmod og= $ID_RSA
     - apk update && apk add openssh-client
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker pull $CI_REGISTRY_IMAGE/api_vllm_fabrique-recette:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker pull $CI_REGISTRY_IMAGE/api_vllm_fabrique:latest"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-vllm-fabrique-recette || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run --restart="always" --gpus all --network="host" -d -p 8081:8081 --name miaou-api-vllm-fabrique-recette -v /var/lib/huggingface:/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm_fabrique-recette:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-vllm-fabrique || true"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run --restart="always" --gpus all --network="host" -d -p 8081:8081 --name miaou-api-vllm-fabrique -v /var/lib/huggingface:/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm_fabrique:latest"
 
-deploy-api-vllm-albert-recette:
+deploy-api-vllm-albert-fs:
   rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
   image: alpine:latest
-  stage: deploy-recette
+  stage: deploy-fs
   environment:
-    name: recette
+    name: fs
   script:
     - chmod og= $ID_RSA
     - apk update && apk add openssh-client
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker pull $CI_REGISTRY_IMAGE/api_vllm_albert-recette:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker pull $CI_REGISTRY_IMAGE/api_vllm_albert:latest"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-vllm-albert-recette || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run --restart="always" --gpus all --network="host" -d -p 8082:8082 --name miaou-api-vllm-albert-recette -v /var/lib/huggingface:/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm_albert-recette:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-vllm-albert || true"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run --restart="always" --gpus all --network="host" -d -p 8082:8082 --name miaou-api-vllm-albert -v /var/lib/huggingface:/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm_albert:latest"
 
