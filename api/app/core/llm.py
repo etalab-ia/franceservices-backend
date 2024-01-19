@@ -18,13 +18,13 @@ def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | None
 
         # Generate
         api_vllm_client = ApiVllmClient(url=prompter.url)
-        response = api_vllm_client.generate(prompt, temperature=20, streaming=False)
+        chat_name = api_vllm_client.generate(prompt, temperature=20, streaming=False)
 
         # Update db_chat
         db_chat = crud.chat.get_chat(db, chat_id)
         if not db_chat:
             return
 
-        db_chat.chat_name = response
+        db_chat.chat_name = chat_name
         db.commit()
-        return response
+        return chat_name
