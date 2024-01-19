@@ -26,4 +26,5 @@ def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | None
             return
 
         db_chat.chat_name = response
+        db.commit()
         return response
