@@ -187,7 +187,6 @@ def create_bm25_index(index_name, add_doc=True, recreate=False, directory=None):
 
         if add_doc:
             # Add documents
-
             documents = []
 
             with open("_data/sheets_as_chunks.json") as f:
