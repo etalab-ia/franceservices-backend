@@ -13,8 +13,8 @@ COPY ./api/alembic /code/alembic
 COPY ./api/app /code/app
 COPY ./api/start.sh /code/start.sh
 RUN chmod +x /code/start.sh
-ARG API_URL
+ARG API_URL http://localhost
 ENV API_URL ${API_URL}
-ARG FRONT_URL
+ARG FRONT_URL http://localhost
 ENV FRONT_URL ${FRONT_URL}
 CMD ["bash", "start.sh"]
