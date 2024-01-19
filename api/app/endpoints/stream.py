@@ -59,10 +59,10 @@ def create_chat_stream(
     if db_chat.user_id != current_user.id:
         raise HTTPException(403, detail="Forbidden")
 
-    db_stream = crud.stream.create_stream(db, stream, user_id=current_user.id, chat_id=chat_id)
     if not db_chat.streams:
         background_tasks.add_task(auto_set_chat_name, chat_id, stream)
 
+    db_stream = crud.stream.create_stream(db, stream, user_id=current_user.id, chat_id=chat_id)
     return db_stream.to_dict()
 
 
