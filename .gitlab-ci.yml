@@ -63,7 +63,7 @@ deploy-api:
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker pull $CI_REGISTRY_IMAGE/api-v2:latest"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker container rm -f miaou-api-v2 || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run -e API_URL=SERVER_URL -e FRONT_URL=SERVER_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run -e API_URL=$SERVER_URL -e FRONT_URL=$SERVER_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
 
 deploy-api-vllm-fabrique:
   rules:
@@ -117,7 +117,7 @@ deploy-api-fs:
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker pull $CI_REGISTRY_IMAGE/api-v2:latest"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-v2 || true"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-v2-recette || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run -e API_URL=SERVER_RECETTE_URL -e FRONT_URL=SERVER_RECETTE_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
+    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run -e API_URL=$SERVER_RECETTE_URL -e FRONT_URL=$SERVER_RECETTE_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
 
 deploy-api-vllm-fabrique-fs:
   rules:
