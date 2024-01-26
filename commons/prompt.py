@@ -122,8 +122,14 @@ class Prompter:
 
         return prompt
 
-    def make_prompt(self, llama_chat=True, expand_acronyms=True, **kwargs):
-        # @TODO: use self.template.get("prompt_format") instead of llama_chat !
+    def make_prompt(self, prompt_format=None, expand_acronyms=True, **kwargs):
+        """Render simple to RAG prompt from template.
+
+        Supported prompt_format
+        ===
+        - llama-chat : see https://github.com/facebookresearch/llama
+        - null : force no chat template (to avoid conflict with the prompt_format template config)
+        """
         if expand_acronyms and "query" in kwargs:
             kwargs["query"] = self.preprocess_prompt(kwargs["query"])
 
@@ -134,8 +140,16 @@ class Prompter:
         template = self.template["template"]
         prompt = template.render(**data)
 
-        if llama_chat:
-            return format_llama_chat_prompt(prompt)["text"]
+        # Set prompt_format
+        if not prompt_format:
+            prompt_format = template.get("prompt_format")
+
+        # format prompt
+        if prompt_format:
+            if prompt_format == "llama-chat":
+                return format_llama_chat_prompt(prompt)["text"]
+            else:
+                raise ValueError("Prompt format unkown: %s" % prompt_format)
 
         return prompt
 
@@ -144,20 +158,21 @@ class Prompter:
     ) -> dict[str, Any]:
         """This method will compute the variables corresponding to the names passed in arguments.
         These variable should be documented as available to devellop prompt template for albert.
+
         Arguments
         ===
         variables: The list of variables used in the jinja templatess
         passed_data: Potential given values for variables
         default: Potential default value for variables or meta variable (e.g {limit})
 
-        Available Variables
+        Available Variables in Prompt Templates
         ===
         context: str      # passed in the query
         links: str        # passed in the query
         institution: str  # passed in the query
-        most_similar_experience:str
-        experience_chunks:list[dict]
-        sheet_chunks:list[dict]
+        most_similar_experience: str
+        experience_chunks: list[dict]
+        sheet_chunks: list[dict]
         """
         data = passed_data.copy()
         query = data.get("query")
