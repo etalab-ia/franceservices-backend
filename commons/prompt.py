@@ -167,6 +167,7 @@ class Prompter:
 
         Available Variables in Prompt Templates
         ===
+        query: str        # passed in the query
         context: str      # passed in the query
         links: str        # passed in the query
         institution: str  # passed in the query
