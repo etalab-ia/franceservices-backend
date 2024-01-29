@@ -12,7 +12,6 @@ Command:
 """
 
 import json
-import os
 
 from docopt import docopt
 

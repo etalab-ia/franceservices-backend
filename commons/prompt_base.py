@@ -58,7 +58,7 @@ class Prompter:
             text_span = (
                 prompt[max(0, start - look_around) : start] + " " + prompt[end : end + look_around]
             )
-            if not acronym["text"].lower() in text_span.lower():
+            if acronym["text"].lower() not in text_span.lower():
                 # I suppose we go here most of the time...
                 # but I also suppose the test should be fast enough to be negligible.
                 expanded = " (" + acronym["text"] + ")"

@@ -1,8 +1,5 @@
-import os
 import pandas as pd
 from vllm import LLM, SamplingParams
-import os
-import pprint
 
 
 evaluation_set = pd.read_excel("benchmark_llm.xlsx", sheet_name="ServicesPublics.fr")
