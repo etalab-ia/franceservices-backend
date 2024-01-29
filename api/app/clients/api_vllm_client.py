@@ -1,6 +1,6 @@
 import json
 import requests
-from typing import Iterable, List
+from typing import Iterable
 
 from app.config import API_VLLM_URL
 
