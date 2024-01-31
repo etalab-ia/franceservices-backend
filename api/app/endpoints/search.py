@@ -16,7 +16,7 @@ router = APIRouter()
 # **************
 
 
-@router.post("/embeddings")
+@router.post("/embeddings", tags=["search"])
 def create_embeddings(
     embedding: schemas.Embedding, current_user: models.User = Depends(get_current_user)
 ):
@@ -30,7 +30,7 @@ def create_embeddings(
 
 
 # TODO: rename to /search !?
-@router.post("/indexes")
+@router.post("/indexes", tags=["search"])
 def search(
     index: schemas.Index,
     db: Session = Depends(get_db),
@@ -68,7 +68,7 @@ def search(
     return JSONResponse(hits)
 
 
-@router.get("/get_chunk/{uid}")
+@router.get("/get_chunk/{uid}", tags=["search"])
 def get_chunk(
     uid: str,
     current_user: models.User = Depends(get_current_user),  # noqa
@@ -77,7 +77,7 @@ def get_chunk(
     return JSONResponse(hit)
 
 
-@router.get("/get_sheet/{uid}")
+@router.get("/get_sheet/{uid}", tags=["search"])
 def get_sheet(
     uid: str,
     current_user: models.User = Depends(get_current_user),  # noqa
@@ -86,7 +86,7 @@ def get_sheet(
     return JSONResponse(hit)
 
 
-@router.post("/get_chunks")
+@router.post("/get_chunks", tags=["search"])
 def get_chunks(
     uids: schemas.QueryDocs,
     current_user: models.User = Depends(get_current_user),  # noqa
@@ -98,7 +98,7 @@ def get_chunks(
     return JSONResponse(hits)
 
 
-@router.post("/get_sheets")
+@router.post("/get_sheets", tags=["search"])
 def get_sheets(
     uids: schemas.QueryDocs,
     current_user: models.User = Depends(get_current_user),  # noqa

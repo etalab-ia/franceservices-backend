@@ -4,7 +4,7 @@ sys.path.append("..")
 from fastapi import APIRouter, FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from app.config import ENV, BACKEND_CORS_ORIGINS
+from app.config import APP_NAME, APP_DESCRIPTION, APP_VERSION, BACKEND_CORS_ORIGINS, CONTACT
 from app.db.init_db import init_db
 from app.endpoints import chat, login, search, stream, user, misc, feedback
 from app.mockups import install_mockups
@@ -14,7 +14,13 @@ if ENV in ("unittest", "dev"):
 
 init_db()
 
-app = FastAPI()
+
+app = FastAPI(
+    title=APP_NAME,
+    description=APP_DESCRIPTION,
+    version=APP_VERSION,
+    contact=CONTACT
+)
 
 if BACKEND_CORS_ORIGINS:
     app.add_middleware(
@@ -26,11 +32,11 @@ if BACKEND_CORS_ORIGINS:
     )
 
 api_router = APIRouter()
-api_router.include_router(misc.router, tags=["misc"])
-api_router.include_router(user.router, tags=["user"])
-api_router.include_router(login.router, tags=["login"])
-api_router.include_router(search.router, tags=["search"])
-api_router.include_router(stream.router, tags=["stream"])
-api_router.include_router(chat.router, tags=["chat"])
-api_router.include_router(feedback.router, tags=["feedback"])
+api_router.include_router(misc.router)
+api_router.include_router(user.router)
+api_router.include_router(login.router)
+api_router.include_router(search.router)
+api_router.include_router(stream.router)
+api_router.include_router(chat.router)
+api_router.include_router(feedback.router)
 app.include_router(api_router)
