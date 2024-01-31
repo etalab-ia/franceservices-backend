@@ -10,22 +10,22 @@ router = APIRouter()
 # TODO: add update / delete endpoints
 
 
-@router.get("/users/pending", response_model=list[schemas.User])
+@router.get("/users/pending", response_model=list[schemas.User], tags=["user"])
 def read_pending_users(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> list[models.User]:
     if not current_user.is_admin:
         raise HTTPException(403, detail="Forbidden")
 
     return crud.user.get_pending_users(db)
 
 
-@router.post("/user/me")
+@router.post("/user/me", tags=["user"])
 def create_user_me(
     form_data: schemas.UserCreate,
     db: Session = Depends(get_db),
-):
+) -> dict[str, str]:
     username = form_data.username
     email = form_data.email
     if crud.user.get_user_by_username(db, username):
@@ -41,19 +41,19 @@ def create_user_me(
     return {"msg": "User created. An admin must confirm the user."}
 
 
-@router.get("/user/me", response_model=schemas.User)
+@router.get("/user/me", response_model=schemas.User, tags=["user"])
 def read_user_me(
     current_user: models.User = Depends(get_current_user),
-):
+) -> models.User:
     return current_user
 
 
-@router.post("/user/confirm")
+@router.post("/user/confirm", tags=["user"])
 def confirm_user(
     form_data: schemas.ConfirmUser,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> dict[str, str]:
     if not current_user.is_admin:
         raise HTTPException(403, detail="Forbidden")
 
@@ -74,12 +74,11 @@ def confirm_user(
     return {"msg": "Success"}
 
 
-@router.post("/user/contact")
+@router.post("/user/contact", tags=["user"])
 def contact_user(
     form_data: schemas.ContactForm,
     current_user: models.User = Depends(get_current_user),
-):
+) -> dict[str, str]:
     mailjet_client = MailjetClient()
     mailjet_client.send_contact_email(current_user, form_data.subject, form_data.text, form_data.institution)
     return {"msg": "Contact form email sent"}
-

@@ -20,7 +20,7 @@ router = APIRouter()
 # TODO: add update / delete endpoints
 
 
-@router.get("/streams", response_model=list[schemas.Stream])
+@router.get("/streams", response_model=list[schemas.Stream], tags=["stream"])
 def read_streams(
     skip: int = 0,
     limit: int = 100,
@@ -28,30 +28,30 @@ def read_streams(
     desc: bool = False,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> list[dict]:
     streams = crud.stream.get_streams(
         db, user_id=current_user.id, skip=skip, limit=limit, chat_id=chat_id, desc=desc
     )
     return [stream.to_dict() for stream in streams]
 
 
-@router.post("/stream", response_model=schemas.Stream)
+@router.post("/stream", response_model=schemas.Stream, tags=["public", "stream"])
 def create_user_stream(
     stream: schemas.StreamCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> models.Stream:
     return crud.stream.create_stream(db, stream, user_id=current_user.id).to_dict()
 
 
-@router.post("/stream/chat/{chat_id}")
+@router.post("/stream/chat/{chat_id}", tags=["stream"])
 def create_chat_stream(
     chat_id: int,
     stream: schemas.StreamCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> dict:
     db_chat = crud.chat.get_chat(db, chat_id)
     if db_chat is None:
         raise HTTPException(404, detail="Chat not found")
@@ -66,12 +66,12 @@ def create_chat_stream(
     return db_stream.to_dict()
 
 
-@router.get("/stream/{stream_id}", response_model=schemas.Stream)
+@router.get("/stream/{stream_id}", response_model=schemas.Stream, tags=["stream"])
 def read_stream(
     stream_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> dict:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
@@ -83,7 +83,7 @@ def read_stream(
 
 
 # TODO: turn into async ?
-@router.get("/stream/{stream_id}/start", response_class=StreamingResponse)
+@router.get("/stream/{stream_id}/start", response_class=StreamingResponse, tags=["public", "stream"])
 def start_stream(
     stream_id: int,
     db: Session = Depends(get_db),
@@ -189,12 +189,12 @@ def start_stream(
 
 
 # TODO: stop has no effect for vllm (no callback), add warning in that case or handle it
-@router.post("/stream/{stream_id}/stop", response_model=schemas.Stream)
+@router.post("/stream/{stream_id}/stop", response_model=schemas.Stream, tags=["stream"])
 def stop_stream(
     stream_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> dict:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")

@@ -13,11 +13,11 @@ from app.deps import get_db, get_current_user
 router = APIRouter()
 
 
-@router.post("/sign_in")
+@router.post("/sign_in", tags=["public", "login"])
 def sign_in(
     form_data: schemas.SignInForm,
     db: Session = Depends(get_db),
-):
+) -> dict[str, str]:
     username = form_data.username
     email = form_data.email
     password = form_data.password
@@ -38,23 +38,23 @@ def sign_in(
     return {"token": token}
 
 
-@router.post("/sign_out")
+@router.post("/sign_out", tags=["login"])
 def sign_out(
     req: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),  # noqa
-):
+) -> dict[str, str]:
     auth_header = req.headers.get("Authorization")
     token = auth_header.split(" ")[1]
     crud.login.create_blacklist_token(db, token)
     return {"msg": "Success"}
 
 
-@router.post("/send_reset_password_email")
+@router.post("/send_reset_password_email", tags=["login"])
 def send_reset_password_email(
     form_data: schemas.SendResetPasswordEmailForm,
     db: Session = Depends(get_db),
-):
+) -> dict[str, str]:
     email = form_data.email
     app = form_data.app
     user = crud.user.get_user_by_email(db, email)
@@ -72,11 +72,11 @@ def send_reset_password_email(
     return {"msg": "Password recovery email sent"}
 
 
-@router.post("/reset_password")
+@router.post("/reset_password", tags=["login"])
 def reset_password(
     form_data: schemas.ResetPasswordForm,
     db: Session = Depends(get_db),
-):
+) -> dict[str, str]:
     token = form_data.token
     password = form_data.password
     password_reset_token = crud.login.get_password_reset_token(db, token)
