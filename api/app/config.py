@@ -28,12 +28,16 @@ CONTACT = {
 BACKEND_CORS_ORIGINS = [
     "http://localhost:4173",
     "http://localhost:8080",
-    "http://albert.etalab.gouv.fr",
-    "http://franceservices.etalab.gouv.fr",
     "http://ia.etalab.gouv.fr",
-    "https://albert.etalab.gouv.fr",
+    "http://albert.etalab.gouv.fr",
+    "http://albert.staging.etalab.gouv.fr",
+    "http://franceservices.etalab.gouv.fr",
+    "http://franceservices.staging.etalab.gouv.fr",
     "https://ia.etalab.gouv.fr",
+    "https://albert.etalab.gouv.fr",
+    "https://albert.staging.etalab.gouv.fr",
     "https://franceservices.etalab.gouv.fr",
+    "https://franceservices.staging.etalab.gouv.fr",
 ]
 
 # JWT token
