@@ -59,8 +59,11 @@ venv.bak/
 .pytest_cache/
 htmlcov/
 
-# pyenv
+# pyenv & rye
 .python-version
+
+# Ruff
+.ruff_cache
 
 # Distribution / packaging
 .Python
