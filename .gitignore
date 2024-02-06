@@ -2,11 +2,6 @@
 # Projet
 #
 _data/
-notebooks/*.json
-notebooks/*.csv
-notebooks/*.xlsx
-notebooks/notes/
-notebooks/answers
 
 # api
 api/app/*.bin
