@@ -15,8 +15,8 @@ def parse_vllm_routing_table(table: list[str]) -> list[dict]:
     # @TODO: add a schema validation in a test pipeline.
     structured_table = []
     columns = [
-        "model_id",
         "model_name",
+        "model_id",
         "host",
         "port",
         "gpu_mem_use",
@@ -99,8 +99,8 @@ if os.path.exists("VLLM_ROUTING_TABLE"):
         ]
 else:  # default
     VLLM_ROUTING_TABLE = [
-        # model_name/ID                      model_name/api      HOST                PORT GPU_MEM_USE(%) TENSOR_PARALLEL_SIZE UDATE
-        "ActeurPublic/albert-light           albert-light        http://127.0.0.1    8082 0.4            1                    false",
+        # model_name/api     model_name/ID                  HOST                PORT GPU_MEM_USE(%) TENSOR_PARALLEL_SIZE UDATE
+        "albert-light        ActeurPublic/albert-light      http://127.0.0.1    8082 0.4            1                    false",
     ]
 
 VLLM_ROUTING_TABLE = parse_vllm_routing_table(VLLM_ROUTING_TABLE)

@@ -102,7 +102,6 @@ def start_stream(
     query = db_stream.query
     # @DEBUG: This should be passed once, when the stream start, and not saved (pass parameters to the first call to start_stream)
     limit = db_stream.limit
-    user_text = db_stream.user_text
     context = db_stream.context
     institution = db_stream.institution
     links = db_stream.links
@@ -121,7 +120,6 @@ def start_stream(
         # We pass a mix of all kw arguments used by all prompters...
         # This is allowed because each prompter accepts **kwargs arguments...
         prompt = prompter.make_prompt(
-            experience=user_text,
             institution=institution,
             context=context,
             links=links,

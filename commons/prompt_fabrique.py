@@ -10,9 +10,9 @@ class FabriquePrompter(Prompter):
     }
 
     @staticmethod
-    def make_prompt(experience=None, institution=None, context=None, links=None, **kwargs):
+    def make_prompt(query=None, institution=None, context=None, links=None, **kwargs):
         institution_ = institution + " " if institution else ""
-        prompt = f"Question soumise au service {institution_}: {experience}\n"
+        prompt = f"Question soumise au service {institution_}: {query}\n"
         if context and links:
             prompt += f"Prompt : {context} {links}\n"
         elif context:
@@ -44,14 +44,9 @@ class FabriqueReferencePrompter(Prompter):
         else:
             raise ValueError("prompt mode unknown: %s" % self.mode)
 
-    @classmethod
-    def preprocess_prompt(cls, prompt: str) -> str:
-        new_prompt = cls._expand_acronyms(prompt)
-        return new_prompt
-
     def make_prompt(self, expand_acronyms=True, **kwargs):
-        if expand_acronyms and "experience" in kwargs:
-            kwargs["experience"] = self.preprocess_prompt(kwargs["experience"])
+        if expand_acronyms and "query" in kwargs:
+            kwargs["query"] = self.preprocess_prompt(kwargs["query"])
 
         if self.mode == "simple":
             return self._make_prompt_simple(**kwargs)
@@ -63,11 +58,11 @@ class FabriqueReferencePrompter(Prompter):
             raise ValueError("prompt mode unknown: %s" % self.mode)
 
     @staticmethod
-    def _make_prompt_simple(experience=None, institution=None, context=None, links=None, **kwargs):
+    def _make_prompt_simple(query=None, institution=None, context=None, links=None, **kwargs):
         institution_ = institution + " " if institution else ""
         prompt = []
         prompt.append("Mode simple")
-        prompt.append(f"Question soumise au service {institution_}: {experience}")
+        prompt.append(f"Question soumise au service {institution_}: {query}")
         if context and links:
             prompt.append(f"Prompt : {context} {links}")
         elif context:
@@ -81,7 +76,7 @@ class FabriqueReferencePrompter(Prompter):
 
     def _make_prompt_experience(
         self,
-        experience=None,
+        query=None,
         institution=None,
         context=None,
         links=None,
@@ -92,7 +87,7 @@ class FabriqueReferencePrompter(Prompter):
         institution_ = institution + " " if institution else ""
         prompt = []
         prompt.append("Mode expérience")
-        prompt.append(f"Question soumise au service {institution_} : {experience}")
+        prompt.append(f"Question soumise au service {institution_} : {query}")
 
         # Rag / similar experiences
         client = get_legacy_client()
@@ -100,7 +95,7 @@ class FabriqueReferencePrompter(Prompter):
         if skip_first:
             limit += 1
         hits = client.search(
-            "experiences", experience, limit=limit, similarity="e5", institution=institution
+            "experiences", query, limit=limit, similarity="e5", institution=institution
         )
         if skip_first:
             hits = hits[1:]
@@ -115,7 +110,7 @@ class FabriqueReferencePrompter(Prompter):
 
     def _make_prompt_expert(
         self,
-        experience=None,
+        query=None,
         institution=None,
         context=None,
         links=None,
@@ -125,7 +120,7 @@ class FabriqueReferencePrompter(Prompter):
     ):
         prompt = []
         prompt.append("Mode expert")
-        prompt.append(f"Experience : {experience}")
+        prompt.append(f"Experience : {query}")
 
         client = get_legacy_client()
         # Get a reponse...
@@ -138,7 +133,7 @@ class FabriqueReferencePrompter(Prompter):
         if skip_first:
             n_exp = 2
         hits = client.search(
-            "experiences", experience, limit=n_exp, similarity="e5", institution=institution
+            "experiences", query, limit=n_exp, similarity="e5", institution=institution
         )
         if skip_first:
             hits = hits[1:]
@@ -148,7 +143,7 @@ class FabriqueReferencePrompter(Prompter):
 
         # Rag / relevant sheets
         limit = 3 if limit is None else limit
-        hits = client.search("chunks", experience, limit=limit, similarity="e5")
+        hits = client.search("chunks", query, limit=limit, similarity="e5")
         chunks = [
             f'{x["url"]} : {x["title"] + (x["context"]) if x["context"] else ""}\n{x["text"]}'
             for x in hits

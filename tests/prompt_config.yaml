@@ -1,0 +1,14 @@
+model_name: albert-light # obsolete
+model_type: chat #obsolete
+# Albert support the following chat/llm prompt format.
+prompt_format: llama | chatml | mistral | null # @ todo
+max_tokens: 2048
+
+prompts:
+  - mode: simple
+    system_prompt: "a particular system prompt..."
+    template: simple_prompt_template.jinja
+
+  - mode: rag
+    template: rag_prompt_template.jinja
+

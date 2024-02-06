@@ -17,11 +17,6 @@ class AlbertLightPrompter(Prompter):
         if not self.mode:
             self.mode = "rag"
 
-    @classmethod
-    def preprocess_prompt(cls, prompt: str) -> str:
-        new_prompt = cls._expand_acronyms(prompt)
-        return new_prompt
-
     def make_prompt(self, llama_chat=True, expand_acronyms=True, **kwargs):
         if expand_acronyms and "query" in kwargs:
             kwargs["query"] = self.preprocess_prompt(kwargs["query"])
