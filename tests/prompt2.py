@@ -15,7 +15,8 @@ if __name__ == "__main__":
     with open('prompt_config.yaml') as f:
         config = yaml.safe_load(f)
 
-    print("model:", config["model_name"])
+    print("prompt format:", config.get("prompt_format"))
+    print(config)
     print()
     for prompt in config["prompts"]:
         print(f'--- prompt mode: {prompt["mode"]} ---')
@@ -25,6 +26,7 @@ if __name__ == "__main__":
         source = template.environment.loader.get_source(template.environment, template.name)
         variables = meta.find_undeclared_variables(env.parse(source[0]))
         print("variables:", variables)
+        print("---")
 
         data = {
             "query": "Comment est votre blanquette ?",

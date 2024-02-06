@@ -1,8 +1,10 @@
 import os
+from commons.api import get_legacy_client
 import re
 from huggingface_hub import hf_hub_download
 from jinja2 import Environment, FileSystemLoader, meta
 import yaml
+from typing import Any
 
 try:
     from app.config import VLLM_ROUTING_TABLE
@@ -46,13 +48,13 @@ def prompt_templates_from_vllm_routing_table(table: list[dict]) -> dict[str, Pro
                 "system_prompt": prompt.get("systemctl"),
                 "template": template,
                 "variables": variables,
+                "default": prompt.get("default", {}),
                 "prompt_format": model.get("prompt_format"),
                 "sampling_params": sampling_params,
             }
 
         templates[model["model_name"]] = template
     return templates
-
 
 
 # Preload all acronyms to be faster
@@ -122,20 +124,99 @@ class Prompter:
 
     def make_prompt(self, llama_chat=True, expand_acronyms=True, **kwargs):
         # @TODO: use self.template.get("prompt_format") instead of llama_chat !
-        #
         if expand_acronyms and "query" in kwargs:
             kwargs["query"] = self.preprocess_prompt(kwargs["query"])
 
-        # TODO: build variable depending on what in variables + kwargs !
-        data = self.make_variables(self.template["variables"])
-        data.update(kwargs)
+        # Build template variables if any
+        data = self.make_variables(self.template["variables"], kwargs, self.template["default"])
 
+        # Render prompt
         template = self.template["template"]
-        rendered_template = template.render(**data)
-        return rendered_template
+        prompt = template.render(**data)
 
-    def make_variables(self, variables:list[str]):
-        pass
+        if llama_chat:
+            return format_llama_chat_prompt(prompt)["text"]
+
+        return prompt
+
+    def make_variables(
+        self, variables: list[str], passed_data: dict[str, Any], default: dict[str, Any]
+    ) -> dict[str, Any]:
+        """This method will compute the variables corresponding to the names passed in arguments.
+        These variable should be documented as available to devellop prompt template for albert.
+        Arguments
+        ===
+        variables: The list of variables used in the jinja templatess
+        passed_data: Potential given values for variables
+        default: Potential default value for variables or meta variable (e.g {limit})
+
+        Available Variables
+        ===
+        context: str      # passed in the query
+        links: str        # passed in the query
+        institution: str  # passed in the query
+        most_similar_experience:str
+        experience_chunks:list[dict]
+        sheet_chunks:list[dict]
+        """
+        data = passed_data.copy()
+        query = data.get("query")
+
+        client = get_legacy_client()
+
+        # Extract one similar value in a collection from query
+        if "most_similar_experience" in variables:
+            # Using LLM
+            # rep1 = vllm_generate(prompt, streaming=False,  max_tokens=500, **FabriquePrompter.SAMPLING_PARAMS)
+            # rep1 = "".join(rep1)
+            # Using similar experience
+            skip_first = passed_data.get("skip_first", default.get("skip_first"))
+            n_exp = 1
+            if skip_first:
+                n_exp = 2
+            hits = client.search(
+                "experiences",
+                query,
+                limit=n_exp,
+                similarity="e5",
+                institution=passed_data.get("institution"),
+            )
+            if skip_first:
+                hits = hits[1:]
+            data["similar_experience"] = hits[0]["description"]
+
+        # List of semantic similar value from query
+        chunks_allowed = ["experience_chunks", "sheet_chunks"]
+        chunks_matches = [v for v in variables if v.endswith("_chunks") and v in chunks_allowed]
+        for v in chunks_matches:
+            if v.split("_")[0] == "experience":
+                collection_name = "experience"
+                id_key = "id_experience"
+            elif v.split("_")[0] == "sheet":
+                collection_name = "chunks"
+                id_key = "hash"
+            else:
+                raise ValueError("chunks identifier (%s) unknown in prompt template." % v)
+
+            limit = passed_data.get("limit", default.get("limit")) or 3
+            skip_first = passed_data.get("skip_first", default.get("skip_first"))
+            if skip_first:
+                limit += 1
+            hits = client.search(
+                collection_name,
+                query,
+                institution=passed_data.get("institution", default.get("institution")),
+                limit=limit,
+                similarity="e5",
+                sources=passed_data.get("sources", default.get("sources")),
+                should_sids=passed_data.get("should_sids", default.get("should_sids")),
+                must_not_sids=passed_data.get("must_not_sids", default.get("must_not_sids")),
+            )
+            if skip_first:
+                hits = hits[1:]
+            self.sources = [x[id_key] for x in hits]
+
+        return data
 
 
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
