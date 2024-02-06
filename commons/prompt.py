@@ -24,7 +24,7 @@ class Prompt:
 
 
 def prompt_templates_from_vllm_routing_table(table: list[dict]) -> dict[str, Prompt]:
-    templates = []
+    templates = {}
     for model in table:
         prompt_config_file = hf_hub_download(
             repo_id=model["model_id"], filename="prompt_config.yml"
@@ -36,14 +36,14 @@ def prompt_templates_from_vllm_routing_table(table: list[dict]) -> dict[str, Pro
         if "max_tokens" in config:
             sampling_params["max_tokens"] = config["max_tokens"]
 
-        template = {}
+        prompt_template = {}
         for prompt in config["prompts"]:
             template_file = hf_hub_download(repo_id=model["model_id"], filename=prompt["template"])
             env = Environment(loader=FileSystemLoader(os.path.dirname(template_file)))
             template = env.get_template(prompt["template"])
             template_ = template.environment.loader.get_source(template.environment, template.name)
             variables = meta.find_undeclared_variables(env.parse(template_[0]))
-            template[prompt["mode"]] = {
+            prompt_template[prompt["mode"]] = {
                 "mode": prompt["mode"],
                 "system_prompt": prompt.get("systemctl"),
                 "template": template,
@@ -53,7 +53,7 @@ def prompt_templates_from_vllm_routing_table(table: list[dict]) -> dict[str, Pro
                 "sampling_params": sampling_params,
             }
 
-        templates[model["model_name"]] = template
+        templates[model["model_name"]] = prompt_template
     return templates
 
 
@@ -263,9 +263,9 @@ def get_prompter(model_name: str, mode: str | None = None):
     if not model:
         raise ValueError("Prompter unknown: %s" % model_name)
 
-    template = TEMPLATES["model_name"].get(mode)
+    template = TEMPLATES[model_name].get(mode)
     if not template:
-        raise ValueError("Prompt mode unknown: %s (available: %s)" % (mode, list(TEMPLATES)))
+        raise ValueError("Prompt mode unknown: %s (available: %s)" % (mode, list(TEMPLATES[model_name])))
 
     url = model["host"] + ":" + model["port"]
     return Prompter(url, template)

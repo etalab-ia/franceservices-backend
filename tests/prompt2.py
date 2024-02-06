@@ -12,7 +12,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 if __name__ == "__main__":
 
-    with open('prompt_config.yaml') as f:
+    with open('prompt_config.yml') as f:
         config = yaml.safe_load(f)
 
     print("prompt format:", config.get("prompt_format"))
