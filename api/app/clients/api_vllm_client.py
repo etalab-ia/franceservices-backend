@@ -41,8 +41,7 @@ class ApiVllmClient:
         data = {
             "prompt": prompt,
             "max_tokens": max_tokens,
-            "temperature": temperature
-            / 100,  # it thinks its better to keep [0,2] value to stay compatible with opanai api. The client can do this operation, if it implement a slider...
+            "temperature": temperature / 100,  # it thinks its better to keep [0,2] value to stay compatible with opanai api. The client can do this operation, if it implement a slider... # fmt: skip
             "top_p": top_p,  # not intended to final user but for dev and research.
             "stream": streaming,
         }
