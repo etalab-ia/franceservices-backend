@@ -1,6 +1,0 @@
-[tool.pylint.format]
-max-line-length=100
-disable=
-    C0114,
-    C0115,
-    C0116,
