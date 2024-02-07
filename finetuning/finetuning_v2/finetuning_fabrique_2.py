@@ -3,15 +3,11 @@ import torch
 from datasets import load_dataset
 from transformers import (
     AutoModelForCausalLM,
-    AutoTokenizer,
     BitsAndBytesConfig,
-    HfArgumentParser,
     TrainingArguments,
-    pipeline,
-    logging,
     LlamaTokenizerFast
 )
-from peft import LoraConfig, PeftModel, get_peft_model
+from peft import LoraConfig
 from trl import SFTTrainer
 
 # Le modèle que nous allons utiliser dans le Hugging Face hub

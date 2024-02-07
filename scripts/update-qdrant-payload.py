@@ -2,13 +2,13 @@
 
 import json
 
-from qdrant_client import QdrantClient, models
+from qdrant_client import QdrantClient
 
 try:
     from app.config import (EMBEDDING_BOOTSTRAP_PATH, QDRANT_IX_VER,
                             collate_ix_name)
-except ModuleNotFoundError as e:
-    from api.app.config import (EMBEDDING_BOOTSTRAP_PATH, QDRANT_IX_VER,
+except ModuleNotFoundError:
+    from api.app.config import (QDRANT_IX_VER,
                                 collate_ix_name)
 
 if __name__ == "__main__":

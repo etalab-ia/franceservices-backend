@@ -5,7 +5,6 @@ import os
 from time import time
 
 import numpy as np
-import pandas as pd
 from scipy import sparse
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
@@ -95,7 +94,6 @@ elif score == "cosine":
 elif score == "e5":
     import torch
     import torch.nn.functional as F
-    from sentence_transformers import SentenceTransformer
     from torch import Tensor
     from transformers import AutoModel, AutoTokenizer
 

@@ -1,6 +1,5 @@
 import pandas as pd
 from vllm import LLM, SamplingParams
-import os
 import json
 from pprint import pprint
 

@@ -5,9 +5,7 @@
 
 import pandas as pd
 from vllm import LLM, SamplingParams
-import os
 import json
-from pprint import pprint
 
 
 def get_hermes_question(user_input, mode = "interview"):

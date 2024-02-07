@@ -1,19 +1,14 @@
 #!/bin/python
 
 import os
-import shutil
 import sys
 
 import bitsandbytes as bnb
 import numpy as np
 import torch
 from datasets import concatenate_datasets, load_dataset
-from peft import (AutoPeftModelForCausalLM, LoraConfig, PeftModel,
-                  get_peft_model)
-from transformers import (AutoModelForCausalLM, AutoTokenizer,
-                          BitsAndBytesConfig, HfArgumentParser,
-                          LlamaTokenizerFast, TrainingArguments, logging,
-                          pipeline)
+from peft import (AutoPeftModelForCausalLM, LoraConfig)
+from transformers import (AutoModelForCausalLM, BitsAndBytesConfig, LlamaTokenizerFast, TrainingArguments)
 from trl import SFTTrainer
 
 sys.path.append(".")

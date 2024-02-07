@@ -12,7 +12,7 @@ from qdrant_client import QdrantClient
 from qdrant_client import models as QdrantModels
 
 
-def _retrieves(index_name, similarity=None):
+def _retrieves(index_name: str, similarity=None):
     if index_name == "experiences":
         retrieves = [
             "id_experience",
@@ -54,7 +54,7 @@ def _retrieves(index_name, similarity=None):
     return retrieves
 
 
-def get_document(index_name, uid):
+def get_document(index_name: str, uid: str):
     es = Elasticsearch(ELASTICSEARCH_URL, basic_auth=ELASTICSEARCH_CREDS)
     _extract = lambda x: dict((r, x[r]) for r in _retrieves(index_name) if r in x)
 

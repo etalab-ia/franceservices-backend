@@ -1,7 +1,6 @@
 #!/bin/python
 
 import sys
-from pprint import pprint
 
 sys.path.append(".")
 
