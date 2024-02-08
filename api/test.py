@@ -12,7 +12,7 @@ response = requests.post(
 )
 try:
     token = response.json()["token"]
-except:
+except Exception:
     print(response, response.text)
     exit()
 
@@ -34,7 +34,7 @@ response = requests.post(f"{url}/stream", json=data, headers=headers)
 
 try:
     stream_id = response.json()["id"]
-except:
+except Exception:
     print(response, response.text)
     exit()
 
