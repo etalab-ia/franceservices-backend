@@ -1,3 +1,7 @@
+from elasticsearch import Elasticsearch
+from qdrant_client import QdrantClient
+from qdrant_client import models as QdrantModels
+
 from app.config import (
     ELASTICSEARCH_CREDS,
     ELASTICSEARCH_IX_VER,
@@ -7,9 +11,6 @@ from app.config import (
     collate_ix_name,
 )
 from app.core.embeddings import make_embeddings
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
 
 
 def _retrieves(index_name: str, similarity=None):

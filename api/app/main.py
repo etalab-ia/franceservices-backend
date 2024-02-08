@@ -4,7 +4,7 @@ sys.path.append("..")
 from fastapi import APIRouter, FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from app.config import APP_NAME, APP_DESCRIPTION, APP_VERSION, BACKEND_CORS_ORIGINS, CONTACT
+from app.config import APP_NAME, APP_DESCRIPTION, APP_VERSION, BACKEND_CORS_ORIGINS, CONTACT, ENV
 from app.db.init_db import init_db
 from app.endpoints import chat, login, search, stream, user, misc, feedback
 from app.mockups import install_mockups
