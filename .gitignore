@@ -2,6 +2,7 @@
 # Projet
 #
 _data/
+api/tiny_albert.bin
 
 # api
 api/app/*.bin

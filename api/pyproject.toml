@@ -38,5 +38,5 @@ distribution = false
 dev = [
     "pytest>=7.4.4",
     "pytest-cov>=4.1.0",
-    "ruff>=0.1.15",
+    "ruff>=0.2.1",
 ]
