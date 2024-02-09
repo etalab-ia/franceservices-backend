@@ -65,17 +65,42 @@ See the dedicated [Readme](/api/README.md) for more information about the API co
 - api/: the code of the main API.
 - api_vllm/: the code of the vllm API.
 - commons/: code shared by different modules, such as the Albert API client, and prompt encoder.
-- corpus_generation/: **Independent** scripts to generate Q/a or evaluation data using third party service (Mistral, Openai etc)
-- finetuning/: **Independent** fine-tuning scripts.
 - sourcing/: code behind `pyalbert download ...` and `pyalbert make_chunks`.
 - ir/: code behind `pyalbert index ...`
 - evaluation/: code behind `pyalbert evaluate ...`
 - scripts/: Various tests scripts, not integrated to pyalbert (yet).
 - tests/: Various util scripts, not integrated to pyalbert (yet).
 - contrib/: configuration files to deploy Albert.
-- notebooks/: Various notebooks used for testing, evaluation demo or fine-tuning.
 - docs/: documentation resources.
 - wiki/: wiki resources.
+
+
+## Docker debug commands cheat sheet
+
+To list containers names in a friendly manner:
+```bash
+docker ps --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}"
+```
+
+To display error logs of a specific container:
+```bash
+docker logs [CONTAINER_NAME]
+```
+
+To access the shell of a already running container:
+```bash
+docker exec -e API_URL=[API_URL] -e FRONT_URL=[API_URL] --gpus all --network="host" -it --rm -p 8090:8090 --name miaou-api-v2 registry.gitlab.com/etalab-datalab/llm/albert-backend/api-v2:latest /bin/sh
+```
+
+To force stop and remove a running container:
+```bash
+docker rm -f [CONTAINER_NAME]
+```
+
+To start a container in interactive mode for debug, while automatically removing it after exiting:
+```bash
+docker run -e API_URL=[API_URL] -e FRONT_URL=[API_URL] --rm --gpus all --network="host" -it -p 8090:8090 --name miaou-api-v2 registry.gitlab.com/etalab-datalab/llm/albert-backend/api-v2:latest /bin/sh
+```
 
 
 ## Contributing
