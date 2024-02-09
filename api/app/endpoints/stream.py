@@ -2,11 +2,11 @@ import json
 
 from app import crud, models, schemas
 from app.clients.api_vllm_client import ApiVllmClient
-from app.config import WITH_GPU
+from app.config import ENV, WITH_GPU
 from app.deps import get_current_user, get_db
 
 from app.core.llm import auto_set_chat_name
-if not WITH_GPU:
+if not WITH_GPU and ENV != "dev":
     from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
@@ -149,7 +149,7 @@ def start_stream(
                 sampling_params.update({k: v})
 
         # Get the right stream generator
-        if WITH_GPU:
+        if WITH_GPU and ENV != "dev":
             api_vllm_client = ApiVllmClient(url=prompter.url)
             generator = api_vllm_client.generate(prompt, **sampling_params)
         else:

@@ -2,9 +2,9 @@ from gpt4all import GPT4All
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.config import ROOT_DIR, WITH_GPU
+from app.config import ENV, ROOT_DIR, WITH_GPU
 
-if WITH_GPU:
+if WITH_GPU and ENV != "dev":
     gpt4all_model = None
 else:
     gpt4all_model = GPT4All("ggml-model-fabrique-q4_K.bin", model_path=ROOT_DIR)

@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from transformers import AutoModel, AutoTokenizer
 
-from app.config import DEVICE_MAP, WITH_GPU, EMBEDDING_MODEL
+from app.config import DEVICE_MAP, EMBEDDING_MODEL, ENV, WITH_GPU
 
 _model_name_ebd = EMBEDDING_MODEL
 tokenizer_ebd = AutoTokenizer.from_pretrained(_model_name_ebd)
@@ -32,14 +32,14 @@ def _make_embeddings(texts, batch_size=1):
             truncation=True,
             return_tensors="pt",
         )
-        if WITH_GPU:
+        if WITH_GPU and ENV != "dev":
             batch_dict.to("cuda")
 
         outputs = model_ebd(**batch_dict)
 
         vectors = _average_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
         vectors = F.normalize(vectors, p=2, dim=1)
-        if WITH_GPU:
+        if WITH_GPU and ENV != "dev":
             embeddings.append(vectors.detach().cpu().numpy())
         else:
             embeddings.append(vectors.detach().numpy())
