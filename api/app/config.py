@@ -1,6 +1,8 @@
 import os
 import re
+from pathlib import Path
 
+import requests
 import torch
 from dotenv import load_dotenv
 
@@ -119,13 +121,20 @@ else:  # default
 
 VLLM_ROUTING_TABLE = parse_vllm_routing_table(VLLM_ROUTING_TABLE)
 
-
+PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
+ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 if ENV == "unittest":
     PASSWORD_RESET_TOKEN_TTL = 3  # seconds
     ACCESS_TOKEN_TTL = 9  # seconds
-else:
-    PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
-    ACCESS_TOKEN_TTL = 3600 * 24  # seconds
+
+# If local, download the model Tiny Albert from HuggingFace
+if ENV == "dev":
+    TINY_ALBERT_LOCAL_PATH = Path("tiny_albert.bin")
+    if not TINY_ALBERT_LOCAL_PATH.exists():
+        print("Downloading Tiny Albert model for local usage since it's not present locally already. It's 7.3GB so it might take a few dozen minutes...")
+        response = requests.get("https://huggingface.co/ActeurPublic/tiny-albert/resolve/main/ggml-model-expert-q4_K.bin", stream=True)
+        open(str(TINY_ALBERT_LOCAL_PATH), 'wb').write(response.content)
+        print("Done!")
 
 if torch.cuda.is_available():
     WITH_GPU = True
