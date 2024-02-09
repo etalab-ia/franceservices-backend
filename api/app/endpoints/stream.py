@@ -6,7 +6,7 @@ from app.config import ENV, WITH_GPU
 from app.deps import get_current_user, get_db
 
 from app.core.llm import auto_set_chat_name
-if not WITH_GPU and ENV != "dev":
+if not WITH_GPU and ENV == "dev":
     from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
