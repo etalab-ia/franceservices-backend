@@ -9,8 +9,8 @@
 
 Each environment is associed with a Outscale VM. After create a new VM, please run *[pyalbert/outscale/init_vm.sh](../pyalbert/outscale/init_vm.sh)* script.This script is used to init a Outscale VM (installing package, create gitlab user and system configuration). To run this script you have to export the following environment variables:
 
-    * `GITLAB_PASSWORD`
-    * `GITLAB_SSH_PUBLIC_KEY`
+* `GITLAB_PASSWORD`
+* `GITLAB_SSH_PUBLIC_KEY`
 
 And copy the file in the new VM and run this command with outscale user :
 
@@ -29,7 +29,7 @@ Albert needs following packages to be deployed:
 * fail2ban
 * docker-ce
 * docker-ce-cli
-containerd.io
+* containerd.io
 * docker-buildx-plugin
 * docker-compose-plugin
 
@@ -58,14 +58,14 @@ Environment variables file must contain the following variables:
 | SERVER_IP | *** | * | Server DNS or IP where Docker containers are deployed |
 | VLLM_IMAGE_TAG | *** | * | VLLM image tag, upgrade it with each build |
 | API_IMAGE_TAG | *** | * | api image tag, upgrade it with each build |
-| OSC_REGION | *** | staging | Outscale VM region, only for link GPU during staging CI/CD pipeline |
-| OSC_SUBREGION | *** | staging | Outscale VM subregion, only for link GPU during staging CI/CD pipeline |
+| OSC_REGION | eu-west \| cloudgouv-eu-west-1 | staging | Outscale VM region, only for link GPU during staging CI/CD pipeline |
+| OSC_SUBREGION | eu-west-2a \| cloudgouv-eu-west-1a | staging | Outscale VM subregion, only for link GPU during staging CI/CD pipeline |
 | OSC_ACCESS_KEY | *** | staging | Outscale access key, only for link GPU during staging CI/CD pipeline |
 | OSC_SECRET_KEY | *** | staging | Outscale secret key, only for link GPU during staging CI/CD pipeline  |
 | OSC_VM_ID | *** | staging | Outscale VM ID, only for link GPU during staging CI/CD pipeline |
 | OSC_GPU_MODEL_NAME | nvidia-p6 \| nvidia-v100 \| nvidia-p100 \| nvidia-a100 \| nvidia-a100-80 | staging | Outscale GPU model name, only for link GPU during staging CI/CD pipeline. Refer to the [Outscale documentation](https://docs.outscale.com/fr/userguide/%C3%80-propos-des-flexible-GPU.html) |
 | OSC_CPU_GENERATION | v5 \| v6 | staging | Outscale CPU generation, only for link GPU during staging CI/CD pipeline. Refer to the [Outscale documentation](https://docs.outscale.com/fr/userguide/%C3%80-propos-des-flexible-GPU.html) |
-| ENV | staging-francesservices \| prod-francesservices \| staging-dinum \| prod-dinum | * |  |
+| ENV | prod | * |  |
 | SECRET_KEY | *** | * |  |
 | FIRST_ADMIN_USERNAME | language_model | * |  |
 | FIRST_ADMIN_EMAIL | language_model@data.gouv.fr | * |  |
