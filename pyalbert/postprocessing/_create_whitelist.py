@@ -2,50 +2,55 @@ import re
 import json
 from urllib.parse import urlparse
 
+from pyalbert import Logging
 
-def create_whitelist(storage_path: str , config_path: str , force_create: bool = False):
+
+def create_whitelist(storage_dir: str, config_file: str, debug: bool = False):
     """Creating a .json whitelist file which contains:
     - All phone numbers
     - All mail
     - All domain URL
-    Extracted from local and national directory
+    Extracted from local and national directory.
 
     Args:
-        storage_path (str): path where to download the files.
-        config_path (str): configuration path file.
-        force_create (bool, optional): force create if files already exists. Default: False.
+        storage_dir (str): path where to download the files.
+        config_file (str): configuration path file.
+        debug (bool, optional): print debug logs. Defaults to False.
     """
 
-    print(f"\ninfo: creating whitelist file ...")
+    logging = Logging(level="DEBUG" if debug else "INFO")
+    logger = logging.get_logger()
+
+    logger.info("creating whitelist file ...")
     whitelist = dict()
     phone_list = []
     mail_list = []
     domain_list = []
-    
+
     # Open whitelist_config
-    file = open(config_path,"r")
+    file = open(config_file, "r")
     whitelist_config = json.load(file)
     file.close()
 
     ### Loading directories
-    directory=[]
-    for ressource, values in whitelist_config['data'].items():
-
+    directory = []
+    for ressource, values in whitelist_config["directories"].items():
         filename = values["file_name"]
 
         if directory:
-            with open(f"{storage_path}/{filename}", encoding="utf-8") as json_file:
+            with open(f"{storage_dir}/{filename}", encoding="utf-8") as json_file:
                 directory.extend(json.load(json_file)["service"])
         else:
-            with open(f"{storage_path}/{filename}", encoding="utf-8") as json_file:
+            with open(f"{storage_dir}/{filename}", encoding="utf-8") as json_file:
                 directory = json.load(json_file)["service"]
-        
+
     ### Creating domain URL whitelist
     url_pattern = r"((?:http[s]?://|w{3}\.)(?:\w|[$-_@.&+#]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+(?<![\.,])|(?<!\S)[\w\-\.]+\.[a-z]{2,3}\S*)"
     for k, contact in enumerate(directory):  # Picking from directory, contact is a dict
-
         try:
-            url = re.findall(pattern=url_pattern, string=contact["site_internet"][0]["valeur"])[0]
+            url = re.findall(
+                pattern=url_pattern, string=contact["site_internet"][0]["valeur"]
+            )[0]
             if url.startswith("www."):
                 url = "https://" + url
             parsed_url = urlparse(url)
@@ -60,14 +65,15 @@ def create_whitelist(storage_path: str , config_path: str , force_create: bool =
             continue
         except IndexError as e:
             continue
-        except Exception:
+        except Exception as e:
             print(e)
 
-    list_url=whitelist_config['missing_urls'] #List of all important urls that are not in public directories and have to be added in the whitelist
+    list_url = whitelist_config[
+        "missing_urls"
+    ]  # List of all important urls that are not in public directories and have to be added in the whitelist
     for url in list_url:
         if url not in domain_list:
             domain_list.append(url)
-
 
     ### Creating phone numbers whitelist
     number_pattern = [
@@ -119,7 +125,7 @@ def create_whitelist(storage_path: str , config_path: str , force_create: bool =
     whitelist["domain_url_whitelist"] = domain_list
 
     whitelist_json = json.dumps(whitelist, ensure_ascii=False, indent=4)
-    with open(f"{storage_path}/whitelist.json", "w", encoding="utf-8") as file:
+    with open(f"{storage_dir}/whitelist.json", "w", encoding="utf-8") as file:
         file.write(whitelist_json)
 
-    return print(f"\nWhitelist file successfuly created ")
+    return logger.info("Whitelist file successfuly created ")
