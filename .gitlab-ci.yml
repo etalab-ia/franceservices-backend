@@ -4,7 +4,7 @@ stages:
   - deploy
 
 ############################################
-################### PRE ####################
+################# CONFIG ###################
 ############################################
 
 before_script:
@@ -17,19 +17,15 @@ before_script:
     fi
 
 config:link gpu: # link gpu for staging environment
-  stage: .pre
   rules:
     - if: $CI_COMMIT_BRANCH == "staging"
       when: manual # manual to start vm
+  stage: .pre
   image: alpine:latest
   script:
     - apk add --no-cache curl jq
     - chmod +x ./pyalbert/outscale/link_gpu.sh
     - ./pyalbert/outscale/link_gpu.sh
-
-############################################
-################### POST ###################
-############################################
 
 config:unlink gpu: # unlink gpu for staging environment
   rules:
@@ -48,7 +44,6 @@ config:unlink gpu: # unlink gpu for staging environment
 ############################################
 
 build:vllm:
-  rules:
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       changes:
@@ -187,7 +182,35 @@ build:api:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE/api-v2:latest
 
-# ################## DINUM ###################
+################## DINUM ###################
+
+setup:postprocessing:dinum:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+  stage: setup
+  environment:
+    name: dinum
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $ID_RSA
+      apk update
+      apk add openssh-client
+    - | # send pyalbert files to remote server
+      mkdir -p ./${CI_JOB_ID}/venv
+      cp -r ./pyalbert ./${CI_JOB_ID}
+      scp -i $ID_RSA -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${SERVER_USER}@${SERVER_IP}:/home/${SERVER_USER}/${CI_JOB_ID}
+    - | # download model on remote server
+      ssh -i $ID_RSA -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "
+      set -e
+      python3.10 -m venv ~/${CI_JOB_ID}/venv
+      source ~/${CI_JOB_ID}/venv/bin/activate
+      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
+      python3 ~/${CI_JOB_ID}/pyalbert/albert.py create_whitelist --config-file=/home/${SERVER_USER}/${CI_JOB_ID}/pyalbert/config/whitelist_config.json --storage-dir=/data/whitelist
+      deactivate
+      rm -rf ~/${CI_JOB_ID}
+      "
 
 deploy:api:
   rules:
@@ -207,6 +230,34 @@ deploy:api:
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run -e API_URL=$SERVER_URL -e FRONT_URL=$SERVER_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
 
 ############# FRANCE SERVICES ##############
+
+setup:postprocessing:france services:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+  stage: setup
+  environment:
+    name: francesevices
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $ID_RSA
+      apk update
+      apk add openssh-client
+    - | # send pyalbert files to remote server
+      mkdir -p ./${CI_JOB_ID}/venv
+      cp -r ./pyalbert ./${CI_JOB_ID}
+      scp -i $ID_RSA -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${SERVER_USER}@${SERVER_IP}:/home/${SERVER_USER}/${CI_JOB_ID}
+    - | # download model on remote server
+      ssh -i $ID_RSA -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "
+      set -e
+      python3.10 -m venv ~/${CI_JOB_ID}/venv
+      source ~/${CI_JOB_ID}/venv/bin/activate
+      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
+      python3 ~/${CI_JOB_ID}/pyalbert/albert.py create_whitelist --config-file=/home/${SERVER_USER}/${CI_JOB_ID}/pyalbert/config/whitelist_config.json --storage-dir=/data/whitelist
+      deactivate
+      rm -rf ~/${CI_JOB_ID}
+      "
 
 deploy:api:france services:
   rules:
