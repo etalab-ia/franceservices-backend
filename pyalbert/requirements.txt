@@ -1,0 +1,2 @@
+huggingface-hub==0.20.3
+docopt==0.6.2

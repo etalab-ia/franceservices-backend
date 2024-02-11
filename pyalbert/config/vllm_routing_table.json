@@ -1,0 +1,11 @@
+{
+    "albert-light-dinum": {
+        "api": "albert-light",
+        "model": "ActeurPublic/albert-light",
+        "env": "dinum",
+        "port": 8082,
+        "gpu_mem_use": 0.4,
+        "tensor_parralel_size": 1,
+        "force_download": false
+    }
+}

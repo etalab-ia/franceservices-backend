@@ -1,16 +1,184 @@
 stages:
-  - publish
-  - publish-fs
+  - build
+  - setup
   - deploy
-  - deploy-fs
 
-publish-api:
+############################################
+################### PRE ####################
+############################################
+
+before_script:
+  - | # export env file
+    echo "info: export env file of $CI_COMMIT_BRANCH branch"
+    if [[ $CI_COMMIT_BRANCH = "staging" ]]; then
+      export $(grep -v "^#" $STAGING__ENV_FILE | xargs)
+    elif [[ $CI_COMMIT_BRANCH = "main" ]]; then
+      export $(grep -v "^#" $PROD__ENV_FILE | xargs)
+    fi
+
+config:link gpu: # link gpu for staging environment
+  stage: .pre
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+      when: manual # manual to start vm
+  image: alpine:latest
+  script:
+    - apk add --no-cache curl jq
+    - chmod +x ./pyalbert/outscale/link_gpu.sh
+    - ./pyalbert/outscale/link_gpu.sh
+
+############################################
+################### POST ###################
+############################################
+
+config:unlink gpu: # unlink gpu for staging environment
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+      when: manual # manual to stop vm
+      allow_failure: true  # to avoid blocked state
+  stage: .post
+  image: alpine:latest
+  script:
+    - apk add --no-cache curl jq
+    - chmod +x ./pyalbert/outscale/unlink_gpu.sh
+    - ./pyalbert/outscale/unlink_gpu.sh
+
+############################################
+################### VLLM ###################
+############################################
+
+build:vllm:
+  rules:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      changes:
+        - api_vllm/**/* # only build if api_vllm folder is changed
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  script:
+    - | # build and push vllm image to gitlab registry
+      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+      docker system prune -af --volumes
+      docker build --rm --file ./api_vllm/Dockerfile --tag ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG} ./api_vllm
+      docker push ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
+
+################## DINUM ###################
+
+setup:models:dinum:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+  stage: setup
+  environment:
+    name: dinum
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $ID_RSA
+      apk update
+      apk add openssh-client
+    - | # send pyalbert files to remote server
+      mkdir -p ./${CI_JOB_ID}/venv
+      cp -r ./pyalbert ./${CI_JOB_ID}
+      scp -i $ID_RSA -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${SERVER_USER}@${SERVER_IP}:/home/${SERVER_USER}/${CI_JOB_ID}
+    - | # download model on remote server
+      ssh -i $ID_RSA -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "
+      set -e
+      python3.10 -m venv ~/${CI_JOB_ID}/venv
+      source ~/${CI_JOB_ID}/venv/bin/activate
+      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
+      python3 ~/${CI_JOB_ID}/pyalbert/albert.py download_models --config-file=/home/${SERVER_USER}/${CI_JOB_ID}/pyalbert/config/vllm_routing_table.json --storage-dir=/data/models --env=${CI_ENVIRONMENT_NAME} --debug
+      deactivate
+      rm -rf ~/${CI_JOB_ID}
+      "
+
+deploy:vllm:dinum:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  image: alpine:latest
+  stage: deploy
+  environment:
+    name: dinum
+  script:
+    - | # ssh connection setup
+      chmod og= $ID_RSA
+      apk update
+      apk add openssh-client
+    - | # deploy vllm containers to remote server
+      ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
+      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+      docker pull ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
+      docker container rm -f miaou-api-vllm-albert || true
+      docker run --restart='always' --gpus all -e VLLM_MODEL=/model -e VLLM_TENSOR_PARALLEL_SIZE=1 -e VLLM_GPU_MEMORY_UTILIZATION=0.4 -e VLLM_HOST=0.0.0.0 -d -p 8082:8000 --name miaou-api-vllm-albert -v /data/models/albert-light-dinum:/model ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
+      "
+
+############# FRANCE SERVICES ##############
+
+setup:models:france services:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+  stage: setup
+  environment:
+    name: francesevices
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $ID_RSA
+      apk update
+      apk add openssh-client
+    - | # send pyalbert files to remote server
+      mkdir -p ./${CI_JOB_ID}/venv
+      cp -r ./pyalbert ./${CI_JOB_ID}
+      scp -i $ID_RSA -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${SERVER_USER}@${SERVER_IP}:/home/${SERVER_USER}/${CI_JOB_ID}
+    - | # download model on remote server
+      ssh -i $ID_RSA -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "
+      set -e
+      python3.10 -m venv ~/${CI_JOB_ID}/venv
+      source ~/${CI_JOB_ID}/venv/bin/activate
+      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
+      python3 ~/${CI_JOB_ID}/pyalbert/albert.py download_models --config-file=/home/${SERVER_USER}/${CI_JOB_ID}/pyalbert/config/vllm_routing_table.json --storage-dir=/data/models --env=${CI_ENVIRONMENT_NAME} --debug
+      deactivate
+      rm -rf ~/${CI_JOB_ID}
+      "
+
+deploy:vllm:france services:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      # when: manual
+      # allow_failure: true  # to avoid blocked state
+  image: alpine:latest
+  stage: deploy
+  environment:
+    name: franceservices
+  script:
+    - | # ssh connection setup
+      chmod og= $ID_RSA
+      apk update
+      apk add openssh-client
+    - | # deploy vllm containers to remote server
+      ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
+      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+      docker pull ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
+      docker container rm -f miaou-api-vllm-albert || true
+      docker run --restart='always' --gpus all -e VLLM_MODEL=/model -e VLLM_TENSOR_PARALLEL_SIZE=1 -e VLLM_GPU_MEMORY_UTILIZATION=0.4 -e VLLM_HOST=0.0.0.0 -d -p 8082:8000 --name miaou-api-vllm-albert -v /data/models/albert-light-dinum:/model ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
+      "
+
+############################################
+################### API ####################
+############################################
+
+build:api:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
+  stage: build
   image: docker:latest
-  stage: publish
   services:
     - docker:dind
   script:
@@ -19,44 +187,17 @@ publish-api:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE/api-v2:latest
 
-publish-api-vllm-fabrique:
+# ################## DINUM ###################
+
+deploy:api:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  image: docker:latest
-  stage: publish
-  services:
-    - docker:dind
-  script:
-    - cd api_vllm && docker build -t $CI_REGISTRY_IMAGE/api_vllm_fabrique:latest --build-arg VLLM_MODEL=/var/lib/huggingface/fabrique-reference-2 --build-arg VLLM_PORT=8081 .
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE/api_vllm_fabrique:latest
-
-publish-api-vllm-albert:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-      allow_failure: true  # to avoid blocked state
-  image: docker:latest
-  stage: publish
-  services:
-    - docker:dind
-  script:
-    - cd api_vllm && docker build -t $CI_REGISTRY_IMAGE/api_vllm_albert:latest --build-arg VLLM_MODEL=/var/lib/huggingface/albert-light --build-arg VLLM_PORT=8082 .
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE/api_vllm_albert:latest
-
-
-deploy-api:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-      allow_failure: true  # to avoid blocked state
-  image: alpine:latest
   stage: deploy
   environment:
-    name: production
+    name: dinum
+  image: alpine:latest
   script:
     - chmod og= $ID_RSA
     - apk update && apk add openssh-client
@@ -65,51 +206,17 @@ deploy-api:
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker container rm -f miaou-api-v2 || true"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run -e API_URL=$SERVER_URL -e FRONT_URL=$SERVER_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
 
-deploy-api-vllm-fabrique:
+############# FRANCE SERVICES ##############
+
+deploy:api:france services:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  image: alpine:latest
   stage: deploy
   environment:
-    name: production
-  script:
-    - chmod og= $ID_RSA
-    - apk update && apk add openssh-client
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker pull $CI_REGISTRY_IMAGE/api_vllm_fabrique:latest"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker container rm -f miaou-api-vllm-fabrique || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run --restart="always" --gpus all --network="host" -d -p 8081:8081 --name miaou-api-vllm-fabrique -v /var/lib/huggingface:/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm_fabrique:latest"
-
-deploy-api-vllm-albert:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-      allow_failure: true  # to avoid blocked state
+    name: franceservices
   image: alpine:latest
-  stage: deploy
-  environment:
-    name: production
-  script:
-    - chmod og= $ID_RSA
-    - apk update && apk add openssh-client
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker pull $CI_REGISTRY_IMAGE/api_vllm_albert:latest"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker container rm -f miaou-api-vllm-albert || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run --restart="always" --gpus all --network="host" -d -p 8082:8082 --name miaou-api-vllm-albert -v /var/lib/huggingface:/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm_albert:latest"
-
-
-
-deploy-api-fs:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-      allow_failure: true  # to avoid blocked state
-  image: alpine:latest
-  stage: deploy-fs
-  environment:
-    name: fs
   script:
     - chmod og= $ID_RSA
     - apk update && apk add openssh-client
@@ -118,40 +225,3 @@ deploy-api-fs:
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-v2 || true"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-v2-recette || true"
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run -e API_URL=$SERVER_RECETTE_URL -e FRONT_URL=$SERVER_RECETTE_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
-
-deploy-api-vllm-fabrique-fs:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-      allow_failure: true  # to avoid blocked state
-  image: alpine:latest
-  stage: deploy-fs
-  environment:
-    name: fs
-  script:
-    - chmod og= $ID_RSA
-    - apk update && apk add openssh-client
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker pull $CI_REGISTRY_IMAGE/api_vllm_fabrique:latest"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-vllm-fabrique-recette || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-vllm-fabrique || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run --restart="always" --gpus all --network="host" -d -p 8081:8081 --name miaou-api-vllm-fabrique -v /var/lib/huggingface:/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm_fabrique:latest"
-
-deploy-api-vllm-albert-fs:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-      allow_failure: true  # to avoid blocked state
-  image: alpine:latest
-  stage: deploy-fs
-  environment:
-    name: fs
-  script:
-    - chmod og= $ID_RSA
-    - apk update && apk add openssh-client
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker pull $CI_REGISTRY_IMAGE/api_vllm_albert:latest"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-vllm-albert-recette || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker container rm -f miaou-api-vllm-albert || true"
-    - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_RECETTE_USER@$SERVER_RECETTE_IP "docker run --restart="always" --gpus all --network="host" -d -p 8082:8082 --name miaou-api-vllm-albert -v /var/lib/huggingface:/var/lib/huggingface $CI_REGISTRY_IMAGE/api_vllm_albert:latest"
-
