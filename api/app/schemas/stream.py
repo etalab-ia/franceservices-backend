@@ -1,14 +1,11 @@
 from enum import Enum
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-if TYPE_CHECKING:
-    from .user import User
-
 from .search import IndexSource
 from .feedback import Feedback
+from .user import User
 
 
 class ModelName(str, Enum):
@@ -105,4 +102,4 @@ class Stream(StreamBase):
 
 
 class StreamWithRelationships(Stream):
-    user: Optional["User"]
+    user: User | None

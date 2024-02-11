@@ -4,7 +4,6 @@ import os
 import string
 import unicodedata
 from collections import defaultdict
-from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -631,7 +630,7 @@ class RagSource:
 
     @classmethod
     def get_sheets(
-        cls, sources: Union[str, list[str]], structured: bool = False, path: Optional[str] = None
+        cls, sources: str | list[str], structured: bool = False, path: str | None = None
     ):
         if isinstance(sources, str):
             sources = [sources]
