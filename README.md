@@ -1,8 +1,22 @@
 # Albert
 
-Ce projet contient le code source d'Albert : l'agent conversationnel de l'administration française, construit pour citer ses sources, et spécialisé pour répondre à des questions administratives.
+## Préambule
 
-## Pré-requis : lancer PyAlbert
+Ce projet contient le code source d'Albert, l'agent conversationnel de l'administration française, développé par les équipes du Datalab de la Direction Interministérielle du Numérique (DINUM). Albert a été créé pour citer ses sources et est spécialisé pour répondre à des questions administratives en français.
+
+Albert est encore en développement et en amélioration continue. Il est conçu pour être utilisé sous la responsabilité d'un agent public.
+
+## Installation
+
+Variables d'environnement. Créez un fichier .ENV.
+>>> TODO
+
+Environnement python (pensez à modifier le .gitignore si vous utilisez un nom différent de `venv` pour votre environnement) :
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+``
 
 Il est nécessaire de lancer les commandes `pyalbert` afin d'importer et structurer les sources de données et les modèles utilisés par Albert. La documentation est accessible via la commande `./pyablert.py --help` :
 
