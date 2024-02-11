@@ -16,7 +16,7 @@ Environnement python (pensez à modifier le .gitignore si vous utilisez un nom d
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-``
+```
 
 Il est nécessaire de lancer les commandes `pyalbert` afin d'importer et structurer les sources de données et les modèles utilisés par Albert. La documentation est accessible via la commande `./pyablert.py --help` :
 
