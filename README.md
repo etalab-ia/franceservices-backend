@@ -1,18 +1,25 @@
+# Albert
+
+Ce projet contient le code source d'Albert : l'agent conversationnel de l'administration française, construit pour citer ses sources, et spécialisé pour répondre à des questions administratives.
+
+## Pré-requis : lancer PyAlbert
+
+Il est nécessaire de lancer les commandes `pyalbert` afin d'importer et structurer les sources de données et les modèles utilisés par Albert. La documentation est accessible via la commande `./pyablert.py --help` :
+
+1. [x] importer le corpus -- `pyalbert download`.
+
+
+
+--- ENGLISH ---
 # LIA - Legal Information Assistant
 
-This project contains the source code of LIA: the **L**egal **I**nformation **A**ssistant, also known as Albert.
-It is a conversational agent that uses official French data sources to answer the agent questions.
+This project contains the source code for LIA (***L**egal **I**nformation **A**ssistant*), also known as *Albert*.
+*Albert* is a conversational agent, using LLM models fine-tuned mainly on official French data sources.
 
 
-## PyAlbert
+## Pre-requisite: run PyAlbert
 
-`pyalbert` is a CLI tool that help build the sources and the model needed for the API.
-
-Once installed, the complete documentation can be view with the command:
-
-    ./albert.py --help
-
-The process to build the data, and their corresponding `pyalbert` subcommands (checked if integrated to the CLI) are summarized below
+Use the CLI tool `pyalbert` to build necessary datasets and models. The documentation can be viewed by running `./pyalbert.py --help`:
 
 1. [x] fetching the French data corpus -- `pyalbert download`.
 2. [x] pre-processing and formatting the data corpus -- `pyalbert make_chunks`.
@@ -20,7 +27,7 @@ The process to build the data, and their corresponding `pyalbert` subcommands (c
 3. [ ] fine-tuning the LLMs. Independents script located in the folder `finetuning/`.
 4. [x] evaluating the models -- `pyalbert evaluate`.
 
-**NOTE**: The step 3 hides a step which consists of building the embeddings from pieces of text (chunks). This step requires a GPU and can be achieves with the command `pyalbert make_embeddings`. This command will create the data required for vector indexes build with the option `pyalbert index --index-type e5`. You can see the [deploy section](/api/README.md#deploy) of the API Readme to see all the step involved in the build process.
+**NOTE**: Step 3 hides a step which consists of building the embeddings from pieces of text (chunks). This step is highly GPU intensive and can be achieves with the command `pyalbert make_embeddings`. This command will create the data required for vector indexes build with the option `pyalbert index --index-type e5`. You can see the [deploy section](/api/README.md#deploy) of the API Readme to see all the step involved in the build process.
 
 ### Install 
 
@@ -77,27 +84,27 @@ See the dedicated [Readme](/api/README.md) for more information about the API co
 
 ## Docker debug commands cheat sheet
 
-To list containers names in a friendly manner:
+List containers in a friendly manner:
 ```bash
 docker ps --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}"
 ```
 
-To display error logs of a specific container:
+Display error logs for a specific container:
 ```bash
 docker logs [CONTAINER_NAME]
 ```
 
-To access the shell of a already running container:
+Access shell in an already running container:
 ```bash
 docker exec -e API_URL=[API_URL] -e FRONT_URL=[API_URL] --gpus all --network="host" -it --rm -p 8090:8090 --name miaou-api-v2 registry.gitlab.com/etalab-datalab/llm/albert-backend/api-v2:latest /bin/sh
 ```
 
-To force stop and remove a running container:
+Force stopping and removing a running container:
 ```bash
 docker rm -f [CONTAINER_NAME]
 ```
 
-To start a container in interactive mode for debug, while automatically removing it after exiting:
+Start a container in interactive mode for debug, while automatically removing it after exiting:
 ```bash
 docker run -e API_URL=[API_URL] -e FRONT_URL=[API_URL] --rm --gpus all --network="host" -it -p 8090:8090 --name miaou-api-v2 registry.gitlab.com/etalab-datalab/llm/albert-backend/api-v2:latest /bin/sh
 ```
