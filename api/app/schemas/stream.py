@@ -1,13 +1,5 @@
 from enum import Enum
 from datetime import datetime
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-from typing import TYPE_CHECKING
->>>>>>> 82f552d (fix: dont use typing.List and typing.Optional)
-=======
-from typing import TYPE_CHECKING, Optional, List
->>>>>>> b1a4288 (Added postprocessing, updated whitelist functions according to pyalbert, fixed wrong deletions ont few __init__.py files due to ruff, and other fixes)
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -109,11 +101,7 @@ class Stream(StreamBase):
     chat_id: int | None
     search_sids: list[str] | None
     feedback: Feedback | None = None
-<<<<<<< HEAD
     postprocessing: list[str] | None = None
-=======
-    postprocessing: List[str] | None = None
->>>>>>> b1a4288 (Added postprocessing, updated whitelist functions according to pyalbert, fixed wrong deletions ont few __init__.py files due to ruff, and other fixes)
 
     class Config:
         from_attributes = True
