@@ -30,11 +30,11 @@ Le projet est concçu pour fonctionner sur l'environnement Linux Ubuntu 22.04 LT
 * docker-buildx-plugin
 * docker-compose-plugin
 
-Pour un déploiement en production vous pouvez utiliser le script [init_vm.sh](../../pyalbert/outscale/init_vm.sh) pour configurer l'environnement nécessaire au projet Albert. Copiez le script sur le serveur et exécutez la commande suivante :
+Pour un déploiement en production vous pouvez utiliser le script [init_vm.sh](../../utils/init_vm.sh) pour configurer l'environnement nécessaire au projet Albert. Copiez le script sur le serveur et exécutez la commande suivante :
 
-	```bash
-	bash ./init_vm.sh
-	```
+```bash
+bash ./init_vm.sh
+```
 
 Ce script permet d'installer les packages nécessaires ainsi que de créer un utilisation *gitlab* qui sera nécessaires pour le déploiement de la pipeline de CI/CD. Pour exécuter le script il est nécessaire d'exporter préalablement les variables suivantes :
 * `GITLAB_PASSWORD` (mot de passe de l'utilisateur *gitlab*)

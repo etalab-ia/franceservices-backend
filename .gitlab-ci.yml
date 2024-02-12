@@ -16,29 +16,6 @@ before_script:
       export $(grep -v "^#" $PROD__ENV_FILE | xargs)
     fi
 
-config:link gpu: # link gpu for staging environment
-  rules:
-    - if: $CI_COMMIT_BRANCH == "staging"
-      when: manual # manual to start vm
-  stage: .pre
-  image: alpine:latest
-  script:
-    - apk add --no-cache curl jq
-    - chmod +x ./pyalbert/outscale/link_gpu.sh
-    - ./pyalbert/outscale/link_gpu.sh
-
-config:unlink gpu: # unlink gpu for staging environment
-  rules:
-    - if: $CI_COMMIT_BRANCH == "staging"
-      when: manual # manual to stop vm
-      allow_failure: true  # to avoid blocked state
-  stage: .post
-  image: alpine:latest
-  script:
-    - apk add --no-cache curl jq
-    - chmod +x ./pyalbert/outscale/unlink_gpu.sh
-    - ./pyalbert/outscale/unlink_gpu.sh
-
 ############################################
 ################### VLLM ###################
 ############################################
