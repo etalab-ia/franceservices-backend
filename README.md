@@ -1,16 +1,12 @@
 # Albert backend
 
-## Préambule
-
 Ce projet contient le code source d'Albert, l'agent conversationnel de l'administration française, développé par les équipes du Datalab de la Direction Interministérielle du Numérique (DINUM). Albert a été créé pour citer ses sources et est spécialisé pour répondre à des questions administratives en français.
 
 Albert est encore en développement et en amélioration continue. Il est conçu pour être utilisé sous la responsabilité d'un agent public.
 
-
-## Déploiement / *Deployment*
+## Déploiement
 
 Pour déployer le projet Albert, vous référez à la documentation dédies : [docs/deploiment](./docs/deploiement/). 
-
 
 ## Pré-requis : exécution de PyAlbert
 
@@ -25,7 +21,7 @@ Utilisez l'outil en ligne de commande `pyalbert` pour créer les ensembles de do
 **REMARQUE** : L'étape 3 cache une étape qui consiste à construire les embeddings à partir de morceaux de texte (chunks). Cette étape nécessite une grande puissance de calcul GPU et peut être réalisée avec la commande `pyalbert make_embeddings`. Cette commande créera les données requises pour les index vectoriels construits avec l'option `pyalbert index --index-type e5`. Vous pouvez consulter la [section de déploiement](/api/README.md#deploy) du fichier Lisez-moi de l'API pour voir toutes les étapes impliquées dans le processus de construction.
 
 
-## Structure du dépôt / *Folder structure* 
+## Structure du dépôt
 
 - \_data/ : contient des données volatiles et volumineuses téléchargées par pyalbert.
 - api/ : le code de l'API principale.
@@ -39,19 +35,6 @@ Utilisez l'outil en ligne de commande `pyalbert` pour créer les ensembles de do
 - contrib/ : fichiers de configuration pour déployer Albert.
 - docs/ : ressources documentaires.
 - wiki/ : ressources wiki.
-
-
-### API
-
-L'API est construite sur plusieurs services :
-
-- L'API LLM (intensive en GPU) : Cette API est gérée par vllm, et l'exécutable se trouve dans api_vllm/.
-- Une base de données vectorielle (pour la recherche sémantique), basée sur Qdrant.
-- Un moteur de recherche (pour la recherche de texte intégral), basé sur ElasticSearch.
-- L'API principale/exposée : l'exécutable de l'application et les configurations se trouvent dans le dossier api/.
-
-Consultez le [Readme](/api/README.md) dédié pour plus d'informations sur la configuration de l'API, les tests et le déploiement.
-
 
 ## Antisèche de commandes Docker pour débugguer
 
