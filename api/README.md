@@ -1,4 +1,6 @@
-# Install
+# Albert API
+
+## Execution locale
 
 ```bash
 pip install -r requirements.txt
@@ -21,6 +23,7 @@ huggingface-cli login --token $HF_ACCESS_TOKEN
 ### Download a model
 
 #### Old version of deployment
+
 - Fabrique model
 ```bash
 python -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-reference-2', download_dir='add_your_path')"
@@ -31,6 +34,7 @@ python -c "from vllm import LLM; LLM(model='etalab-ia/albert-light', download_di
 ```
 
 #### Newer version
+
 Open python console
 ```bash
 python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/fabrique-reference-2'); tokenizer.save_pretrained('add_your_path/fabrique-reference-2'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/fabrique-reference-2'); model.save_pretrained('add_your_path/fabrique-reference-2') "
@@ -41,15 +45,9 @@ python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokeniz
 ```
 
 
+## Tests unitaires de l'API
 
-# Test
-
-Install dev packages:
-```bash
-pip install -r requirements_dev.txt
-```
-
-Run unit tests:
+Lancer les test unitaires :
 ```bash
 pytest --cov=app --cov-report=html --cov-report=term-missing app/tests
 ```
@@ -64,7 +62,7 @@ and in another terminal:
 python test.py
 ```
 
-# Alembic
+## Alembic
 
 Create a new alembic (empty) template version:
 
@@ -79,7 +77,7 @@ Upgrade a database according to alemic revision:
     PYTHONPATH=. alembic upgrade head
 
 
-# Production
+## Production
 
 If GPU is available, the vllm API is run separately with:
 ```bash
@@ -93,7 +91,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8090 # --root-path /api/v2
 ```
 
 
-# Deploy
+## Deploy
 
 > En se placant à la racine du projet.
 
@@ -181,7 +179,7 @@ The search API and the RAG should now be ready to be used.
 **possibily migrate 
 
 
-### Export pinned dependencies from pyproject.toml to requirements.txt
+## Export pinned dependencies from pyproject.toml to requirements.txt
 
 Using [PDM](https://pdm.fming.dev/)
 ```bash

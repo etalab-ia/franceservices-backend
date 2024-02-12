@@ -70,7 +70,7 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 	ln -s albert-backend/pyalbert albert/lib/python3.10/site-packages
 	```
 
-	> ⚠️ Remplacez la version de python par celle correspondante à votre environment si celle-ci n'est pas 3.10.
+	> ⚠️ Remplacez la version de Python par celle correspondante à votre environment si celle-ci n'est pas 3.10.
 
 ### VLLM
 
