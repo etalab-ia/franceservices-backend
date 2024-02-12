@@ -6,23 +6,9 @@ Ce projet contient le code source d'Albert, l'agent conversationnel de l'adminis
 
 Albert est encore en développement et en amélioration continue. Il est conçu pour être utilisé sous la responsabilité d'un agent public.
 
-## Installation
+## Déploiement
 
-Variables d'environnement. Créez un fichier .ENV.
->>> TODO
-
-Environnement python (pensez à modifier le .gitignore si vous utilisez un nom différent de `venv` pour votre environnement) :
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-Il est nécessaire de lancer les commandes `pyalbert` afin d'importer et structurer les sources de données et les modèles utilisés par Albert. La documentation est accessible via la commande `./pyablert.py --help` :
-
-1. [x] importer le corpus -- `pyalbert download`.
-
-
+Pour déployer le projet Albert, vous référez à la documentation dédies : [docs/deploiment](./docs/deploiement/). 
 
 --- ENGLISH ---
 # LIA - Legal Information Assistant

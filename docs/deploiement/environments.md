@@ -7,32 +7,6 @@
 | dinum | staging | outsclae | staging-dinum |
 | dinum | main | outscale | prod-dinum 
 
-Each environment is associed with a Outscale VM. After create a new VM, please run *[pyalbert/outscale/init_vm.sh](../pyalbert/outscale/init_vm.sh)* script.This script is used to init a Outscale VM (installing package, create gitlab user and system configuration). To run this script you have to export the following environment variables:
-
-* `GITLAB_PASSWORD`
-* `GITLAB_SSH_PUBLIC_KEY`
-
-And copy the file in the new VM and run this command with outscale user :
-
-```bash
-bash ./init_vm.sh
-```
-
-Albert needs following packages to be deployed:
-* jq
-* python3.10
-* python3.10-venv
-* nvidia-driver-535
-* nvidia-cuda-toolkit
-* nvidia-cuda-toolkit-gcc
-* nvidia-container-toolkit
-* fail2ban
-* docker-ce
-* docker-ce-cli
-* containerd.io
-* docker-buildx-plugin
-* docker-compose-plugin
-
 ## CI/CD secret variables
 
 | key | environment | type | protected | info |
