@@ -1,7 +1,10 @@
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, EmailStr, Extra, constr
 
 from app.config import PASSWORD_PATTERN
-from .stream import Stream
+if TYPE_CHECKING:
+    from .stream import Stream
 
 # ********
 # * Misc *
@@ -46,4 +49,4 @@ class User(UserBase):
 
 
 class UserWithRelationships(User):
-    streams: list[Stream] | None
+    streams: list["Stream"] | None
