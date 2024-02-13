@@ -20,7 +20,6 @@ Examples:
 """
 
 import os
-from pathlib import Path
 
 from docopt import docopt
 
@@ -36,7 +35,7 @@ if __name__ == "__main__":
             "/data/models" if args["--storage-dir"] is None else args["--storage-dir"]
         )  # if --storage-dir is not provided, use default path /data/models
         config_file = (
-            os.path.join(Path().absolute(), "config", "vllm_routing_table.json")
+            os.path.join(s.path.dirname(__file__), "config", "vllm_routing_table.json")
             if args["--config-file"] is None
             else args["--config-file"]
         ) # if --config-file is not provided, use default path /config/vllm_routing_table.json
@@ -57,7 +56,7 @@ if __name__ == "__main__":
             else args["--storage-dir"]
         )
         config_file = (
-            os.path.join(Path().absolute(), "config", "whitelist_config.json")
+            os.path.join(s.path.dirname(__file__), "config", "whitelist_config.json")
             if args["--config-file"] is None
             else args["--config-file"]
         ) # if --config-file is not provided, use default path /config/whitelist_config.json

@@ -6,6 +6,7 @@ RUN apt-get update && \
 
 WORKDIR /code
 ADD ./app.py ./requirements.txt .
+ADD ./tests ./tests
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 CMD ["sh", "-c", "python3 app.py --model ${VLLM_MODEL} --tensor-parallel-size ${VLLM_TENSOR_PARALLEL_SIZE} --gpu-memory-utilization ${VLLM_GPU_MEMORY_UTILIZATION} --host ${VLLM_HOST} --port 8000"]

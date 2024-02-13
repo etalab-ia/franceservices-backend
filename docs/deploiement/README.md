@@ -119,6 +119,4 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 
 ### API
 	
-## Déploiement avec Docker
-
-
+## Installation avec Docker
