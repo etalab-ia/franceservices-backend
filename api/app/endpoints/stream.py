@@ -1,4 +1,5 @@
 import json
+import os
 
 from app import crud, models, schemas
 from app.clients.api_vllm_client import ApiVllmClient
@@ -15,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from commons import get_prompter
 
-from postprocessing.postprocessing import check_url, correct_mail, correct_number, correct_url
+from pyalbert.postprocessing import check_url, correct_mail, correct_number, correct_url
 from spacy.lang.fr import French
 
 router = APIRouter()
@@ -191,20 +192,25 @@ def start_stream(
             crud.stream.set_is_streaming(db, _db_stream, False, commit=False)
             crud.stream.set_rag_output(db, _db_stream, raw_response, rag_sources)
 
-    def generate_and_postprocess(test: bool = False):
+    # TODO : directly manage the if below in generate_and_postprocess?
+    if not postprocessing:
+        # return token by token
+        return StreamingResponse(generate(), media_type="text/event-stream")
+    
+    def generate_and_postprocess():
         nlp = French()
         nlp.add_pipe("sentencizer")
         bucket = []
         bucket_out = ""
         eos_code = "[DONE]"
         url_dict, mail_dict, number_dict = [], [], []
+        whitelist_path=os.environ.get("API_WHITELIST_FILE", "/data/whitelist/whitelist.json")
 
         for words in generate():
             try:
                 _, _, data = words.decode("utf-8").partition("data: ")
                 text = json.loads(data)
                 bucket.append(text)
-                text = json.loads(data)
 
             except AttributeError:
                 _, _, data = words.encode("utf-8").decode("utf-8").partition("data: ")
@@ -217,16 +223,16 @@ def start_stream(
                 bucket_out = str(list(doc.sents)[0])
 
                 if "check_mail" in postprocessing:
-                    mail_dict.extend(correct_mail(text=bucket_out)[1])
-                    bucket_out = correct_mail(text=bucket_out)[0]
+                    mail_dict.extend(correct_mail(text=bucket_out,whitelist_path=whitelist_path)[1])
+                    bucket_out = correct_mail(text=bucket_out,whitelist_path=whitelist_path)[0]
 
                 if "check_number" in postprocessing:
-                    number_dict.extend(correct_number(text=bucket_out)[1])
-                    bucket_out = correct_number(text=bucket_out)[0]
+                    number_dict.extend(correct_number(text=bucket_out,whitelist_path=whitelist_path)[1])
+                    bucket_out = correct_number(text=bucket_out,whitelist_path=whitelist_path)[0]
 
                 if "check_url" in postprocessing:
-                    url_dict.extend(correct_url(text=bucket_out)[1])
-                    bucket_out = correct_url(text=bucket_out)[0]
+                    url_dict.extend(correct_url(text=bucket_out,whitelist_path=whitelist_path)[1])
+                    bucket_out = correct_url(text=bucket_out,whitelist_path=whitelist_path)[0]
 
                 if bucket_out[-1] == "." or bucket_out[-1] == "?":
                     bucket_out += " "  # Adding a space after "." or "?" at the end of each sentence
@@ -242,16 +248,16 @@ def start_stream(
                 bucket_out = bucket_out.replace(eos_code, "")
 
                 if "check_mail" in postprocessing:
-                    mail_dict.extend(correct_mail(text=bucket_out)[1])
-                    bucket_out = correct_mail(text=bucket_out)[0]
+                    mail_dict.extend(correct_mail(text=bucket_out,whitelist_path=whitelist_path)[1])
+                    bucket_out = correct_mail(text=bucket_out,whitelist_path=whitelist_path)[0]
 
                 if "check_number" in postprocessing:
-                    number_dict.extend(correct_number(text=bucket_out)[1])
-                    bucket_out = correct_number(text=bucket_out)[0]
+                    number_dict.extend(correct_number(text=bucket_out,whitelist_path=whitelist_path)[1])
+                    bucket_out = correct_number(text=bucket_out,whitelist_path=whitelist_path)[0]
 
                 if "check_url" in postprocessing:
-                    url_dict.extend(correct_url(text=bucket_out)[1])
-                    bucket_out = correct_url(text=bucket_out)[0]
+                    url_dict.extend(correct_url(text=bucket_out,whitelist_path=whitelist_path)[1])
+                    bucket_out = correct_url(text=bucket_out,whitelist_path=whitelist_path)[0]
 
                 yield f"number_dict: {number_dict} mail_dict: {mail_dict} url_dict: {url_dict} data: {json.dumps(bucket_out)}\n\n"
                 # yield of the last sentence
@@ -262,10 +268,10 @@ def start_stream(
                 ):  # Checking all url's status code and fullfilling url_dict with full urls having a status code = 200
                     for dict in url_dict:
                         if dict["old_url"] == check_url(
-                            url=dict["old_url"], check_status_code=True
+                            url=dict["old_url"], whitelist_path=whitelist_path, check_status_code=True
                         ):
                             dict["new_url_full"] = check_url(
-                                url=dict["old_url"], check_status_code=True
+                                url=dict["old_url"], whitelist_path=whitelist_path, check_status_code=True
                             )
                         else:
                             dict["new_url_full"] = ""
@@ -273,14 +279,8 @@ def start_stream(
                 yield f"number_dict: {number_dict} mail_dict: {mail_dict} url_dict: {url_dict} data: {json.dumps(bucket_out)}\n\n"
                 # yielding the end_of_stream token and full dictionnaries
 
-    # TODO : directly manage the if below in generate_and_postprocess?
-    if not postprocessing:
-        # return token by token
-        return StreamingResponse(generate(), media_type="text/event-stream")
-
-    else:
-        # return sentence by sentence
-        return StreamingResponse(generate_and_postprocess(), media_type="text/event-stream")
+    # streaming generated text sentence by sentence
+    return StreamingResponse(generate_and_postprocess(), media_type="text/event-stream")
 
 
 # TODO: stop has no effect for vllm (no callback), add warning in that case or handle it
