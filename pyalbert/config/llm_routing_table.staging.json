@@ -1,0 +1,20 @@
+{
+    "tiny-albert-dinum": {
+        "env": "dinum",
+        "api": "albert-light",
+        "hf_repo_id": "AgentPublic/tiny-albert",
+        "driver": "gpt4all",
+        "model_port": 8082,
+        "model_file": "ggml-model-expert-q4_K.bin",
+        "force_download": false
+    },
+    "tiny-albert-franceservices": {
+        "env": "franceservices",
+        "api": "albert-light",
+        "hf_repo_id": "AgentPublic/tiny-albert",
+        "driver": "gpt4all",
+        "model_port": 8082,
+        "model_file": "ggml-model-expert-q4_K.bin",
+        "force_download": false
+    }
+}

@@ -5,7 +5,7 @@ Le projet Albert est composé de plusieurs services à déployer :
 - models
 - api
 
-Pour cela vous devez d'abord disposez d'un environment répondants aux exigences requises ([Requirements](#requirements)). Puis vous disposez de manière de déployer le projet Albert, sans Docker ([Déploiement sans Docker](#déploiement-sans-docker)) ou avec ([Déploiement avec Docker](#déploiement-avec-docker)).
+Pour cela vous devez d'abord disposez d'un environment répondants aux exigences requises ([Requirements](#requirements)). Puis vous disposez de manière de déployer le projet Albert, sans Docker ([Déploiement sans Docker](#déploiement-sans-docker)) ou avec ([Déploiement avec Docker](#déploiement-avec-docker)). **Le projet est conçu pour être déployer dans un pipeline de CI/CD Gitlab avec Docker.**
 
 **Tables des matières**
 
@@ -72,7 +72,7 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 
 	> ⚠️ Remplacez la version de Python par celle correspondante à votre environment si celle-ci n'est pas 3.10.
 
-### VLLM
+### LLM
 
 * Installez les packages nécessaires
 
@@ -80,7 +80,7 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 	pip install -r albert-backend/api_vllm/requirements.txt
 	```
 
-* Configurez les modèles à déployer dans le fichier [vllm_routing_table.json](../../pyalbert/config/vllm_routing_table.json)
+* Configurez les modèles à déployer dans le fichier [llm_routing_table.json](../../pyalbert/config/llm_routing_table.json)
 
 	Pour plus d'information sur comment configurer ce fichier rendez vous sur la documenntation [models.md](../models.md)
 
@@ -92,6 +92,13 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 
 	> 💡 Remplacez STORAGE_PATH par l'emplacement où vous souhaitez stocker les modèles et ENV par la valeur que vous avez mentionnée dans le fichier de configuration.
 
+#### GPT4All
+
+TO DO
+
+
+#### VLLM
+
  * Lancer l'API du modèle
 
 	Pour chaque modèle vous pouvez déployer une API pour intéragir. Commencez par définir l'emplacement des modèles dans une variable *storage_path*.
@@ -99,7 +106,7 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 	Puis sélectionner un modèle parmi ceux définit le fichier de configuration :
 
 	```bash
-	routing_table=albert-backend/pyalbert/config/vllm_routing_table.json
+	routing_table=albert-backend/pyalbert/config/llm_routing_table.json
 	models=$(jq -r 'keys[]' $routing_table)
 
 	id=$(echo "$models" | sed -n '1p')
@@ -120,3 +127,37 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 ### API
 	
 ## Installation avec Docker
+
+L'installation avec Docker se fait dans le cadre d'un pipeline de CI/CD Gitlab. Reférez-vous au fichier [.gitlab-ci.yml](../../.gitlab-ci.yml) pour plus d'information sur les étapes de déploiement réalisée. Afin d'exécuter cette pipeline il est nécessaire de configurer au préalable certaines variables d'environnement dans Gitlab. Pour cela rendez vous sur la documentation [environments.md](environments.md).
+
+Les étapes de CI/CD sont décrites schématiquement ici :
+
+```mermaid
+---
+title: "Albert deployment flow"
+---
+graph TD
+
+subgraph VLLM["VLLM"]
+    job_vllm_build["build"]
+    -.-> job_vllm_setup["setup\n[pyalbert/albert.py]\ndownload_models"]
+    -.-> job_vllm_deploy["deploy\n(manual)"]
+    -.-> job_vllm_test["test"]
+end
+
+subgraph API["API"]
+    job_api_build["build"]
+    -.-> job_api_setup["setup\n[pyalbert/albert.py]\ncreate_whitelist"]
+    -.-> job_api_deploy["deploy\n(manual)"]
+    -.-> job_api_test["test"]
+
+end
+
+job_pre["link gpu"]
+job_post["unlink gpu"]
+
+job_pre -.-> |"only staging"| VLLM
+job_pre -.-> |"only staging"| API
+VLLM -.-> |"only staging"| job_post
+API -.-> |"only staging"| job_post
+```

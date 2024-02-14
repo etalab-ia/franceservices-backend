@@ -36,7 +36,7 @@ def download_models(storage_dir: str, config_file: str, env: str, debug: bool = 
             logger.debug(f"model {model} is not available for the current environment, skipping.")
             continue
 
-        local_dir = os.path.join(storage_dir, model)
+        local_dir = os.path.join(storage_dir, attributes["hf_repo_id"])
 
         if os.path.exists(local_dir):
             if attributes["force_download"]:
@@ -49,7 +49,7 @@ def download_models(storage_dir: str, config_file: str, env: str, debug: bool = 
         os.makedirs(local_dir, exist_ok=True)
 
         params = {
-            "repo_id": attributes["model"],
+            "repo_id": attributes["hf_repo_id"],
             "local_dir": local_dir,
             "force_download": attributes["force_download"],
             "cache_dir": local_dir,

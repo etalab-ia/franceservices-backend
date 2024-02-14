@@ -9,112 +9,78 @@ stages:
 ############################################
 
 before_script:
-  - | # export env file
-    echo "info: export env file of $CI_COMMIT_BRANCH branch"
-    if [[ $CI_COMMIT_BRANCH = "staging" ]]; then
-      export $(grep -v "^#" $STAGING__ENV_FILE | xargs)
-    elif [[ $CI_COMMIT_BRANCH = "main" ]]; then
-      export $(grep -v "^#" $PROD__ENV_FILE | xargs)
+  - | # export env file and copy routing table to pyalbert config
+    if [[ -z $CI_ENVIRONMENT_NAME ]]; then
+      echo "info: CI_ENVIRONMENT_NAME is empty, skip the export"
+    else
+      if [[ $CI_COMMIT_BRANCH = "staging" ]]; then
+        echo "info: export staging env file of $CI_ENVIRONMENT_NAME environment"
+        export $(grep -v "^#" $STAGING__ENV_FILE | xargs)
+        echo "info: copy staging routing table to pyalbert config"
+        cp ./pyalbert/config/llm_routing_table.staging.json ./pyalbert/config/llm_routing_table.json
+      elif [[ $CI_COMMIT_BRANCH = "main" ]]; then
+        echo "info: export production env file of $CI_ENVIRONMENT_NAME environment"
+        export $(grep -v "^#" $PROD__ENV_FILE | xargs)
+        echo "info: copy production routing table to pyalbert config"
+        cp ./pyalbert/config/llm_routing_table.prod.json ./pyalbert/config/llm_routing_table.json
+      fi
     fi
 
+config:clean gitlab runner:
+  rules:
+    - when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: .pre
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker system prune -af --volumes
+
 ############################################
-################### VLLM ###################
+#################### LLM ###################
 ############################################
 
-build:vllm:
+build:llm:gpt4all:
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       changes:
-        - api_vllm/**/* # only build if api_vllm folder is changed
+        - llm/gpt4all/**/* # only build if llm/gpt4all folder is changed
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - | # build and push gpt4all image to gitlab registry
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker build --rm --file ./llm/gpt4all/Dockerfile --tag ${CI_REGISTRY_IMAGE}/gpt4all:${CI_GPT4ALL_IMAGE_TAG} ./llm/gpt4all
+      docker push ${CI_REGISTRY_IMAGE}/gpt4all:${CI_GPT4ALL_IMAGE_TAG}
+
+build:llm:vllm:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      changes:
+        - llm/vllm/**/* # only build if llm/vllm folder is changed
   stage: build
   image: docker:latest
   services:
     - docker:dind
   script:
     - | # build and push vllm image to gitlab registry
-      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-      docker system prune -af --volumes
-      docker build --rm --file ./api_vllm/Dockerfile --tag ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG} ./api_vllm
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker build --rm --file ./llm/vllm/Dockerfile --tag ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG} ./llm/vllm
       docker push ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
 
 ################## DINUM ###################
 
-setup:models:dinum:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+setup:llm:dinum:
   environment:
     name: dinum
-  stage: setup
-  image: alpine:latest
-  script:
-    - | # ssh connection setup
-      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
-      apk update
-      apk add openssh-client
-    - | # send pyalbert files to remote server
-      mkdir -p ./${CI_JOB_ID}/venv
-      cp -r ./pyalbert ./${CI_JOB_ID}
-      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-    - | # download model on remote server
-      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
-      set -e
-      python3.10 -m venv ~/${CI_JOB_ID}/venv
-      source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
-      ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
-      python3 ~/${CI_JOB_ID}/pyalbert/albert.py download_models --config-file=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert/config/vllm_routing_table.json --storage-dir=/data/models --env=${CI_ENVIRONMENT_NAME} --debug
-      deactivate
-      rm -rf ~/${CI_JOB_ID}
-      "
-
-deploy:vllm:dinum:
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  environment:
-    name: dinum
-  stage: deploy
-  image: alpine:latest
-  script:
-    - | # ssh connection setup
-      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
-      apk update
-      apk add openssh-client
-    - | # deploy vllm containers to remote server
-      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
-      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-      docker pull ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
-      docker container rm -f miaou-api-vllm-albert || true
-      docker image rm ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG} || true
-      docker run --restart='always' --gpus all -e VLLM_MODEL=/model -e VLLM_TENSOR_PARALLEL_SIZE=1 -e VLLM_GPU_MEMORY_UTILIZATION=0.4 -e VLLM_HOST=0.0.0.0 -d -p 8082:8000 --name miaou-api-vllm-albert -v /data/models/albert-light-dinum:/model ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
-      "
-
-test:vllm:dinum:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
-  stage: test
-  environment:
-    name: dinum
-  image: alpine:latest
-  script:
-    - | # ssh connection setup
-      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
-      apk update
-      apk add openssh-client
-    - | # test vllm containers on remote server
-      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
-      docker exec miaou-api-vllm-albert python3 /code/tests/test_generate_endpoint.py --port=8000 --debug
-      "
-    
-############# FRANCE SERVICES ##############
-
-setup:models:france services:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
   stage: setup
-  environment:
-    name: franceservices
   image: alpine:latest
   script:
     - | # ssh connection setup
@@ -132,17 +98,18 @@ setup:models:france services:
       source ~/${CI_JOB_ID}/venv/bin/activate
       pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
-      python3 ~/${CI_JOB_ID}/pyalbert/albert.py download_models --config-file=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert/config/vllm_routing_table.json --storage-dir=/data/models --env=${CI_ENVIRONMENT_NAME} --debug
+      python3 ~/${CI_JOB_ID}/pyalbert/albert.py download_models --config-file=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert/config/llm_routing_table.json --storage-dir=/data/models --env=${CI_ENVIRONMENT_NAME} --debug
       deactivate
       rm -rf ~/${CI_JOB_ID}
       "
 
-deploy:vllm:france services:
+deploy:llm:dinum:
+  environment:
+    name: dinum
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
-  environment:
-    name: franceservices
+      allow_failure: true  # to avoid blocked state
   stage: deploy
   image: alpine:latest
   script:
@@ -150,20 +117,31 @@ deploy:vllm:france services:
       chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
       apk update
       apk add openssh-client
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      cp ./llm/deploy.sh ./${CI_JOB_ID}/deploy.sh
+      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # deploy vllm containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
       docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-      docker pull ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
-      docker container rm -f miaou-api-vllm-albert || true
-      docker image rm ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG} || true
-      docker run --restart='always' --gpus all -e VLLM_MODEL=/model -e VLLM_TENSOR_PARALLEL_SIZE=1 -e VLLM_GPU_MEMORY_UTILIZATION=0.4 -e VLLM_HOST=0.0.0.0 -d -p 8082:8000 --name miaou-api-vllm-albert -v /data/models/albert-light-franceservices:/model ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
+      export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
+      export CI_VLLM_IMAGE_TAG=${CI_VLLM_IMAGE_TAG}
+      export CI_GPT4ALL_IMAGE_TAG=${CI_GPT4ALL_IMAGE_TAG}
+      export ENV=${CI_ENVIRONMENT_NAME}
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      bash ./deploy.sh -r ./llm_routing_table.json
+      rm -rf ~/${CI_JOB_ID}
       "
 
-test:vllm:france services:
+test:llm:dinum:
+  environment:
+    name: dinum
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
-  environment:
-    name: franceservices  
+      when: manual
+      allow_failure: true  # to avoid blocked state
   stage: test
   image: alpine:latest
   script:
@@ -171,9 +149,120 @@ test:vllm:france services:
       chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
       apk update
       apk add openssh-client
-    - | # test vllm containers on remote server
+    - | # send pyalbert files to remote server
+      mkdir -p ./${CI_JOB_ID}/venv
+      cp ./llm/test.sh ./${CI_JOB_ID}/test.sh
+      cp -r ./llm/tests ./${CI_JOB_ID}
+      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # test llm containers on remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
-      docker exec miaou-api-vllm-albert python3 /code/tests/test_generate_endpoint.py --port=8000 --debug
+      set -e
+      export ENV=${CI_ENVIRONMENT_NAME}
+      python3.10 -m venv ~/${CI_JOB_ID}/venv
+      source ~/${CI_JOB_ID}/venv/bin/activate
+      pip install -r ~/${CI_JOB_ID}/tests/requirements.txt
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      bash ./test.sh -r ./llm_routing_table.json
+      deactivate
+      rm -rf ~/${CI_JOB_ID}
+      "
+
+############# FRANCE SERVICES ##############
+
+setup:llm:france services:
+  environment:
+    name: franceservices
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: setup
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # send pyalbert files to remote server
+      mkdir -p ./${CI_JOB_ID}/venv
+      cp -r ./pyalbert ./${CI_JOB_ID}
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # download model on remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      set -e
+      python3.10 -m venv ~/${CI_JOB_ID}/venv
+      source ~/${CI_JOB_ID}/venv/bin/activate
+      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
+      python3 ~/${CI_JOB_ID}/pyalbert/albert.py download_models --config-file=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert/config/llm_routing_table.json --storage-dir=/data/models --env=${CI_ENVIRONMENT_NAME} --debug
+      deactivate
+      rm -rf ~/${CI_JOB_ID}
+      "
+
+deploy:llm:france services:
+  environment:
+    name: franceservices
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: deploy
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      cp ./llm/deploy.sh ./${CI_JOB_ID}/deploy.sh
+      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # deploy vllm containers to remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+      export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
+      export CI_VLLM_IMAGE_TAG=${CI_VLLM_IMAGE_TAG}
+      export CI_GPT4ALL_IMAGE_TAG=${CI_GPT4ALL_IMAGE_TAG}
+      export ENV=${CI_ENVIRONMENT_NAME}
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      bash ./deploy.sh -r ./llm_routing_table.json
+      rm -rf ~/${CI_JOB_ID}
+      "
+
+test:llm:france services:
+  environment:
+    name: franceservices 
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: test
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # send pyalbert files to remote server
+      mkdir -p ./${CI_JOB_ID}/venv
+      cp ./llm/test.sh ./${CI_JOB_ID}/test.sh
+      cp -r ./llm/tests ./${CI_JOB_ID}
+      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # test llm containers on remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      set -e
+      export ENV=${CI_ENVIRONMENT_NAME}
+      python3.10 -m venv ~/${CI_JOB_ID}/venv
+      source ~/${CI_JOB_ID}/venv/bin/activate
+      pip install -r ~/${CI_JOB_ID}/tests/requirements.txt
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      bash ./test.sh -r ./llm_routing_table.json
+      deactivate
+      rm -rf ~/${CI_JOB_ID}
       "
 
 ############################################
@@ -191,18 +280,20 @@ build:api:
     - docker:dind
   script:
     - cp $ENV_FILE api/app/.env
-    - docker build -t $CI_REGISTRY_IMAGE/api-v2:latest -f api/Dockerfile .
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --tag $CI_REGISTRY_IMAGE/api-v2:latest -f api/Dockerfile .
+    - docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE/api-v2:latest
 
 ################## DINUM ###################
 
 setup:postprocessing:dinum:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
-  stage: setup
   environment:
     name: dinum
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: setup
   image: alpine:latest
   script:
     - | # ssh connection setup
@@ -236,7 +327,7 @@ deploy:api:
   script:
     - chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
     - apk update && apk add openssh-client
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
+    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY"
     - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker pull $CI_REGISTRY_IMAGE/api-v2:latest"
     - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker container rm -f miaou-api-v2 || true"
     - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker run -e API_URL=$SERVER_URL -e FRONT_URL=$SERVER_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
@@ -246,6 +337,8 @@ deploy:api:
 setup:postprocessing:france services:
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
   stage: setup
   environment:
     name: franceservices
@@ -283,8 +376,11 @@ deploy:api:france services:
   script:
     - chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
     - apk update && apk add openssh-client
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
+    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY"
     - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker pull $CI_REGISTRY_IMAGE/api-v2:latest"
+    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker container rm -f miaou-api-v2 || true"
+    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker container rm -f miaou-api-v2-recette || true"
+    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker run -e API_URL=$SERVER_RECETTE_URL -e FRONT_URL=$SERVER_RECETTE_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
     - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker container rm -f miaou-api-v2 || true"
     - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker container rm -f miaou-api-v2-recette || true"
     - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker run -e API_URL=$SERVER_RECETTE_URL -e FRONT_URL=$SERVER_RECETTE_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"

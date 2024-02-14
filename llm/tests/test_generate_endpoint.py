@@ -1,7 +1,5 @@
 import argparse
 import requests
-import json
-import traceback
 import logging
 
 parser = argparse.ArgumentParser(description="Test the response of a LLM model.")
@@ -12,6 +10,7 @@ parser.add_argument(
 parser.add_argument(
     "--prompt", type=str, default="Hello, world!", help="Prompt to use for the model"
 )
+parser.add_argument("--stream", action="store_true", help="Stream the results")
 parser.add_argument("--debug", action="store_true", help="Print debug logs")
 
 if __name__ == "__main__":
@@ -27,21 +26,13 @@ if __name__ == "__main__":
     endpoint = f"http://{args.host}:{args.port}/generate"
     data = {
         "prompt": args.prompt,
-        "max_tokens": 100,
+        "max_tokens": 20,
         "temperature": 0,
-        "stream": False,
+        "stream": args.stream,
     }
 
     response = requests.post(endpoint, json=data, verify=False)
-    for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-        try:
-            text = json.loads(chunk.decode("utf-8"))["text"][0].strip()
-            logger.info(text)
-        except Exception:
-            logger.error(traceback.format_exc())
-
     logger.info(f"Response: {response.text}")
-
     logger.debug(f"Response status code: {response.status_code}")
     logger.debug(f"Response headers: {response.headers}")
     logger.debug(f"Response content: {response.content}")
