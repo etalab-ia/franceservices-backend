@@ -46,13 +46,6 @@ CONTACT = {
     "email": "etalab@mail.numerique.gouv.fr",
 }
 
-# Urls
-# @obsolete: use HOST instead of URL, this is confusing
-API_VLLM_URL = "http://127.0.0.1:8081"  # default
-ELASTICSEARCH_URL = "http://127.0.0.1:9202"
-ELASTICSEARCH_CREDS = ("elastic", "changeme")
-QDRANT_URL = "http://127.0.0.1:6333"
-
 # Root directory:
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
