@@ -2,6 +2,8 @@ import json
 import requests
 from typing import Iterable
 
+from app.config import API_VLLM_URL
+
 
 def get_response(response: requests.Response) -> str:
     data = json.loads(response.content)
@@ -25,7 +27,10 @@ def get_streaming_response(response: requests.Response) -> Iterable[str]:
 
 
 class ApiVllmClient:
-    def __init__(self, url):
+    def __init__(self, url=None):
+        if not url:
+            url = API_VLLM_URL
+
         self.url = url
 
     # TODO: turn into async
