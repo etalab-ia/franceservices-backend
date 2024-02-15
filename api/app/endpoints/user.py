@@ -1,6 +1,6 @@
 from app import crud, models, schemas
 from app.clients.mailjet_client import MailjetClient
-from app.config import FIRST_ADMIN_EMAIL
+from app.config import FIRST_ADMIN_EMAIL, CONTACT_EMAIL
 from app.deps import get_current_user, get_db
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -37,7 +37,7 @@ def create_user_me(
     crud.user.create_user(db, form_data)
     mailjet_client = MailjetClient()
     mailjet_client.send_create_user_me_email(email)
-    mailjet_client.send_create_user_me_notify_admin_email(FIRST_ADMIN_EMAIL, email)
+    mailjet_client.send_create_user_me_notify_admin_email(CONTACT_EMAIL, email)
     return {"msg": "User created. An admin must confirm the user."}
 
 
