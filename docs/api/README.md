@@ -8,6 +8,11 @@ pip install -r requirements.txt
 ...or using `pyproject.toml` via a modern Python manager like [pip-tools](https://github.com/jazzband/pip-tools), [PDM](https://pdm.fming.dev/), [Poetry](https://python-poetry.org/docs/cli/#export) or [hatch](https://hatch.pypa.io/)
 
 
+Lancer l'API dans le venv avec :
+```bash
+uvicorn app.main:app --reload
+```
+
 ### Gpt4all quantized model (for CPUs)
 
 To run the quantized model, the model `"{model-name}.bin"` needs to be imported/copied in `api/app`.
@@ -44,7 +49,6 @@ python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokeniz
 python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/albert-light'); tokenizer.save_pretrained('add_your_path/albert-light'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/albert-light'); model.save_pretrained('add_your_path/albert-light') "
 ```
 
-
 ## Tests unitaires de l'API
 
 Lancer les test unitaires :
@@ -52,12 +56,12 @@ Lancer les test unitaires :
 pytest --cov=app --cov-report=html --cov-report=term-missing app/tests
 ```
 
-Test the app locally:
+Lancer l'API localement...
 ```bash
 uvicorn app.main:app --reload
 ```
 
-and in another terminal:
+...puis les tests unitaires en parallèle dans un autre terminal :
 ```bash
 python test.py
 ```

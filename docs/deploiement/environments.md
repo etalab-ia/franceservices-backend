@@ -4,7 +4,7 @@
 | --- | --- | --- | --- |
 | franceservices | staging | outscale | staging-franceservices |
 | franceservices | main | outscale | prod-franceservices |
-| dinum | staging | outsclae | staging-dinum |
+| dinum | staging | outscale | staging-dinum |
 | dinum | main | outscale | prod-dinum 
 
 ## CI/CD secret variables
