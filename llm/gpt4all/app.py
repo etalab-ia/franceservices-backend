@@ -10,7 +10,6 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 app = FastAPI()
 
-
 @app.post("/generate", status_code=200)
 async def generate(request: Request) -> Response:
     request = await request.json()
