@@ -107,6 +107,61 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 	bash ./utils/launch_local_llm.sh -s ~/models -r AgentPublic/albert-light -d vllm -p 8000
 	```
 
+### Configuration du server et de Nginx
+
+* Installez Nginx
+
+	```bash
+	sudo apt install nginx
+	```
+
+* Configurez Nginx pour rediriger les requêtes vers l'API, et activez le vhost:
+
+	```bash
+	sudo albert-backend/contrib/nginx/albert.conf /etc/nginx/sites-available/albert.conf
+	sudo ln -s /etc/nginx/sites-available/albert /etc/nginx/sites-enabled
+	```
+
+* Redémarrez Nginx
+
+	```bash
+	sudo systemctl restart nginx
+	```
+
+* Installer certbot
+
+	```bash
+	sudo apt install certbot python3-certbot-nginx
+	```
+
+* Créez un certificat SSL pour votre domaine
+
+	```bash
+	sudo certbot --nginx -d mondomaine.com
+	```
+
+	Vous pouvez ensuite vérifier que le certificat a été correctement installé en regardant si le fichier `/etc/nginx/sites-available/albert.conf` a bien été modifié:
+	```bash
+	cat /etc/nginx/sites-available/albert.conf
+	```
+
+* Optionnel : installer et configurer le firewall pour Nginx
+
+	```bash
+	sudo apt install ufw
+	sudo ufw allow 'Nginx Full'
+	sudo ufw allow ssh
+	sudo ufw enable
+	```
+
+* N'oublier pas d'installer et de configurer fail2ban
+
+	```bash
+	sudo apt install fail2ban
+	sudo systemctl start fail2ban
+	sudo systemctl enable fail2ban
+	```
+
 ### API
 	
 ## Déploiement en CI/CD (avec Docker)
