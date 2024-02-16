@@ -34,10 +34,14 @@ for model in $(jq -r 'keys[]' $routing_table); do
         continue
     fi
 
-    model_dir=$(jq -r '.["'$model'"] | .hf_repo_id' $routing_table)
-    model_port=$(jq -r '.["'$model'"] | .model_port' $routing_table)
-    driver=$(jq -r '.["'$model'"] | .driver' $routing_table)
+    hf_repo_id=$(jq -r '.["'$model'"] | .hf_repo_id' $routing_table)
+    force_download=$(jq -r '.["'$model'"] | .force_download' $routing_table)
+    if [[ $force_download == true ]]; then
+        force_download="--force-download"
+    else
+        force_download=""
+    fi
 
     echo "info: testing $model vllm container"
-    python3 ./tests/test_generate_endpoint.py --port=$model_port --debug
+    python3 ./pyalbert/albert.py download_models --storage-dir=/data/models --hf-repo-id=$hf_repo_id $force_download
 done

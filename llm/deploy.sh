@@ -4,7 +4,7 @@ set -e
 Help()
 {
    # Display Help
-   echo "Dynamic deploy vllm containers."
+   echo "Dynamic deploy llm containers."
    echo
    echo "Syntax: bash build.sh [-h|r|d]"
    echo "options:"
@@ -22,8 +22,8 @@ done
 
 if [[ -z $routing_table ]]; then
     echo "-r ergument is required. Help:" && Help && exit 0
-elif ! [[ -r $routing_table ]]; then
-    echo "file specified with -f argument does not exists. Help:" && Help && exit 0
+elif ! [[ -f $routing_table ]]; then
+    echo "file specified with -r argument does not exists. Help:" && Help && exit 0
 fi
 
 for model in $(jq -r 'keys[]' $routing_table); do

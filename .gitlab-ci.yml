@@ -89,6 +89,7 @@ setup:llm:dinum:
       apk add openssh-client
     - | # send pyalbert files to remote server
       mkdir -p ./${CI_JOB_ID}/venv
+      cp ./llm/setup.sh ./${CI_JOB_ID}/setup.sh
       cp -r ./pyalbert ./${CI_JOB_ID}
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # download model on remote server
@@ -98,7 +99,9 @@ setup:llm:dinum:
       source ~/${CI_JOB_ID}/venv/bin/activate
       pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
-      python3 ~/${CI_JOB_ID}/pyalbert/albert.py download_models --config-file=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert/config/llm_routing_table.json --storage-dir=/data/models --env=${CI_ENVIRONMENT_NAME} --debug
+      export ENV=${CI_ENVIRONMENT_NAME}
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      bash ./setup.sh -r ./pyalbert/config/llm_routing_table.json
       deactivate
       rm -rf ~/${CI_JOB_ID}
       "
@@ -186,6 +189,7 @@ setup:llm:france services:
       apk add openssh-client
     - | # send pyalbert files to remote server
       mkdir -p ./${CI_JOB_ID}/venv
+      cp ./llm/setup.sh ./${CI_JOB_ID}/setup.sh
       cp -r ./pyalbert ./${CI_JOB_ID}
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # download model on remote server
@@ -195,7 +199,9 @@ setup:llm:france services:
       source ~/${CI_JOB_ID}/venv/bin/activate
       pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
-      python3 ~/${CI_JOB_ID}/pyalbert/albert.py download_models --config-file=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert/config/llm_routing_table.json --storage-dir=/data/models --env=${CI_ENVIRONMENT_NAME} --debug
+      export ENV=${CI_ENVIRONMENT_NAME}
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      bash ./setup.sh -r ./pyalbert/config/llm_routing_table.json
       deactivate
       rm -rf ~/${CI_JOB_ID}
       "
