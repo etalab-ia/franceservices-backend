@@ -136,7 +136,7 @@ if ENV == "unittest":
 
 # If local, download the model Tiny Albert from HuggingFace
 if ENV == "dev":
-    TINY_ALBERT_LOCAL_PATH = Path("tiny_albert.bin")
+    TINY_ALBERT_LOCAL_PATH = Path("tiny_albert.bin").resolve()
     if not TINY_ALBERT_LOCAL_PATH.exists():
         print("Downloading Tiny Albert model for local usage since it's not present locally already. It's 7.3GB so it might take a few dozen minutes...")
         response = requests.get("https://huggingface.co/ActeurPublic/tiny-albert/resolve/main/ggml-model-expert-q4_K.bin", stream=True)

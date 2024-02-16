@@ -21,6 +21,7 @@ dependencies = [
     "python-jose==3.3.0",
     "psycopg2-binary==2.9.8",
     "qdrant-client==1.5.4",
+    "spacy>=3.7.4",
     "requests==2.31.0",
     "SQLAlchemy==2.0.20",
     "transformers==4.33.2",
