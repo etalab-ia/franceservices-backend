@@ -4,17 +4,21 @@ RUN apt-get update && \
     apt-get install -y python3-pip python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /code
-COPY ./api/requirements.txt /code/requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-COPY ./commons /code/commons
-COPY ./api/alembic.ini /code/alembic.ini
-COPY ./api/alembic /code/alembic
-COPY ./api/app /code/app
-COPY ./api/start.sh /code/start.sh
-RUN chmod +x /code/start.sh
 ARG API_URL http://localhost
-ENV API_URL ${API_URL}
+ENV API_URL $API_URL
 ARG FRONT_URL http://localhost
-ENV FRONT_URL ${FRONT_URL}
+ENV FRONT_URL $FRONT_URL
+ENV PYTHONPATH="$PYTHONPATH:/code"
+
+WORKDIR /code
+ADD ./requirements.txt ./alembic.ini ./start.sh .
+ADD ./alembic ./alembic
+ADD ./app ./app
+COPY --from=commons . ./commons
+COPY --from=pyalbert . ./pyalbert
+
+RUN chmod +x /code/start.sh
+RUN pip install --no-cache-dir --upgrade -r ./requirements.txt
+RUN pip install --no-cache-dir --upgrade -r ./pyalbert/requirements.txt
+
 CMD ["bash", "start.sh"]

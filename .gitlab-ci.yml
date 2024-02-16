@@ -277,18 +277,23 @@ test:llm:france services:
 
 build:api:
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-      allow_failure: true  # to avoid blocked state
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      changes:
+        - api/**/* # only build if api folder is changed
   stage: build
   image: docker:latest
   services:
     - docker:dind
   script:
-    - cp $ENV_FILE api/app/.env
-    - docker build --tag $CI_REGISTRY_IMAGE/api-v2:latest -f api/Dockerfile .
-    - docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE/api-v2:latest
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # build and push api image to gitlab registry
+      cp $ENV_FILE api/app/.env
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker build --rm --build-context commons=./commons --build-context pyalbert=./pyalbert --tag ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2 --file ./api/Dockerfile ./api
+      docker push ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2
 
 ################## DINUM ###################
 
@@ -322,32 +327,38 @@ setup:postprocessing:dinum:
       rm -rf ~/${CI_JOB_ID}
       "
 
-deploy:api:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-  stage: deploy
+deploy:api:dinum:
   environment:
     name: dinum
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: deploy
   image: alpine:latest
   script:
-    - chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
-    - apk update && apk add openssh-client
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker pull $CI_REGISTRY_IMAGE/api-v2:latest"
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker container rm -f miaou-api-v2 || true"
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker run -e API_URL=$SERVER_URL -e FRONT_URL=$SERVER_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # deploy api containers to remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker container rm -f ${COMPOSE_PROJECT_NAME}-gpt4all || true
+      docker image rm ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2 || true
+      docker run --env API_URL=${CI_DEPLOY_URL} --env FRONT_URL=${CI_DEPLOY_URL} --restart "always" --gpus all --detach --publish 8090:8090 --name ${CI_ENVIRONMENT_NAME}-api-v2 ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2
+      "
 
 ############# FRANCE SERVICES ##############
 
 setup:postprocessing:france services:
+  environment:
+    name: franceservices
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
   stage: setup
-  environment:
-    name: franceservices
   image: alpine:latest
   script:
     - | # ssh connection setup
@@ -371,22 +382,23 @@ setup:postprocessing:france services:
       "
 
 deploy:api:france services:
+  environment:
+    name: franceservices
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
   stage: deploy
-  environment:
-    name: franceservices
   image: alpine:latest
   script:
-    - chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
-    - apk update && apk add openssh-client
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker pull $CI_REGISTRY_IMAGE/api-v2:latest"
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker container rm -f miaou-api-v2 || true"
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker container rm -f miaou-api-v2-recette || true"
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker run -e API_URL=$SERVER_RECETTE_URL -e FRONT_URL=$SERVER_RECETTE_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker container rm -f miaou-api-v2 || true"
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker container rm -f miaou-api-v2-recette || true"
-    - ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "docker run -e API_URL=$SERVER_RECETTE_URL -e FRONT_URL=$SERVER_RECETTE_URL --restart="always" --gpus all --network="host" -d -p 8090:8090 --name miaou-api-v2 $CI_REGISTRY_IMAGE/api-v2:latest"
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # deploy api to remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker container rm -f ${COMPOSE_PROJECT_NAME}-gpt4all || true
+      docker image rm ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2 || true
+      docker run --env API_URL=${CI_DEPLOY_URL} --env FRONT_URL=${CI_DEPLOY_URL} --restart "always" --gpus all --detach --publish 8090:8090 --name ${CI_ENVIRONMENT_NAME}-api-v2 ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2
+      "
