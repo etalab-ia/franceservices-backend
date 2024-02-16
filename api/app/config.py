@@ -1,10 +1,11 @@
 import os
 import re
-from pathlib import Path
 
 import requests
 import torch
 from dotenv import load_dotenv
+
+from pathlib import Path
 
 
 def collate_ix_name(name, version):
@@ -29,7 +30,8 @@ def parse_vllm_routing_table(table: list[str]) -> list[dict]:
         values = re.split("\s+", model)
         if len(values) != len(columns):
             raise ValueError(
-                "VLLM_ROUTING_TABLE format error: wrong number of columns for line" % (model)
+                "VLLM_ROUTING_TABLE format error: wrong number of columns for line"
+                % (model)
             )
         structured_table.append(dict(zip(columns, values)))
 
@@ -111,14 +113,18 @@ ELASTICSEARCH_IX_VER = "v3"
 QDRANT_IX_VER = "v3"
 SHEET_SOURCES = ["service-public", "travail-emploi"]
 EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
-EMBEDDING_BOOTSTRAP_PATH = os.path.join("_data", "embeddings", EMBEDDING_MODEL.split("/")[-1])
+EMBEDDING_BOOTSTRAP_PATH = os.path.join(
+    "_data", "embeddings", EMBEDDING_MODEL.split("/")[-1]
+)
 
 # Vllm Routing Table.
 # Set UPDATE to "true" to force (re)download the model in the dowload-vllm-model job.
 if os.path.exists("VLLM_ROUTING_TABLE"):
     with open("VLLM_ROUTING_TABLE") as f:
         VLLM_ROUTING_TABLE = [
-            line.strip() for line in f if line.strip() and not line.lstrip().startswith("#")
+            line.strip()
+            for line in f
+            if line.strip() and not line.lstrip().startswith("#")
         ]
 else:  # default
     VLLM_ROUTING_TABLE = [

@@ -23,10 +23,10 @@ headers = {
     "Authorization": f"Bearer {token}",
 }
 data = {
-    "user_text": "Quelles sont les conditions pour obtenir les APL? Sur quels site web de service-public puis je faire ma demande ?",
-    # "query": "Quel est la limite d'age pour voter en france, et quelle sont les échances électorales ?",
-    # "query": "Qu'est ce que la DITP et la DINUM ?",
-    # "model_name": "albert-light",
+    "user_text": "Quelles sont les conditions pour obtenir les APL? Sur quels site web de puis je faire ma demande ?",
+    #"query": "Quel est la limite d'age pour voter en france, et quelle sont les échances électorales ?",
+    #"query": "Qu'est ce que la DITP et la DINUM ?",
+    #"model_name": "albert-light",
     # "sources": ["travail-emploi"],
     # "should_sids": ["F35789"],
     # "must_not_sids": ["F35789"],
@@ -39,7 +39,7 @@ try:
         postprocessing_activated = True
     else:
         postprocessing_activated = False
-except KeyError as e:
+except KeyError:
     postprocessing_activated = False
     pass
 
