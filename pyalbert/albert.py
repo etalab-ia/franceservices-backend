@@ -19,7 +19,6 @@ Examples:
     ./albert.py create_whitelist --config-file=/path/to/config.yml --storage-dir=/path/to/storage --debug
 """
 
-import os
 from pathlib import Path
 
 from docopt import docopt
@@ -36,10 +35,10 @@ if __name__ == "__main__":
             "/data/models" if args["--storage-dir"] is None else args["--storage-dir"]
         )  # if --storage-dir is not provided, use default path /data/models
         config_file = (
-            os.path.join(Path().absolute(), "config", "vllm_routing_table.json")
+            Path(__file__).parent.resolve() / "config" / "llm_routing_table.json"
             if args["--config-file"] is None
             else args["--config-file"]
-        ) # if --config-file is not provided, use default path /config/vllm_routing_table.json
+        )  # if --config-file is not provided, use default path /config/llm_routing_table.json
 
         download_models(
             storage_dir=storage_dir,
@@ -57,10 +56,10 @@ if __name__ == "__main__":
             else args["--storage-dir"]
         )
         config_file = (
-            os.path.join(Path().absolute(), "config", "whitelist_config.json")
+            Path(__file__).parent.resolve() / "config" / "whitelist_config.json"
             if args["--config-file"] is None
             else args["--config-file"]
-        ) # if --config-file is not provided, use default path /config/whitelist_config.json
+        )  # if --config-file is not provided, use default path /config/whitelist_config.json
 
         download_directory(
             storage_dir=storage_dir, config_file=args["--config-file"], debug=debug
