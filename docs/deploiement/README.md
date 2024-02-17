@@ -115,20 +115,15 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 	sudo apt install nginx
 	```
 
-* Configurez Nginx pour rediriger les requêtes vers l'API, et activez le vhost:
+* Configurez Nginx pour rediriger les requêtes vers l'API, activez le vhost et redémarrez Nginx:
 
 	```bash
-	sudo albert-backend/contrib/nginx/albert.conf /etc/nginx/sites-available/albert.conf
+	sudo cp ./contrib/nginx/albert.conf /etc/nginx/sites-available/albert.conf
 	sudo ln -s /etc/nginx/sites-available/albert /etc/nginx/sites-enabled
-	```
-
-* Redémarrez Nginx
-
-	```bash
 	sudo systemctl restart nginx
 	```
 
-* Installer certbot
+* Installez certbot
 
 	```bash
 	sudo apt install certbot python3-certbot-nginx
@@ -145,31 +140,26 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 	cat /etc/nginx/sites-available/albert.conf
 	```
 
-* Optionnel : installer et configurer le firewall pour Nginx
+* Optionnel : installez et configurez le firewall pour Nginx
 
 	```bash
 	sudo apt install ufw
 	sudo ufw allow 'Nginx Full'
-	sudo ufw allow ssh
+	sudo ufw allow ssh # très important! pour conserver sa connection ssh
 	sudo ufw enable
 	```
 
-* N'oublier pas d'installer et de configurer fail2ban
+* Optionnel : n'oubliez pas d'installer et d'activer fail2ban
 
 	```bash
 	sudo apt install fail2ban
-	sudo systemctl start fail2ban
-	sudo systemctl enable fail2ban
+	sudo systemctl start fail2ban # pour le démarrer
+	sudo systemctl enable fail2ban # pour le démarrer au démarrage
 	```
 
 ### API
-<<<<<<< HEAD
-	
-## Déploiement en CI/CD (avec Docker)
-=======
 
 ## Installation avec Docker
->>>>>>> 239ba03 (feat: #81 update api dockerfile and clean api ci/cd)
 
 L'installation avec Docker se fait dans le cadre d'un pipeline de CI/CD Gitlab. Reférez-vous au fichier [.gitlab-ci.yml](../../.gitlab-ci.yml) pour plus d'information sur les étapes de déploiement réalisée. Afin d'exécuter cette pipeline il est nécessaire de configurer au préalable certaines variables d'environnement dans Gitlab. Pour cela rendez vous sur la documentation [environments.md](environments.md).
 
