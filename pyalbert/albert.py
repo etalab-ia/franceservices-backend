@@ -59,8 +59,8 @@ if __name__ == "__main__":
         )  # if --config-file is not provided, use default path /config/whitelist_config.json
 
         download_directory(
-            storage_dir=storage_dir, config_file=args["--config-file"], debug=debug
+            storage_dir=storage_dir, config_file=config_file, debug=debug
         )
         create_whitelist(
-            storage_dir=storage_dir, config_file=args["--config-file"], debug=debug
+            storage_dir=storage_dir, config_file=config_file, debug=debug
         )

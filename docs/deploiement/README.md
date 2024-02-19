@@ -107,7 +107,7 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 	bash ./utils/launch_local_llm.sh -s ~/models -r AgentPublic/albert-light -d vllm -p 8000
 	```
 
-### Configuration du server et de Nginx
+### Reverse proxy (Nginx)
 
 * Installez Nginx
 
@@ -155,6 +155,29 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 	sudo apt install fail2ban
 	sudo systemctl start fail2ban # pour le démarrer
 	sudo systemctl enable fail2ban # pour le démarrer au démarrage
+	```
+
+### Databases
+
+* Créer un fichier de variable d'environnement avec les variables suivantes :
+
+	* `POSTGRES_PASSWORD`
+    * `POSTGRES_PORT`
+    * `ELASTIC_PASSWORD`
+  	* `ELASTIC_PORT`
+    * `QDRANT_PORT`
+    * `COMPOSE_FILE`
+    * `COMPOSE_PROJECT_NAME`
+
+	Pour plus d'informations sur la valeur des variables voir la documentation dédiées [environments.md](environments.md).
+
+	Les variables `COMPOSE_FILE` et `COMPOSE_PROJECT_NAME` sont des variables prédéfinies par Docker, pour plus d'information voir la [documentation officielle]( https://docs.docker.com/compose/environment-variables/envvars/).
+
+
+* Déployer les bases de données
+
+	```bash
+	docker compose --env-file=PATH_TO_ENV_FILE down && docker compose --env-file=PATH_TO_ENV_FILE up --detach
 	```
 
 ### API
