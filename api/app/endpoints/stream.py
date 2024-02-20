@@ -1,23 +1,21 @@
 import json
 import os
 
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi.responses import StreamingResponse
+from spacy.lang.fr import French
+from sqlalchemy.orm import Session
+
 from app import crud, models, schemas
 from app.clients.api_vllm_client import ApiVllmClient
 from app.config import ENV, WITH_GPU
 from app.deps import get_current_user, get_db
-
 from app.core.llm import auto_set_chat_name
 if not WITH_GPU and ENV == "dev":
     from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
-
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
-
 from commons import get_prompter
-
 from pyalbert.postprocessing import check_url, correct_mail, correct_number, correct_url
-from spacy.lang.fr import French
+
 
 router = APIRouter()
 
