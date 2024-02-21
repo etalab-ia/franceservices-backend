@@ -31,7 +31,7 @@ def read_streams(
     desc: bool = False,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> list[schemas.Stream]:
     streams = crud.stream.get_streams(
         db, user_id=current_user.id, skip=skip, limit=limit, chat_id=chat_id, desc=desc
     )
@@ -43,7 +43,7 @@ def create_user_stream(
     stream: schemas.StreamCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-) -> models.Stream:
+) -> schemas.Stream:
     return crud.stream.create_stream(db, stream, user_id=current_user.id).to_dict()
 
 
@@ -54,7 +54,7 @@ def create_chat_stream(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> schemas.Stream:
     db_chat = crud.chat.get_chat(db, chat_id)
     if db_chat is None:
         raise HTTPException(404, detail="Chat not found")
@@ -74,7 +74,7 @@ def read_stream(
     stream_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> schemas.Stream:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
@@ -93,7 +93,7 @@ def start_stream(
     stream_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> StreamingResponse:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
@@ -289,7 +289,7 @@ def stop_stream(
     stream_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> schemas.Stream:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")

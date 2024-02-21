@@ -70,7 +70,7 @@ def read_chat_archive(
     chat_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-) -> dict:
+) -> schemas.ChatArchive:
     db_chat = crud.chat.get_chat_archive(db, chat_id=chat_id)
     if db_chat is None:
         raise HTTPException(404, detail="Chat not found")
