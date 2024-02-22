@@ -14,7 +14,7 @@ Pour cela vous devez d'abord disposer d'un environment répondant aux exigences 
 
 ## Requirements
 
-Le projet est concçu pour fonctionner sur l'environnement Linux Ubuntu 22.04 LTS. De plus, les packages sont nécessaires :
+Le projet est conçu pour fonctionner sur l'environnement Linux Ubuntu 22.04 LTS. De plus, les packages sont nécessaires :
 
 * jq
 * python3.10

@@ -1,29 +1,62 @@
 # Albert API
 
-## Execution locale
+## Execution locale (Draft)
 
-```bash
-pip install -r requirements.txt
-```
-...or using `pyproject.toml` via a modern Python manager like [pip-tools](https://github.com/jazzband/pip-tools), [PDM](https://pdm.fming.dev/), [Poetry](https://python-poetry.org/docs/cli/#export) or [hatch](https://hatch.pypa.io/)
+- Installez les requirements:
+
+    ```bash
+    cd api
+    pip install -r requirements.txt
+    ```
+    ...ou en utilisant `pyproject.toml` via un Python manager moderne comme [pip-tools](https://github.com/jazzband/pip-tools), [PDM](https://pdm.fming.dev/), [Poetry](https://python-poetry.org/docs/cli/#export) ou [hatch](https://hatch.pypa.io/)
+
+    Assurez-vous dans un premier temps que votre variable d'environnement `ENV` présent dans [api/app/.env](../api/app/.env) est égale à `dev` telle que: `ENV="dev"`.
+
+### Modèle quantisé
+
+- 1: Lancez l'API du modèle:
+
+    - Via GPT4All: Lancer l'API du modèle quantisé sur CPU
+
+        Cas d'utilisation: Si vous n'avez pas de carte graphique ou que votre carte graphique n'est pas compatible avec CUDA.
+
+    - Via VLLM: Lancer l'API du modèle quantisé sur GPU
+
+        Cas d'utilisation: Si vous avez une carte graphique NVIDIA compatible avec CUDA
+
+Pour déployer l'API du modèle via le module de votre choix, allez voir la section 'LLM' du README du [deploiement](../docs/deploiement/README.md)
+
+- 2: Lancez ensuite l'API en local:
+
+    ```bash
+    cd api
+    source start.sh
+    ```
 
 
-Lancer l'API dans le venv avec :
-```bash
-uvicorn app.main:app --reload
-```
+- 3: Testez le modèle:
 
-### Gpt4all quantized model (for CPUs)
+    Le fichier [test.py](../api/test.py) permet de tester l'endpoint `stream` de l'api du modèle. 
+    Vous pouvez alors utliser le modèle et generér un output en fonction des paramètres en entrée.
+    Les paramètres en entrée sont configurables dans la variable `data` au début du code.
+    La variable `data` est un dictionnaire où chaque clé correspond à un paramètre.
 
-To run the quantized model, the model `"{model-name}.bin"` needs to be imported/copied in `api/app`.
+    - Description non exhaustive des paramètres : (cf [stream.py](../api/app/schemas/stream.py) pour la liste complète)
 
-### Vllm model (for GPUs)
+        - `model_name` : Par defaut: 'fabrique-reference'. (cf: [models.md](../docs/models.md) pour la liste complète)
+        - `user_text` (si `model_name`==`fabrique-reference`): Requête de l'utilisateur. L'input que vous donnez au modèle. 
+        - `query` (si `model_name`==`albert-light`): Requête de l'utilisateur. L'input que vous donnez au modèle. 
+        - `sources` : Restreint la liste des sources à rechercher (en mode RAG). ex: ["travail-emploi"]
+        - `should_sids` : Ajouter le document qui doit correspondre (en mode RAG). ex: ["F35789"]
+        - `must_not_sids` (optionnel): Filtre les documents qui ne doivent pas correspondre (en mode RAG). ex: ["F35789"]
+        - `postprocessing` (optionnel): Liste des étapes de post processing à appliquer au texte generé. ex :  ["check_url", "check_mail", "check_number"].
+            Pour utiliser cette feature, n'oubliez pas de télécharger la whitelist via le module `pyalbert` (cf [albert.py](../pyalbert/albert.py)) et d'entrer le path du fichier de whitelist téléchargé dans la variable d'environnement `API_WHITELIST_FILE` dans le fichier [api/app/.env](../api/app/.env).
 
-You must be registered with `huggingface-cli` to download private models:
+    Executez enfin dans une nouvelle console:
 
-```bash
-huggingface-cli login --token $HF_ACCESS_TOKEN
-```
+    ```bash
+    python test.py
+    ```
 
 ### Download a model
 
@@ -70,7 +103,7 @@ python test.py
 
 Create a new alembic (empty) template version:
 
-    PYTHONPATH=. alembic revision -m  "vXXX
+    PYTHONPATH=. alembic revision -m  "vXXX"
 
 Autogenerate a new alembic upgrade version script:
 
