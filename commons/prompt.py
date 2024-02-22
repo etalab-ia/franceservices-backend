@@ -1,7 +1,6 @@
 import os
 from commons.api import get_legacy_client
 import re
-from huggingface_hub import hf_hub_download
 from jinja2 import Environment, FileSystemLoader, meta, BaseLoader
 import yaml
 from typing import Any
@@ -27,11 +26,6 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
     client = get_legacy_client()
     templates = {}
     for model in table:
-        #prompt_config_file = hf_hub_download(
-        #    repo_id=model["model_id"], filename="prompt_config.yml"
-        #)
-        #with open(prompt_config_file) as f:
-        #    config = yaml.safe_load(f)
         templates_files = client.get_templates_files(model[1])
         if not templates_files:
             return templates
@@ -42,18 +36,17 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
             print(f"prompt_config.yml file not found for model {model[0]}, passing...")
             return templates
 
-
         sampling_params = {}
         if "max_tokens" in config:
             sampling_params["max_tokens"] = config["max_tokens"]
 
         prompt_template = {}
-        for prompt in config["prompts"]:
+        for prompt in config.get("prompts", []):
             # Template from file template
-            #template_file = hf_hub_download(repo_id=model["model_id"], filename=prompt["template"])
-            #env = Environment(loader=FileSystemLoader(os.path.dirname(template_file)))
-            #template = env.get_template(prompt["template"])
-            #template_ = template.environment.loader.get_source(template.environment, template.name)
+            # template_file = hf_hub_download(repo_id=model["hf_repo_id"], filename=prompt["template"])
+            # env = Environment(loader=FileSystemLoader(os.path.dirname(template_file)))
+            # template = env.get_template(prompt["template"])
+            # template_ = template.environment.loader.get_source(template.environment, template.name)
             # Template from string template
             template_string = templates_files[prompt["template"]]
             env = Environment(loader=BaseLoader())

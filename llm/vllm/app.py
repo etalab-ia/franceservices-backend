@@ -5,15 +5,16 @@ from typing import AsyncGenerator
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 import uvicorn
+from huggingface_hub import hf_hub_download
 
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 
-'''
+"""
 Modified version from https://github.com/vllm-project/vllm/blob/main/vllm/entrypoints/api_server.py
-'''
+"""
 
 TIMEOUT_KEEP_ALIVE = 5  # seconds.
 TIMEOUT_TO_PREVENT_DEADLOCK = 1  # seconds.
@@ -41,10 +42,8 @@ async def generate(request: Request) -> Response:
     # Streaming case
     async def stream_results() -> AsyncGenerator[bytes, None]:
         async for request_output in results_generator:
-            #prompt = request_output.prompt
-            text_outputs = [
-                output.text for output in request_output.outputs
-            ]
+            # prompt = request_output.prompt
+            text_outputs = [output.text for output in request_output.outputs]
             ret = {"text": text_outputs}
             yield (json.dumps(ret) + "\0").encode("utf-8")
 
@@ -67,10 +66,27 @@ async def generate(request: Request) -> Response:
         final_output = request_output
 
     assert final_output is not None
-    #prompt = final_output.prompt
+    # prompt = final_output.prompt
     text_outputs = [output.text for output in final_output.outputs]
     ret = {"text": text_outputs}
     return JSONResponse(ret)
+
+
+@app.post("/get_templates_files")
+async def get_templates_files() -> Response:
+    prompt_config_file = hf_hub_download(repo_id=model["hf_repo_id"], filename="prompt_config.yml")
+    config_files = {}
+    with open(prompt_config_file) as f:
+        config = yaml.safe_load(f)
+        config_files["prompt_config.yml"] = f.read()
+
+    for prompt in config.get("prompts", []):
+        filename = prompt["template"]
+        file_path = hf_hub_download(repo_id=model["hf_repo_id"], filename=filename)
+        with open(file_path) as f:
+            config_files[filename] = f.read()
+
+    return JSONResponse(config_files)
 
 
 if __name__ == "__main__":
@@ -83,8 +99,10 @@ if __name__ == "__main__":
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
 
-    uvicorn.run(app,
-                host=args.host,
-                port=args.port,
-                log_level="debug",
-                timeout_keep_alive=TIMEOUT_KEEP_ALIVE)
+    uvicorn.run(
+        app,
+        host=args.host,
+        port=args.port,
+        log_level="debug",
+        timeout_keep_alive=TIMEOUT_KEEP_ALIVE,
+    )

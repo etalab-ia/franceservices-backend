@@ -15,29 +15,6 @@ def collate_ix_name(name, version):
     return name
 
 
-def parse_vllm_routing_table(table: list[str]) -> list[dict]:
-    # @TODO: add a schema validation in a test pipeline.
-    structured_table = []
-    columns = [
-        "model_name",
-        "model_id",
-        "host",
-        "port",
-        "gpu_mem_use",
-        "tensor_par_size",
-        "do_update",
-    ]
-    for model in table:
-        values = re.split("\s+", model)
-        if len(values) != len(columns):
-            raise ValueError(
-                "VLLM_ROUTING_TABLE format error: wrong number of columns for line"
-                % (model)
-            )
-        structured_table.append(dict(zip(columns, values)))
-
-    return structured_table
-
 # App metadata
 # TODO load metadata from pyproject.toml using tomlib instead of this
 APP_NAME = "albert-api"
