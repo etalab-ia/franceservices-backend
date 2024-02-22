@@ -44,7 +44,7 @@ Pour lister les containers actifs de manière claire :
 docker ps --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}"
 ```
 
-Pour afficher les logs d'erreur dún container spécifique :
+Pour afficher les logs d'erreur d'un container spécifique :
 ```bash
 docker logs [CONTAINER_NAME]
 ```

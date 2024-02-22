@@ -1,11 +1,12 @@
 import os
 import re
-from pathlib import Path
 import ast
 
 import requests
 import torch
 from dotenv import load_dotenv
+
+from pathlib import Path
 
 
 def collate_ix_name(name, version):
@@ -13,6 +14,29 @@ def collate_ix_name(name, version):
         return "-".join([name, version])
     return name
 
+
+def parse_vllm_routing_table(table: list[str]) -> list[dict]:
+    # @TODO: add a schema validation in a test pipeline.
+    structured_table = []
+    columns = [
+        "model_name",
+        "model_id",
+        "host",
+        "port",
+        "gpu_mem_use",
+        "tensor_par_size",
+        "do_update",
+    ]
+    for model in table:
+        values = re.split("\s+", model)
+        if len(values) != len(columns):
+            raise ValueError(
+                "VLLM_ROUTING_TABLE format error: wrong number of columns for line"
+                % (model)
+            )
+        structured_table.append(dict(zip(columns, values)))
+
+    return structured_table
 
 # App metadata
 # TODO load metadata from pyproject.toml using tomlib instead of this
@@ -83,7 +107,9 @@ ELASTICSEARCH_IX_VER = "v3"
 QDRANT_IX_VER = "v3"
 SHEET_SOURCES = ["service-public", "travail-emploi"]
 EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
-EMBEDDING_BOOTSTRAP_PATH = os.path.join("_data", "embeddings", EMBEDDING_MODEL.split("/")[-1])
+EMBEDDING_BOOTSTRAP_PATH = os.path.join(
+    "_data", "embeddings", EMBEDDING_MODEL.split("/")[-1]
+)
 
 # LLM Routing Table.
 LLM_TABLE = os.getenv("LLM_TABLE")
@@ -107,7 +133,7 @@ if ENV == "unittest":
 
 # If local, download the model Tiny Albert from HuggingFace
 if ENV == "dev":
-    TINY_ALBERT_LOCAL_PATH = Path("tiny_albert.bin")
+    TINY_ALBERT_LOCAL_PATH = Path("tiny_albert.bin").resolve()
     if not TINY_ALBERT_LOCAL_PATH.exists():
         print(
             "Downloading Tiny Albert model for local usage since it's not present locally already. It's 7.3GB so it might take a few dozen minutes..."
