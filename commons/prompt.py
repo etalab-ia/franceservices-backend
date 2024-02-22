@@ -2,35 +2,46 @@ import os
 from commons.api import get_legacy_client
 import re
 from huggingface_hub import hf_hub_download
-from jinja2 import Environment, FileSystemLoader, meta
+from jinja2 import Environment, FileSystemLoader, meta, BaseLoader
 import yaml
 from typing import Any
 
 try:
-    from app.config import VLLM_ROUTING_TABLE
+    from app.config import LLM_TABLE
     from app.core.acronyms import ACRONYMS
 except ModuleNotFoundError:
-    from api.app.config import VLLM_ROUTING_TABLE
+    from api.app.config import LLM_TABLE
     from api.app.core.acronyms import ACRONYMS
 
 
 class Prompt:
     mode: str
     template: str
-    variables: list[str]
+    variables: set[str]
     system_prompt: str | None
     prompt_format: str | None
     sampling_params: dict
 
 
-def prompt_templates_from_vllm_routing_table(table: list[dict]) -> dict[str, Prompt]:
+def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
+    client = get_legacy_client()
     templates = {}
     for model in table:
-        prompt_config_file = hf_hub_download(
-            repo_id=model["model_id"], filename="prompt_config.yml"
-        )
-        with open(prompt_config_file) as f:
-            config = yaml.safe_load(f)
+        #prompt_config_file = hf_hub_download(
+        #    repo_id=model["model_id"], filename="prompt_config.yml"
+        #)
+        #with open(prompt_config_file) as f:
+        #    config = yaml.safe_load(f)
+        templates_files = client.get_templates_files(model[1])
+        if not templates_files:
+            return templates
+
+        try:
+            config = yaml.safe_load(templates_files["prompt_config.yml"])
+        except KeyError:
+            print(f"prompt_config.yml file not found for model {model[0]}, passing...")
+            return templates
+
 
         sampling_params = {}
         if "max_tokens" in config:
@@ -38,11 +49,16 @@ def prompt_templates_from_vllm_routing_table(table: list[dict]) -> dict[str, Pro
 
         prompt_template = {}
         for prompt in config["prompts"]:
-            template_file = hf_hub_download(repo_id=model["model_id"], filename=prompt["template"])
-            env = Environment(loader=FileSystemLoader(os.path.dirname(template_file)))
-            template = env.get_template(prompt["template"])
-            template_ = template.environment.loader.get_source(template.environment, template.name)
-            variables = meta.find_undeclared_variables(env.parse(template_[0]))
+            # Template from file template
+            #template_file = hf_hub_download(repo_id=model["model_id"], filename=prompt["template"])
+            #env = Environment(loader=FileSystemLoader(os.path.dirname(template_file)))
+            #template = env.get_template(prompt["template"])
+            #template_ = template.environment.loader.get_source(template.environment, template.name)
+            # Template from string template
+            template_string = templates_files[prompt["template"]]
+            env = Environment(loader=BaseLoader())
+            template = env.from_string(template_string)
+            variables = meta.find_undeclared_variables(env.parse(template_string))
             prompt_template[prompt["mode"]] = {
                 "mode": prompt["mode"],
                 "system_prompt": prompt.get("systemctl"),
@@ -61,7 +77,7 @@ def prompt_templates_from_vllm_routing_table(table: list[dict]) -> dict[str, Pro
 ACRONYMS_KEYS = [acronym["symbol"].lower() for acronym in ACRONYMS]
 
 # Preload all prompt template to be faster
-TEMPLATES = prompt_templates_from_vllm_routing_table(VLLM_ROUTING_TABLE)
+TEMPLATES = prompt_templates_from_llm_table(LLM_TABLE)
 
 
 class Prompter:
@@ -236,6 +252,7 @@ class Prompter:
 
 
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
+# see also to implement this part in the driver management module of the llm API: https://gitlab.com/etalab-datalab/llm/albert-backend/-/issues/119
 def format_llama_chat_prompt(item: dict | str):
     # An item as at least one {prompt} entry, and on optionnal {answer} entry
     # in the case of a formatting for a finetuning step.
@@ -260,13 +277,15 @@ def format_llama_chat_prompt(item: dict | str):
 
 
 def get_prompter(model_name: str, mode: str | None = None):
-    model = next((m for m in VLLM_ROUTING_TABLE if m["model_name"] == model_name), None)
+    model = next((m for m in LLM_TABLE if m[0] == model_name), None)
     if not model:
         raise ValueError("Prompter unknown: %s" % model_name)
 
     template = TEMPLATES[model_name].get(mode)
     if not template:
-        raise ValueError("Prompt mode unknown: %s (available: %s)" % (mode, list(TEMPLATES[model_name])))
+        raise ValueError(
+            "Prompt mode unknown: %s (available: %s)" % (mode, list(TEMPLATES[model_name]))
+        )
 
     url = model["host"] + ":" + model["port"]
     return Prompter(url, template)

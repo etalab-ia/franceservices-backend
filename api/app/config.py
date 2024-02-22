@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+import ast
 
 import requests
 import torch
@@ -12,28 +13,6 @@ def collate_ix_name(name, version):
         return "-".join([name, version])
     return name
 
-
-def parse_vllm_routing_table(table: list[str]) -> list[dict]:
-    # @TODO: add a schema validation in a test pipeline.
-    structured_table = []
-    columns = [
-        "model_name",
-        "model_id",
-        "host",
-        "port",
-        "gpu_mem_use",
-        "tensor_par_size",
-        "do_update",
-    ]
-    for model in table:
-        values = re.split("\s+", model)
-        if len(values) != len(columns):
-            raise ValueError(
-                "VLLM_ROUTING_TABLE format error: wrong number of columns for line" % (model)
-            )
-        structured_table.append(dict(zip(columns, values)))
-
-    return structured_table
 
 # App metadata
 # TODO load metadata from pyproject.toml using tomlib instead of this
@@ -106,20 +85,19 @@ SHEET_SOURCES = ["service-public", "travail-emploi"]
 EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
 EMBEDDING_BOOTSTRAP_PATH = os.path.join("_data", "embeddings", EMBEDDING_MODEL.split("/")[-1])
 
-# Vllm Routing Table.
-# Set UPDATE to "true" to force (re)download the model in the dowload-vllm-model job.
-if os.path.exists("VLLM_ROUTING_TABLE"):
-    with open("VLLM_ROUTING_TABLE") as f:
-        VLLM_ROUTING_TABLE = [
-            line.strip() for line in f if line.strip() and not line.lstrip().startswith("#")
-        ]
-else:  # default
-    VLLM_ROUTING_TABLE = [
-        # model_name/api     model_name/ID                  HOST                PORT GPU_MEM_USE(%) TENSOR_PARALLEL_SIZE UDATE
-        "albert-light        ActeurPublic/albert-light      http://127.0.0.1    8082 0.4            1                    false",
+# LLM Routing Table.
+LLM_TABLE = os.getenv("LLM_TABLE")
+if not LLM_TABLE:  # default
+    LLM_TABLE = [
+        # model_name/api URL
+        ("albert-light", "http://127.0.0.1:8082")
     ]
+else:
+    try:
+        LLM_TABLE = ast.literal_eval(LLM_TABLE)
+    except Exception as e:
+        raise ValueError("LLM_TABLE is not valid: %s" % e)
 
-VLLM_ROUTING_TABLE = parse_vllm_routing_table(VLLM_ROUTING_TABLE)
 
 PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
 ACCESS_TOKEN_TTL = 3600 * 24  # seconds
@@ -131,9 +109,14 @@ if ENV == "unittest":
 if ENV == "dev":
     TINY_ALBERT_LOCAL_PATH = Path("tiny_albert.bin")
     if not TINY_ALBERT_LOCAL_PATH.exists():
-        print("Downloading Tiny Albert model for local usage since it's not present locally already. It's 7.3GB so it might take a few dozen minutes...")
-        response = requests.get("https://huggingface.co/ActeurPublic/tiny-albert/resolve/main/ggml-model-expert-q4_K.bin", stream=True)
-        open(str(TINY_ALBERT_LOCAL_PATH), 'wb').write(response.content)
+        print(
+            "Downloading Tiny Albert model for local usage since it's not present locally already. It's 7.3GB so it might take a few dozen minutes..."
+        )
+        response = requests.get(
+            "https://huggingface.co/ActeurPublic/tiny-albert/resolve/main/ggml-model-expert-q4_K.bin",
+            stream=True,
+        )
+        open(str(TINY_ALBERT_LOCAL_PATH), "wb").write(response.content)
         print("Done!")
 
 if torch.cuda.is_available():
