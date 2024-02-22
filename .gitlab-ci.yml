@@ -38,14 +38,92 @@ config:clean gitlab runner:
     - docker system prune -af --volumes
 
 ############################################
+################# DATABASE #################
+############################################
+
+################## DINUM ###################
+
+deploy:database:dinum:
+  environment:
+    name: dinum
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: deploy
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      cp ./databases/docker-compose.yml ./${CI_JOB_ID}/docker-compose.yml
+      echo "
+      POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      POSTGRES_PORT=${POSTGRES_PORT}
+      ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      ELASTIC_PORT=${ELASTIC_PORT}
+      QDRANT_PORT=${QDRANT_PORT}
+      COMPOSE_FILE=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/docker-compose.yml
+      COMPOSE_PROJECT_NAME=${CI_ENVIRONMENT_NAME}
+      " > ./${CI_JOB_ID}/.env
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # deploy database to remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env down
+      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env up --detach
+      "
+
+############# FRANCE SERVICES ##############
+
+deploy:database:france services:
+  environment:
+    name: franceservices
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: deploy
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      cp ./databases/docker-compose.yml ./${CI_JOB_ID}/docker-compose.yml
+      echo "
+      POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      POSTGRES_PORT=${POSTGRES_PORT}
+      ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      POSTGRES_PORT=${POSTGRES_PORT}
+      QDRANT_PORT=${QDRANT_PORT}
+      COMPOSE_FILE=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/docker-compose.yml
+      COMPOSE_PROJECT_NAME=${CI_ENVIRONMENT_NAME}
+      " > ./${CI_JOB_ID}/.env
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # deploy database to remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env down
+      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env up --detach
+      "
+
+############################################
 #################### LLM ###################
 ############################################
 
 build:llm:gpt4all:
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
-      changes:
-        - llm/gpt4all/**/* # only build if llm/gpt4all folder is changed
+      # changes:
+      #   - llm/gpt4all/**/* # only build if llm/gpt4all folder is changed
+      when: manual
+      allow_failure: true  # to avoid blocked state
   stage: build
   image: docker:latest
   services:
@@ -59,8 +137,10 @@ build:llm:gpt4all:
 build:llm:vllm:
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
-      changes:
-        - llm/vllm/**/* # only build if llm/vllm folder is changed
+      # changes:
+      #   - llm/vllm/**/* # only build if llm/vllm folder is changed
+      when: manual
+      allow_failure: true  # to avoid blocked state
   stage: build
   image: docker:latest
   services:
@@ -278,8 +358,10 @@ test:llm:france services:
 build:api:
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
-      changes:
-        - api/**/* # only build if api folder is changed
+      # changes:
+      #   - api/**/* # only build if api folder is changed
+      when: manual
+      allow_failure: true  # to avoid blocked state
   stage: build
   image: docker:latest
   services:
@@ -344,9 +426,9 @@ deploy:api:dinum:
     - | # deploy api containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker container rm -f ${COMPOSE_PROJECT_NAME}-gpt4all || true
+      docker container rm --force api-v2 || true
       docker image rm ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2 || true
-      docker run --env API_URL=${CI_DEPLOY_URL} --env FRONT_URL=${CI_DEPLOY_URL} --restart "always" --gpus all --detach --publish 8090:8090 --name ${CI_ENVIRONMENT_NAME}-api-v2 ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2
+      docker run --env API_URL=${CI_DEPLOY_URL} --env FRONT_URL=${CI_DEPLOY_URL} --restart 'always' --gpus all --detach --publish 8090:8090 --name api-v2 ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2
       "
 
 ############# FRANCE SERVICES ##############
@@ -398,7 +480,7 @@ deploy:api:france services:
     - | # deploy api to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker container rm -f ${COMPOSE_PROJECT_NAME}-gpt4all || true
+      docker container rm --force api-v2 || true
       docker image rm ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2 || true
-      docker run --env API_URL=${CI_DEPLOY_URL} --env FRONT_URL=${CI_DEPLOY_URL} --restart "always" --gpus all --detach --publish 8090:8090 --name ${CI_ENVIRONMENT_NAME}-api-v2 ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2
+      docker run --env API_URL=${CI_DEPLOY_URL} --env FRONT_URL=${CI_DEPLOY_URL} --restart 'always' --gpus all --detach --publish 8090:8090 --name api-v2 ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2
       "
