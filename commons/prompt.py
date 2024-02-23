@@ -49,6 +49,7 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
         if "max_tokens" in config:
             sampling_params["max_tokens"] = config["max_tokens"]
 
+        prompt_format = config.get("prompt_format")
         prompt_template = {}
         for prompt in config.get("prompts", []):
             # Template from file template
@@ -67,7 +68,7 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
                 "template": template,
                 "variables": variables,
                 "default": prompt.get("default", {}),
-                "prompt_format": prompt.get("prompt_format"),
+                "prompt_format": prompt.get("prompt_format", prompt_format),
                 "sampling_params": sampling_params,
             }
 
@@ -154,14 +155,13 @@ class Prompter:
         # Build template and render prompt with variables if any
         if self.template:
             data = self.make_variables(kwargs, self.template["variables"], self.template["default"])
-            template = self.template["template"]
-            prompt = template.render(**data)
+            prompt = self.template["template"].render(**data)
         else:
             prompt = kwargs.get("query")
 
         # Set prompt_format
-        if not prompt_format:
-            prompt_format = template.get("prompt_format")
+        if not prompt_format and self.template:
+            prompt_format = self.template.get("prompt_format")
 
         # format prompt
         if prompt_format:
@@ -284,7 +284,10 @@ def get_prompter(model_name: str, mode: str | None = None):
     if not model:
         raise ValueError("Prompter unknown: %s" % model_name)
 
-    if model not in TEMPLATES:
+    model_name = model[0]
+    model_url = model[1]
+    global TEMPLATES
+    if model_name not in TEMPLATES:
         # Try again to rebuild TEMPLATES
         TEMPLATES = prompt_templates_from_llm_table(LLM_TABLE)
 
@@ -294,5 +297,4 @@ def get_prompter(model_name: str, mode: str | None = None):
             "Prompt mode unknown: %s (available: %s)" % (mode, list(TEMPLATES[model_name]))
         )
 
-    url = model["host"] + ":" + model["port"]
-    return Prompter(url, template)
+    return Prompter(model_url, template)

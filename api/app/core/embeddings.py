@@ -32,14 +32,14 @@ def _make_embeddings(texts, batch_size=1):
             truncation=True,
             return_tensors="pt",
         )
-        if WITH_GPU and ENV != "dev":
+        if WITH_GPU:
             batch_dict.to("cuda")
 
         outputs = model_ebd(**batch_dict)
 
         vectors = _average_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
         vectors = F.normalize(vectors, p=2, dim=1)
-        if WITH_GPU and ENV != "dev":
+        if WITH_GPU:
             embeddings.append(vectors.detach().cpu().numpy())
         else:
             embeddings.append(vectors.detach().numpy())
