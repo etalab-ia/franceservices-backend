@@ -51,7 +51,7 @@ for model in $(jq -r 'keys[]' $routing_table); do
 
         docker container rm --force ${COMPOSE_PROJECT_NAME}-gpt4all || true
         docker image rm ${CI_REGISTRY_IMAGE}/gpt4all:${CI_GPT4ALL_IMAGE_TAG} || true
-        docker run --restart="always" --detach --publish ${GPT4ALL_PORT}:8000 --name ${COMPOSE_PROJECT_NAME}-gpt4all -v ${GPT4ALL_MODEL_DIR}:/model ${CI_REGISTRY_IMAGE}/gpt4all:${CI_GPT4ALL_IMAGE_TAG} python3 /code/app.py --model=/model/${GPT4ALL_MODEL} --port=8000 --host=0.0.0.0 --debug
+        docker run --restart="always" --detach --env MODEL_REPO_ID=${MODEL_REPO_ID} --publish ${GPT4ALL_PORT}:8000 --name ${COMPOSE_PROJECT_NAME}-gpt4all -v ${GPT4ALL_MODEL_DIR}:/model ${CI_REGISTRY_IMAGE}/gpt4all:${CI_GPT4ALL_IMAGE_TAG} python3 /code/app.py --model=/model/${GPT4ALL_MODEL} --port=8000 --host=0.0.0.0 --debug
 
     # vllm driver
     elif [[ $driver == "vllm" ]]; then
@@ -68,6 +68,6 @@ for model in $(jq -r 'keys[]' $routing_table); do
 
         docker container rm --force ${COMPOSE_PROJECT_NAME}-vllm || true
         docker image rm ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG} || true
-        docker run --restart="always" --detach --gpus all --env VLLM_MODEL=/model --env VLLM_TENSOR_PARALLEL_SIZE=${VLLM_TENSOR_PARALLEL_SIZE} --env VLLM_GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION} --env VLLM_HOST=0.0.0.0 --publish ${VLLM_PORT}:8000 --name ${COMPOSE_PROJECT_NAME}-vllm -v ${VLLM_MODEL_DIR}:/model ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
+        docker run --restart="always" --detach --gpus all --env MODEL_REPO_ID=${MODEL_REPO_ID} --env VLLM_MODEL=/model --env VLLM_TENSOR_PARALLEL_SIZE=${VLLM_TENSOR_PARALLEL_SIZE} --env VLLM_GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION} --env VLLM_HOST=0.0.0.0 --publish ${VLLM_PORT}:8000 --name ${COMPOSE_PROJECT_NAME}-vllm -v ${VLLM_MODEL_DIR}:/model ${CI_REGISTRY_IMAGE}/vllm:${CI_VLLM_IMAGE_TAG}
     fi
 done
