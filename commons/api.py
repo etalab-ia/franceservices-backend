@@ -2,14 +2,13 @@ import json
 from datetime import datetime, timedelta
 
 import requests
+from requests.exceptions import ConnectionError
 
 # @IMPROVE: commons & app.config unification (relative imports...)
 try:
-    from app.config import (API_URL, API_ROUTE_VER, FIRST_ADMIN_PASSWORD,
-                            FIRST_ADMIN_USERNAME)
+    from app.config import API_URL, API_ROUTE_VER, FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
 except ModuleNotFoundError:
-    from api.app.config import (API_URL, API_ROUTE_VER,
-                                FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME)
+    from api.app.config import API_URL, API_ROUTE_VER, FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
 
 
 def get_legacy_client():
@@ -89,11 +88,17 @@ class ApiClient:
         response = self._signed_in_fetch("POST", "/indexes", json_data=json_data)
         return response.json()
 
+    def fetch_templates_files(self, url):
+        headers = {}
+        response = requests.get(f"{url}/get_templates_files", headers=headers)
+        response.raise_for_status()
+        return response.json()
+
 
 # TODO: factorize with api/app/clients/api_vllm_client.py
 def generate(url, conf, text):
     """OpenAI-like completion API"""
-    #headers = {"Content-Type": "application/json"}
+    # headers = {"Content-Type": "application/json"}
     c = conf.copy()
     c["prompt"] = text
     c["temperature"] = c["temperature"] / 100

@@ -12,7 +12,8 @@ Pour déployer le projet Albert, vous référez à la documentation dédies : [d
 
 Utilisez l'outil en ligne de commande `pyalbert` pour créer les ensembles de données et les modèles nécessaires. La documentation peut être consultée en exécutant `./pyalbert.py --help` :
 
-1. [x] téléchargement du corpus de données en français -- `pyalbert download`.
+1. [x] téléchargement du corpus de données en français -- `pyalbert download_corpus`.
+1. [x] téléchargement des modéles de langue -- `pyalbert download_models`.
 2. [x] prétraitement et mise en forme du corpus de données -- `pyalbert make_chunks`.
 3. [x] alimenter les moteurs de recherche d'indexation <index/vector> -- `pyalbert index`
 3. [ ] affiner les LLMs. Script indépendant situé dans le dépôt `pyalbert`, répertoire `finetuning/`.
@@ -27,9 +28,9 @@ Utilisez l'outil en ligne de commande `pyalbert` pour créer les ensembles de do
 - api/ : le code de l'API principale.
 - api_vllm/ : le code de l'API vllm.
 - commons/ : code partagé par différents modules, comme le client API Albert, et l'encodeur d'invite.
-- sourcing/ : code derrière `pyalbert download ...` et `pyalbert make_chunks`.
+- sourcing/ : code derrière `pyalbert download*` et `pyalbert make_chunks`.
 - ir/ : code derrière `pyalbert index ...`
-- évaluation/ : code derrière `pyalbert évaluer ...`
+- évaluation/ : code derrière `pyalbert evaluate ...`
 - scripts/ : Divers scripts de tests, non (encore) intégrés à pyalbert.
 - tests/ : Divers scripts utilitaires, non (encore) intégrés à pyalbert.
 - contrib/ : fichiers de configuration pour déployer Albert.

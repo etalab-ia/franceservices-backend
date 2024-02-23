@@ -18,7 +18,7 @@ class StreamBase(BaseModel):
     # Pydantic configuration:
     model_config = ConfigDict(use_enum_values=True)
 
-    model_name: ModelName = ModelName.fabrique_reference.value
+    model_name: ModelName = ModelName.albert_light.value
     # For chat/albert (+RAG) like prompt
     mode: str | None = None  # Possible value should be documented by each model/prompt
     query: str = Field(

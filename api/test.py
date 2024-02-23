@@ -3,9 +3,10 @@ import json
 import re
 
 import requests
+
 from app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
-url = "http://127.0.0.1:8090"
+url = "http://127.0.0.1:8000"
 
 # Sign In:
 response = requests.post(
@@ -23,7 +24,7 @@ headers = {
     "Authorization": f"Bearer {token}",
 }
 data = {
-    "user_text": "Quelles sont les conditions pour obtenir les APL? Sur quels site web de puis je faire ma demande ?",
+    "query": "Quelles sont les conditions pour obtenir les APL? Sur quels site web de puis je faire ma demande ?",
     #"query": "Quel est la limite d'age pour voter en france, et quelle sont les échances électorales ?",
     #"query": "Qu'est ce que la DITP et la DINUM ?",
     #"model_name": "albert-light",

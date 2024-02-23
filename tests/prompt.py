@@ -4,7 +4,7 @@ import sys
 
 sys.path.append(".")
 
-from commons.prompt_base import Prompter
+from commons.prompt import Prompter
 
 # from api.app.config import (ELASTICSEARCH_CREDS, ELASTICSEARCH_IX_VER,
 

@@ -1,5 +1,6 @@
 import os
 import re
+import ast
 
 import torch
 from dotenv import load_dotenv
@@ -13,29 +14,6 @@ def collate_ix_name(name, version):
     return name
 
 
-def parse_vllm_routing_table(table: list[str]) -> list[dict]:
-    # @TODO: add a schema validation in a test pipeline.
-    structured_table = []
-    columns = [
-        "model_name",
-        "model_id",
-        "host",
-        "port",
-        "gpu_mem_use",
-        "tensor_par_size",
-        "do_update",
-    ]
-    for model in table:
-        values = re.split("\s+", model)
-        if len(values) != len(columns):
-            raise ValueError(
-                "VLLM_ROUTING_TABLE format error: wrong number of columns for line"
-                % (model)
-            )
-        structured_table.append(dict(zip(columns, values)))
-
-    return structured_table
-
 # App metadata
 # TODO load metadata from pyproject.toml using tomlib instead of this
 APP_NAME = "albert-api"
@@ -46,13 +24,6 @@ CONTACT = {
     "url": "https://www.etalab.gouv.fr/",
     "email": "etalab@mail.numerique.gouv.fr",
 }
-
-# Urls
-# @obsolete: use HOST instead of URL, this is confusing
-API_VLLM_URL = "http://127.0.0.1:8081"  # default
-ELASTICSEARCH_URL = "http://127.0.0.1:9202"
-ELASTICSEARCH_CREDS = ("elastic", "changeme")
-QDRANT_URL = "http://127.0.0.1:6333"
 
 # Root directory:
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -96,13 +67,12 @@ MJ_API_SECRET = os.getenv("MJ_API_SECRET")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL")
 
 # Public Urls
-API_URL = os.getenv("API_URL", "https://albert.etalab.gouv.fr")
-FRONT_URL = os.getenv("FRONT_URL", "https://albert.etalab.gouv.fr")
-API_ROUTE_VER = "/api/v2"
-# For local testing, use:
-# --
-# API_URL = "http://localhost:8000"
-# API_ROUTE_VER = "/"
+API_URL = os.getenv("API_URL", "http://localhost:8000")
+FRONT_URL = os.getenv("FRONT_URL", "http://localhost:8000")
+if ENV == "dev":
+    API_ROUTE_VER = "/"
+else:
+    API_ROUTE_VER = "/api/v2"
 
 # Search Engines
 ELASTICSEARCH_URL = "http://127.0.0.1:9202"
@@ -116,22 +86,19 @@ EMBEDDING_BOOTSTRAP_PATH = os.path.join(
     "_data", "embeddings", EMBEDDING_MODEL.split("/")[-1]
 )
 
-# Vllm Routing Table.
-# Set UPDATE to "true" to force (re)download the model in the dowload-vllm-model job.
-if os.path.exists("VLLM_ROUTING_TABLE"):
-    with open("VLLM_ROUTING_TABLE") as f:
-        VLLM_ROUTING_TABLE = [
-            line.strip()
-            for line in f
-            if line.strip() and not line.lstrip().startswith("#")
-        ]
-else:  # default
-    VLLM_ROUTING_TABLE = [
-        # model_name/api     model_name/ID                  HOST                PORT GPU_MEM_USE(%) TENSOR_PARALLEL_SIZE UDATE
-        "albert-light        ActeurPublic/albert-light      http://127.0.0.1    8082 0.4            1                    false",
+# LLM Routing Table.
+LLM_TABLE = os.getenv("LLM_TABLE")
+if not LLM_TABLE:  # default
+    LLM_TABLE = [
+        # model_name/api URL
+        ("albert-light", "http://127.0.0.1:8082")
     ]
+else:
+    try:
+        LLM_TABLE = ast.literal_eval(LLM_TABLE)
+    except Exception as e:
+        raise ValueError("LLM_TABLE is not valid: %s" % e)
 
-VLLM_ROUTING_TABLE = parse_vllm_routing_table(VLLM_ROUTING_TABLE)
 
 PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
 ACCESS_TOKEN_TTL = 3600 * 24  # seconds

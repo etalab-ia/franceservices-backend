@@ -11,7 +11,7 @@ from app.clients.api_vllm_client import ApiVllmClient
 from app.config import ENV, WITH_GPU
 from app.deps import get_current_user, get_db
 from app.core.llm import auto_set_chat_name
-if not WITH_GPU and ENV == "dev":
+if not WITH_GPU:
     from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
 from commons import get_prompter
 from pyalbert.postprocessing import check_url, correct_mail, correct_number, correct_url
@@ -30,7 +30,7 @@ def read_streams(
     desc: bool = False,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> list[schemas.Stream]:
     streams = crud.stream.get_streams(
         db, user_id=current_user.id, skip=skip, limit=limit, chat_id=chat_id, desc=desc
     )
@@ -42,7 +42,7 @@ def create_user_stream(
     stream: schemas.StreamCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-) -> models.Stream:
+) -> schemas.Stream:
     return crud.stream.create_stream(db, stream, user_id=current_user.id).to_dict()
 
 
@@ -53,7 +53,7 @@ def create_chat_stream(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> schemas.Stream:
     db_chat = crud.chat.get_chat(db, chat_id)
     if db_chat is None:
         raise HTTPException(404, detail="Chat not found")
@@ -73,7 +73,7 @@ def read_stream(
     stream_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> schemas.Stream:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
@@ -92,7 +92,7 @@ def start_stream(
     stream_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> StreamingResponse:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
@@ -106,7 +106,6 @@ def start_stream(
     query = db_stream.query
     # @DEBUG: This should be passed once, when the stream start, and not saved (pass parameters to the first call to start_stream)
     limit = db_stream.limit
-    user_text = db_stream.user_text
     context = db_stream.context
     institution = db_stream.institution
     links = db_stream.links
@@ -126,11 +125,10 @@ def start_stream(
         # We pass a mix of all kw arguments used by all prompters...
         # This is allowed because each prompter accepts **kwargs arguments...
         prompt = prompter.make_prompt(
-            experience=user_text,
+            query=query,
             institution=institution,
             context=context,
             links=links,
-            query=query,
             limit=limit,
             sources=sources,
             should_sids=should_sids,
@@ -156,7 +154,7 @@ def start_stream(
                 sampling_params.update({k: v})
 
         # Get the right stream generator
-        if WITH_GPU and ENV != "dev":
+        if WITH_GPU:
             api_vllm_client = ApiVllmClient(url=prompter.url)
             generator = api_vllm_client.generate(prompt, **sampling_params)
         else:
@@ -194,7 +192,7 @@ def start_stream(
     if not postprocessing:
         # return token by token
         return StreamingResponse(generate(), media_type="text/event-stream")
-    
+
     def generate_and_postprocess():
         nlp = French()
         nlp.add_pipe("sentencizer")
@@ -287,7 +285,7 @@ def stop_stream(
     stream_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-):
+) -> schemas.Stream:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
