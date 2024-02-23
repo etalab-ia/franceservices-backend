@@ -1,7 +1,6 @@
 import os
 import re
 
-import requests
 import torch
 from dotenv import load_dotenv
 
@@ -142,12 +141,9 @@ if ENV == "unittest":
 
 # If local, download the model Tiny Albert from HuggingFace
 if ENV == "dev":
-    TINY_ALBERT_LOCAL_PATH = Path("tiny_albert.bin").resolve()
+    TINY_ALBERT_LOCAL_PATH = Path("../../../pyalbert/models/tiny_albert/ggml-model-expert-q4_K.bin").resolve()
     if not TINY_ALBERT_LOCAL_PATH.exists():
-        print("Downloading Tiny Albert model for local usage since it's not present locally already. It's 7.3GB so it might take a few dozen minutes...")
-        response = requests.get("https://huggingface.co/ActeurPublic/tiny-albert/resolve/main/ggml-model-expert-q4_K.bin", stream=True)
-        open(str(TINY_ALBERT_LOCAL_PATH), 'wb').write(response.content)
-        print("Done!")
+        print("Le modèle Tiny Albert n'est pas présent localement. Téléchargez-le depuis HuggingFace à l'aide du script pyalbert/albert.py en utilisant la configuration vllm_routing_table.json, puis relancez l'API.")
 
 if torch.cuda.is_available():
     WITH_GPU = True
