@@ -1,17 +1,17 @@
 import argparse
 import json
 from typing import AsyncGenerator
-import yaml
 
+import uvicorn
+import yaml
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-import uvicorn
+from gpt4all import GPT4All
 from huggingface_hub import hf_hub_download
 
-from gpt4all import GPT4All
-
-
 app = FastAPI()
+MODEL_REPO_ID = None
+LOCAL_DIR = None
 
 
 @app.post("/generate", status_code=200)
@@ -47,7 +47,7 @@ async def generate(request: Request) -> Response:
 
 @app.get("/get_templates_files")
 async def get_templates_files() -> Response:
-    prompt_config_file = hf_hub_download(repo_id=model["hf_repo_id"], filename="prompt_config.yml")
+    prompt_config_file = hf_hub_download(repo_id=MODEL_REPO_ID, filename="prompt_config.yml", local_files_only=True, local_dir=LOCAL_DIR)
     config_files = {}
     with open(prompt_config_file) as f:
         config = yaml.safe_load(f)
@@ -55,7 +55,7 @@ async def get_templates_files() -> Response:
 
     for prompt in config.get("prompts", []):
         filename = prompt["template"]
-        file_path = hf_hub_download(repo_id=model["hf_repo_id"], filename=filename)
+        file_path = hf_hub_download(repo_id=MODEL_REPO_ID, filename=filename, local_files_only=True, local_dir=LOCAL_DIR)
         with open(file_path) as f:
             config_files[filename] = f.read()
 
@@ -73,6 +73,8 @@ if __name__ == "__main__":
     parser.add_argument("--model", required=True, type=str)
     parser.add_argument("--stream", action="store_true")
     args = parser.parse_args()
+    if args.model.startswith((".", "/")):
+        LOCAL_DIR = args.model
 
     model_name = args.model.split("/")[-1]
     model_path = args.model.replace(model_name, "")

@@ -1,13 +1,12 @@
 import argparse
 import json
 from typing import AsyncGenerator
-import yaml
 
+import uvicorn
+import yaml
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-import uvicorn
 from huggingface_hub import hf_hub_download
-
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.sampling_params import SamplingParams
@@ -21,6 +20,8 @@ TIMEOUT_KEEP_ALIVE = 5  # seconds.
 TIMEOUT_TO_PREVENT_DEADLOCK = 1  # seconds.
 app = FastAPI()
 engine = None
+MODEL_REPO_ID = None
+LOCAL_DIR = None
 
 
 @app.post("/generate")
@@ -76,7 +77,7 @@ async def generate(request: Request) -> Response:
 @app.get("/get_templates_files")
 async def get_templates_files() -> Response:
     config_files = {}
-    prompt_config_file = hf_hub_download(repo_id=args.model, filename="prompt_config.yml")
+    prompt_config_file = hf_hub_download(repo_id=MODEL_REPO_ID, filename="prompt_config.yml", local_files_only=True, local_dir=LOCAL_DIR)
     with open(prompt_config_file) as f:
         config_files["prompt_config.yml"] = f.read()
 
@@ -84,7 +85,7 @@ async def get_templates_files() -> Response:
 
     for prompt in config.get("prompts", []):
         filename = prompt["template"]
-        file_path = hf_hub_download(repo_id=args.model, filename=filename)
+        file_path = hf_hub_download(repo_id=MODEL_REPO_ID, filename=filename, local_files_only=True, local_dir=LOCAL_DIR)
         with open(file_path) as f:
             config_files[filename] = f.read()
 
@@ -97,6 +98,8 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8000)
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
+    if args.model.startswith((".", "/")):
+        LOCAL_DIR = args.model
 
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
