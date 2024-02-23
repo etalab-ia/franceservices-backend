@@ -2,7 +2,6 @@ import os
 import re
 import ast
 
-import requests
 import torch
 from dotenv import load_dotenv
 
@@ -106,6 +105,12 @@ ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 if ENV == "unittest":
     PASSWORD_RESET_TOKEN_TTL = 3  # seconds
     ACCESS_TOKEN_TTL = 9  # seconds
+
+# If local, download the model Tiny Albert from HuggingFace
+if ENV == "dev":
+    TINY_ALBERT_LOCAL_PATH = Path("../../../pyalbert/models/tiny_albert/ggml-model-expert-q4_K.bin").resolve()
+    if not TINY_ALBERT_LOCAL_PATH.exists():
+        print("Le modèle Tiny Albert n'est pas présent localement. Téléchargez-le depuis HuggingFace à l'aide du script pyalbert/albert.py en utilisant la configuration vllm_routing_table.json, puis relancez l'API.")
 
 if torch.cuda.is_available():
     WITH_GPU = True
