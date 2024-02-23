@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timedelta
 
 import requests
+from requests.exceptions import ConnectionError
 
 # @IMPROVE: commons & app.config unification (relative imports...)
 try:
@@ -87,7 +88,7 @@ class ApiClient:
         response = self._signed_in_fetch("POST", "/indexes", json_data=json_data)
         return response.json()
 
-    def get_templates_files(self, url):
+    def fetch_templates_files(self, url):
         headers = {}
         response = requests.get(f"{url}/get_templates_files", headers=headers)
         response.raise_for_status()

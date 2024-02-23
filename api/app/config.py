@@ -68,13 +68,12 @@ MJ_API_SECRET = os.getenv("MJ_API_SECRET")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL")
 
 # Public Urls
-API_URL = os.getenv("API_URL", "https://albert.etalab.gouv.fr")
-FRONT_URL = os.getenv("FRONT_URL", "https://albert.etalab.gouv.fr")
-API_ROUTE_VER = "/api/v2"
-# For local testing, use:
-# --
-# API_URL = "http://localhost:8000"
-# API_ROUTE_VER = "/"
+API_URL = os.getenv("API_URL", "http://localhost:8000")
+FRONT_URL = os.getenv("FRONT_URL", "http://localhost:8000")
+if ENV == "dev":
+    API_ROUTE_VER = "/"
+else:
+    API_ROUTE_VER = "/api/v2"
 
 # Search Engines
 ELASTICSEARCH_URL = "http://127.0.0.1:9202"

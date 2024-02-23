@@ -54,16 +54,16 @@ acronyms: #acronyms_directory acronyms_sp
 	# ./script/acronyms_to_json.py
 
 sync_etalab_repo:
-	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@datascience-01.infra.data.gouv.fr:~/
+	rsync -avz --delete --exclude-from=".gitignore" -e "ssh -i ~/.ssh/etalab-dulac"  "../albert-backend" adulac@datascience-01.infra.data.gouv.fr:~/
 
 sync_etalab_repo_outscale_prod:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@171.33.114.210:~/
+	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" -e "ssh -i ~/.ssh/etalab-dulac"  "../albert-backend" adulac@171.33.114.210:~/
 
 sync_etalab_repo_outscale_prod_2:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@142.44.51.104:~/
+	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" -e "ssh -i ~/.ssh/etalab-dulac"  "../albert-backend" adulac@142.44.51.104:~/
 
 sync_etalab_repo_outscale_sand:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" -e "ssh -i ~/.ssh/etalab-dulac"  "../legal-information-assistant" adulac@217.75.171.132:~/
+	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" -e "ssh -i ~/.ssh/etalab-dulac"  "../albert-backend" adulac@217.75.171.132:~/
 
 build_llama.cpp:
 	git clone https://github.com/ggerganov/llama.cpp

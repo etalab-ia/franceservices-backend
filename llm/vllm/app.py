@@ -1,6 +1,7 @@
 import argparse
 import json
 from typing import AsyncGenerator
+import yaml
 
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
@@ -72,17 +73,18 @@ async def generate(request: Request) -> Response:
     return JSONResponse(ret)
 
 
-@app.post("/get_templates_files")
+@app.get("/get_templates_files")
 async def get_templates_files() -> Response:
-    prompt_config_file = hf_hub_download(repo_id=model["hf_repo_id"], filename="prompt_config.yml")
     config_files = {}
+    prompt_config_file = hf_hub_download(repo_id=args.model, filename="prompt_config.yml")
     with open(prompt_config_file) as f:
-        config = yaml.safe_load(f)
         config_files["prompt_config.yml"] = f.read()
+
+    config = yaml.safe_load(config_files["prompt_config.yml"])
 
     for prompt in config.get("prompts", []):
         filename = prompt["template"]
-        file_path = hf_hub_download(repo_id=model["hf_repo_id"], filename=filename)
+        file_path = hf_hub_download(repo_id=args.model, filename=filename)
         with open(file_path) as f:
             config_files[filename] = f.read()
 

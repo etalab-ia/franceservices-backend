@@ -1,13 +1,15 @@
 import argparse
-from typing import AsyncGenerator
 import json
-
-from gpt4all import GPT4All
-import uvicorn
-from huggingface_hub import hf_hub_download
+from typing import AsyncGenerator
+import yaml
 
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+import uvicorn
+from huggingface_hub import hf_hub_download
+
+from gpt4all import GPT4All
+
 
 app = FastAPI()
 
@@ -43,7 +45,7 @@ async def generate(request: Request) -> Response:
     return response
 
 
-@app.post("/get_templates_files")
+@app.get("/get_templates_files")
 async def get_templates_files() -> Response:
     prompt_config_file = hf_hub_download(repo_id=model["hf_repo_id"], filename="prompt_config.yml")
     config_files = {}

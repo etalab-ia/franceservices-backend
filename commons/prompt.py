@@ -4,6 +4,7 @@ import re
 from jinja2 import Environment, FileSystemLoader, meta, BaseLoader
 import yaml
 from typing import Any
+from requests.exceptions import RequestException
 
 try:
     from app.config import LLM_TABLE
@@ -17,6 +18,7 @@ class Prompt:
     mode: str
     template: str
     variables: set[str]
+    default: dict
     system_prompt: str | None
     prompt_format: str | None
     sampling_params: dict
@@ -26,15 +28,22 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
     client = get_legacy_client()
     templates = {}
     for model in table:
-        templates_files = client.get_templates_files(model[1])
+        model_name = model[0]
+        model_url = model[1]
+        try:
+            templates_files = client.fetch_templates_files(model_url)
+        except RequestException as err:
+            print(f"Error: Failed to fetch templates file for url {model_url} ({err}), passing...")
+            continue
+
         if not templates_files:
             return templates
 
         try:
             config = yaml.safe_load(templates_files["prompt_config.yml"])
         except KeyError:
-            print(f"prompt_config.yml file not found for model {model[0]}, passing...")
-            return templates
+            print(f"warning: prompt_config.yml file not found for model {model_name}, passing...")
+            continue
 
         sampling_params = {}
         if "max_tokens" in config:
@@ -54,15 +63,15 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
             variables = meta.find_undeclared_variables(env.parse(template_string))
             prompt_template[prompt["mode"]] = {
                 "mode": prompt["mode"],
-                "system_prompt": prompt.get("systemctl"),
+                "system_prompt": prompt.get("system_prompt"),
                 "template": template,
                 "variables": variables,
                 "default": prompt.get("default", {}),
-                "prompt_format": model.get("prompt_format"),
+                "prompt_format": prompt.get("prompt_format"),
                 "sampling_params": sampling_params,
             }
 
-        templates[model["model_name"]] = prompt_template
+        templates[model_name] = prompt_template
     return templates
 
 
@@ -79,7 +88,7 @@ class Prompter:
         "temperature": 20,
     }
 
-    def __init__(self, url: str, template: Prompt):
+    def __init__(self, url: str, template: Prompt | None = None):
         # The prompt template
         self.template = template
         # Eventually stores the sources returned by the last RAG prompt built
@@ -142,12 +151,13 @@ class Prompter:
         if expand_acronyms and "query" in kwargs:
             kwargs["query"] = self.preprocess_prompt(kwargs["query"])
 
-        # Build template variables if any
-        data = self.make_variables(self.template["variables"], kwargs, self.template["default"])
-
-        # Render prompt
-        template = self.template["template"]
-        prompt = template.render(**data)
+        # Build template and render prompt with variables if any
+        if self.template:
+            data = self.make_variables(kwargs, self.template["variables"], self.template["default"])
+            template = self.template["template"]
+            prompt = template.render(**data)
+        else:
+            prompt = kwargs.get("query")
 
         # Set prompt_format
         if not prompt_format:
@@ -163,7 +173,7 @@ class Prompter:
         return prompt
 
     def make_variables(
-        self, variables: list[str], passed_data: dict[str, Any], default: dict[str, Any]
+        self, passed_data: dict[str, Any], variables: list[str], default: dict[str, Any]
     ) -> dict[str, Any]:
         """This method will compute the variables corresponding to the names passed in arguments.
         These variable should be documented as available to devellop prompt template for albert.
@@ -273,6 +283,10 @@ def get_prompter(model_name: str, mode: str | None = None):
     model = next((m for m in LLM_TABLE if m[0] == model_name), None)
     if not model:
         raise ValueError("Prompter unknown: %s" % model_name)
+
+    if model not in TEMPLATES:
+        # Try again to rebuild TEMPLATES
+        TEMPLATES = prompt_templates_from_llm_table(LLM_TABLE)
 
     template = TEMPLATES[model_name].get(mode)
     if not template:
