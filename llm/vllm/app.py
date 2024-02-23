@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 from typing import AsyncGenerator
 
 import uvicorn
@@ -20,7 +21,7 @@ TIMEOUT_KEEP_ALIVE = 5  # seconds.
 TIMEOUT_TO_PREVENT_DEADLOCK = 1  # seconds.
 app = FastAPI()
 engine = None
-MODEL_REPO_ID = None
+MODEL_REPO_ID = os.environ.get("MODEL_REPO_ID")
 LOCAL_DIR = None
 
 

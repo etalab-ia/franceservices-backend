@@ -1,3 +1,4 @@
+import os
 import argparse
 import json
 from typing import AsyncGenerator
@@ -10,7 +11,7 @@ from gpt4all import GPT4All
 from huggingface_hub import hf_hub_download
 
 app = FastAPI()
-MODEL_REPO_ID = None
+MODEL_REPO_ID = os.environ.get("MODEL_REPO_ID")
 LOCAL_DIR = None
 
 
