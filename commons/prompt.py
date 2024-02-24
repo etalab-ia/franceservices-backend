@@ -158,19 +158,23 @@ class Prompter:
         if self.template:
             data = self.make_variables(kwargs, self.template["variables"], self.template["default"])
             prompt = self.template["template"].render(**data)
+            system_prompt = self.template.get("system_prompt")
         else:
             prompt = kwargs.get("query")
+            system_prompt = None
 
         # Set prompt_format
         if not prompt_format and self.template:
             prompt_format = self.template.get("prompt_format")
 
         # format prompt
-        if prompt_format:
-            if prompt_format == "llama-chat":
-                return format_llama_chat_prompt(prompt)["text"]
-            else:
-                raise ValueError("Prompt format unkown: %s" % prompt_format)
+        if prompt is None:
+            # no formatting
+            pass
+        elif prompt_format == "llama-chat":
+            return format_llama2chat_prompt(prompt, system_prompt=system_prompt)["text"]
+        else:
+            raise ValueError("Prompt format unkown: %s" % prompt_format)
 
         return prompt
 
@@ -258,7 +262,7 @@ class Prompter:
 
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
 # see also to implement this part in the driver management module of the llm API: https://gitlab.com/etalab-datalab/llm/albert-backend/-/issues/119
-def format_llama_chat_prompt(item: dict | str):
+def format_llama2chat_prompt(item: dict | str, system_prompt: str | None = None):
     # An item as at least one {prompt} entry, and on optionnal {answer} entry
     # in the case of a formatting for a finetuning step.
     if isinstance(item, str):
@@ -268,13 +272,19 @@ def format_llama_chat_prompt(item: dict | str):
     B_INST, E_INST = "[INST]", "[/INST]"
     B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
+    sysprompt = ""
+    if system_prompt:
+        sysprompt = B_SYS + system_prompt + E_SYS
+
     if "answer" in item:
         # Finetuning format
-        prompt = f"{B_INST} {(item['prompt']).strip()} {E_INST} {(item['answer']).strip()} "
+        prompt = (
+            f"{B_INST} {{sysprompt}}{(item['prompt']).strip()} {E_INST} {(item['answer']).strip()} "
+        )
         prompt = bos + prompt + eos
     else:
         # Inference format
-        prompt = f"{B_INST} {(item['prompt']).strip()} {E_INST}"
+        prompt = f"{B_INST} {{sysprompt}}{(item['prompt']).strip()} {E_INST}"
         prompt = bos + prompt
 
     # @huggingface: it still keeps other features :o
