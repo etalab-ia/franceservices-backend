@@ -1,10 +1,12 @@
 import os
-from commons.api import get_legacy_client
 import re
-from jinja2 import Environment, FileSystemLoader, meta, BaseLoader
-import yaml
 from typing import Any
+
+import yaml
+from jinja2 import BaseLoader, Environment, FileSystemLoader, meta
 from requests.exceptions import RequestException
+
+from commons.api import get_legacy_client
 
 try:
     from app.config import LLM_TABLE
@@ -98,7 +100,7 @@ class Prompter:
         self.url = url
         # The sampling params to pass to LLM generate function for inference.
         self.sampling_params = self.SAMPLING_PARAMS
-        if "sampling_params" in template:
+        if template and "sampling_params" in template:
             self.sampling_params.update(template["sampling_params"])
 
     @classmethod
@@ -282,7 +284,7 @@ def format_llama_chat_prompt(item: dict | str):
 def get_prompter(model_name: str, mode: str | None = None):
     model = next((m for m in LLM_TABLE if m[0] == model_name), None)
     if not model:
-        raise ValueError("Prompter unknown: %s" % model_name)
+        raise ValueError("Prompt model unknown: %s" % model_name)
 
     model_name = model[0]
     model_url = model[1]
@@ -292,7 +294,7 @@ def get_prompter(model_name: str, mode: str | None = None):
         TEMPLATES = prompt_templates_from_llm_table(LLM_TABLE)
 
     template = TEMPLATES[model_name].get(mode)
-    if not template:
+    if mode and not template:
         raise ValueError(
             "Prompt mode unknown: %s (available: %s)" % (mode, list(TEMPLATES[model_name]))
         )

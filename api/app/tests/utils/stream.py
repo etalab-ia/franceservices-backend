@@ -13,7 +13,6 @@ def create_user_stream(
     client: TestClient,
     token,
     model_name,
-    user_text,
     context="",
     institution="",
     links="",
@@ -24,7 +23,6 @@ def create_user_stream(
         headers={"Authorization": f"Bearer {token}"},
         json={
             "model_name": model_name,
-            "user_text": user_text,
             "context": context,
             "institution": institution,
             "links": links,
@@ -38,7 +36,6 @@ def create_chat_stream(
     token,
     chat_id,
     model_name,
-    user_text,
     context="",
     institution="",
     links="",
@@ -49,7 +46,6 @@ def create_chat_stream(
         headers={"Authorization": f"Bearer {token}"},
         json={
             "model_name": model_name,
-            "user_text": user_text,
             "context": context,
             "institution": institution,
             "links": links,

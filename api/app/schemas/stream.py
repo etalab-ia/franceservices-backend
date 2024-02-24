@@ -1,32 +1,20 @@
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .search import IndexSource
 from .feedback import Feedback
+from .search import IndexSource
 from .user import User
-
-
-class ModelName(str, Enum):
-    fabrique_miaou = "fabrique-miaou"
-    fabrique_reference = "fabrique-reference"
-    albert_light = "albert-light"
 
 
 class StreamBase(BaseModel):
     # Pydantic configuration:
     model_config = ConfigDict(use_enum_values=True)
 
-    model_name: ModelName = ModelName.albert_light.value
-    # For chat/albert (+RAG) like prompt
-    mode: str | None = None  # Possible value should be documented by each model/prompt
+    model_name: str
+    mode: str | None = None
     query: str = Field(
-        default="",
-        description='The user query. It the query exceed a certain size wich depends on the contextual window of the model, the model will return an  HTTPException(413, detail="Prompt too large")',
-    )
-    # @obselete: replace user_text (use by fabrique model) by query and remove this entry (db copy user_text->query)
-    user_text: str = Field(
         default="",
         description='The user query. It the query exceed a certain size wich depends on the contextual window of the model, the model will return an  HTTPException(413, detail="Prompt too large")',
     )
@@ -65,21 +53,21 @@ class StreamBase(BaseModel):
     # --
     @model_validator(mode="after")
     def validate_model(self):
-        if self.model_name == ModelName.fabrique_miaou:
-            if self.mode is not None:
-                raise ValueError("Incompatible mode")
+        # if self.model_name == ModelName.fabrique_miaou:
+        #     if self.mode is not None:
+        #         raise ValueError("Incompatible mode")
 
-        elif self.model_name == ModelName.fabrique_reference:
-            if self.mode not in (None, "simple", "experience", "expert"):
-                raise ValueError("Incompatible mode")
-            if self.mode is None:
-                self.mode = "simple"  # default
+        # elif self.model_name == ModelName.fabrique_reference:
+        #     if self.mode not in (None, "simple", "experience", "expert"):
+        #         raise ValueError("Incompatible mode")
+        #     if self.mode is None:
+        #         self.mode = "simple"  # default
 
-        elif self.model_name == ModelName.albert_light:
-            if self.mode not in (None, "simple", "rag"):
-                raise ValueError("Incompatible mode")
-            if self.mode is None:
-                self.mode = "rag"  # default
+        # elif self.model_name == ModelName.albert_light:
+        #     if self.mode not in (None, "simple", "rag"):
+        #         raise ValueError("Incompatible mode")
+        #     if self.mode is None:
+        #         self.mode = "rag"  # default
 
         # For SQLAlchemy relationship compatibility
         if not self.sources:
