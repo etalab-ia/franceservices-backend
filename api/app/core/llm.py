@@ -1,9 +1,8 @@
+from commons import get_prompter
+
 from app import crud, schemas
 from app.clients.api_vllm_client import ApiVllmClient
 from app.db.session import SessionLocal
-
-
-from commons import get_prompter
 
 
 def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | None:
@@ -13,7 +12,7 @@ def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | None
 
         # Build prompt
         query = f"Synthétise la demande suivante en un court titre de quelque mots (pas plus de 8 mots) permettant d'identifier la thématique. Le titre doit être court, clair et accrocheur:\n\n{query}"
-        prompter = get_prompter(model_name, "simple")
+        prompter = get_prompter(model_name, None)
         prompt = prompter.make_prompt(query=query)
 
         # Generate
