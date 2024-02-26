@@ -19,6 +19,9 @@ class StreamBase(BaseModel):
         description='The user query. It the query exceed a certain size wich depends on the contextual window of the model, the model will return an  HTTPException(413, detail="Prompt too large")',
     )
     limit: int | None = None
+    with_history: bool | None = Field(
+        default=None, description="Use the conversation history to generate a new response."
+    )
     # For instruct/fabrique like prompt.
     context: str = ""
     institution: str = ""

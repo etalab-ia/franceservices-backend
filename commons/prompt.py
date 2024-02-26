@@ -31,7 +31,6 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
     templates = {}
     client = get_legacy_client()
     for model_name, model_url in table:
-
         try:
             config = client.get_prompt_config(model_url)
         except RequestException as err:
@@ -107,8 +106,7 @@ class Prompter:
         # preceded by a space, but not if the first non-space character encountered backwards is a dot.
         pattern = r"(?<!\S\. )[A-Z0-9][A-Za-z0-9]{2,}\b"
         matches = [
-            (match.group(), match.start(), match.end())
-            for match in re.finditer(pattern, prompt)
+            (match.group(), match.start(), match.end()) for match in re.finditer(pattern, prompt)
         ]
 
         # Prevent extreme case (caps lock, list of items, etc)
@@ -125,9 +123,7 @@ class Prompter:
             acronym = ACRONYMS[i]
             look_around = 100
             text_span = (
-                prompt[max(0, start - look_around) : start]
-                + " "
-                + prompt[end : end + look_around]
+                prompt[max(0, start - look_around) : start] + " " + prompt[end : end + look_around]
             )
             if not acronym["text"].lower() in text_span.lower():
                 # I suppose we go here most of the time...
@@ -150,9 +146,7 @@ class Prompter:
 
         # Build template and render prompt with variables if any
         if self.template:
-            data = self.make_variables(
-                kwargs, self.template["variables"], self.template["default"]
-            )
+            data = self.make_variables(kwargs, self.template["variables"], self.template["default"])
             prompt = self.template["template"].render(**data)
             system_prompt = self.template.get("system_prompt")
         else:
@@ -164,13 +158,20 @@ class Prompter:
             prompt_format = self.template.get("prompt_format")
 
         # format prompt
+        history = kwargs.get("history")
+        print("=== history ===")
+        print(history)
         if prompt is None:
             # no formatting
             pass
         elif prompt_format == "llama-chat":
-            return format_llama2chat_prompt(prompt, system_prompt=system_prompt)["text"]
+            return format_llama2chat_prompt(prompt, system_prompt=system_prompt, history=history)[
+                "text"
+            ]
         elif prompt_format == "chatml":
-            return format_chatml_prompt(prompt, system_prompt=system_prompt)["text"]
+            return format_chatml_prompt(prompt, system_prompt=system_prompt, history=history)[
+                "text"
+            ]
         else:
             raise ValueError("Prompt format unkown: %s" % prompt_format)
 
@@ -226,9 +227,7 @@ class Prompter:
 
         # List of semantic similar value from query
         chunks_allowed = ["experience_chunks", "sheet_chunks"]
-        chunks_matches = [
-            v for v in variables if v.endswith("_chunks") and v in chunks_allowed
-        ]
+        chunks_matches = [v for v in variables if v.endswith("_chunks") and v in chunks_allowed]
         for v in chunks_matches:
             if v.split("_")[0] == "experience":
                 collection_name = "experience"
@@ -237,9 +236,7 @@ class Prompter:
                 collection_name = "chunks"
                 id_key = "hash"
             else:
-                raise ValueError(
-                    "chunks identifier (%s) unknown in prompt template." % v
-                )
+                raise ValueError("chunks identifier (%s) unknown in prompt template." % v)
 
             limit = passed_data.get("limit", default.get("limit")) or 3
             skip_first = passed_data.get("skip_first", default.get("skip_first"))
@@ -253,9 +250,7 @@ class Prompter:
                 similarity="e5",
                 sources=passed_data.get("sources", default.get("sources")),
                 should_sids=passed_data.get("should_sids", default.get("should_sids")),
-                must_not_sids=passed_data.get(
-                    "must_not_sids", default.get("must_not_sids")
-                ),
+                must_not_sids=passed_data.get("must_not_sids", default.get("must_not_sids")),
             )
             if skip_first:
                 hits = hits[1:]
@@ -266,7 +261,9 @@ class Prompter:
 
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
 # see also to implement this part in the driver management module of the llm API: https://gitlab.com/etalab-datalab/llm/albert-backend/-/issues/119
-def format_llama2chat_prompt(item: dict | str, system_prompt: str | None = None):
+def format_llama2chat_prompt(
+    item: dict | str, system_prompt: str | None = None, history=list[dict] | None
+):
     # An item as at least one {prompt} entry, and on optionnal {answer} entry
     # in the case of a formatting for a finetuning step.
     if isinstance(item, str):
@@ -293,7 +290,9 @@ def format_llama2chat_prompt(item: dict | str, system_prompt: str | None = None)
     return {"text": prompt}
 
 
-def format_chatml_prompt(item: dict | str, system_prompt: str | None = None):
+def format_chatml_prompt(
+    item: dict | str, system_prompt: str | None = None, history=list[dict] | None
+):
     # An item as at least one {prompt} entry, and on optionnal {answer} entry
     # in the case of a formatting for a finetuning step.
     if isinstance(item, str):
@@ -344,8 +343,7 @@ def get_prompter(model_name: str, mode: str | None = None):
     template = TEMPLATES[model_name].get(mode)
     if mode and not template:
         raise ValueError(
-            "Prompt mode unknown: %s (available: %s)"
-            % (mode, list(TEMPLATES[model_name]))
+            "Prompt mode unknown: %s (available: %s)" % (mode, list(TEMPLATES[model_name]))
         )
 
     return Prompter(model_url, template)

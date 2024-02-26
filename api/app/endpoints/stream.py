@@ -11,6 +11,7 @@ from app.clients.api_vllm_client import ApiVllmClient
 from app.config import ENV, WITH_GPU
 from app.deps import get_current_user, get_db
 from app.core.llm import auto_set_chat_name
+
 if not WITH_GPU:
     from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
 from commons import get_prompter
@@ -113,9 +114,25 @@ def start_stream(
     should_sids = db_stream.should_sids
     must_not_sids = db_stream.must_not_sids
     postprocessing = db_stream.postprocessing
+
     sources = None
     if db_stream.sources:
         sources = [source.source_name for source in db_stream.sources]
+
+    history = None
+    if db_stream.with_history:
+        if not db_stream.chat_id:
+            raise HTTPException(
+                400, detail="No chat_id found. Stream with history requires chat session, ."
+            )
+
+        history = [
+            [
+                {"role": "user", "content": stream.query},
+                {"role": "assistant", "content": stream.response},
+            ]
+            for stream in db_stream.chat.streams
+        ]
 
     # TODO: turn into async
     # Streaming case
@@ -133,6 +150,7 @@ def start_stream(
             sources=sources,
             should_sids=should_sids,
             must_not_sids=must_not_sids,
+            history=history,
         )
 
         if (
@@ -200,7 +218,7 @@ def start_stream(
         bucket_out = ""
         eos_code = "[DONE]"
         url_dict, mail_dict, number_dict = [], [], []
-        whitelist_path=os.environ.get("API_WHITELIST_FILE", "/data/whitelist/whitelist.json")
+        whitelist_path = os.environ.get("API_WHITELIST_FILE", "/data/whitelist/whitelist.json")
 
         for words in generate():
             try:
@@ -219,16 +237,20 @@ def start_stream(
                 bucket_out = str(list(doc.sents)[0])
 
                 if "check_mail" in postprocessing:
-                    mail_dict.extend(correct_mail(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_mail(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    mail_dict.extend(
+                        correct_mail(text=bucket_out, whitelist_path=whitelist_path)[1]
+                    )
+                    bucket_out = correct_mail(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 if "check_number" in postprocessing:
-                    number_dict.extend(correct_number(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_number(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    number_dict.extend(
+                        correct_number(text=bucket_out, whitelist_path=whitelist_path)[1]
+                    )
+                    bucket_out = correct_number(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 if "check_url" in postprocessing:
-                    url_dict.extend(correct_url(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_url(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    url_dict.extend(correct_url(text=bucket_out, whitelist_path=whitelist_path)[1])
+                    bucket_out = correct_url(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 if bucket_out[-1] == "." or bucket_out[-1] == "?":
                     bucket_out += " "  # Adding a space after "." or "?" at the end of each sentence
@@ -244,16 +266,20 @@ def start_stream(
                 bucket_out = bucket_out.replace(eos_code, "")
 
                 if "check_mail" in postprocessing:
-                    mail_dict.extend(correct_mail(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_mail(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    mail_dict.extend(
+                        correct_mail(text=bucket_out, whitelist_path=whitelist_path)[1]
+                    )
+                    bucket_out = correct_mail(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 if "check_number" in postprocessing:
-                    number_dict.extend(correct_number(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_number(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    number_dict.extend(
+                        correct_number(text=bucket_out, whitelist_path=whitelist_path)[1]
+                    )
+                    bucket_out = correct_number(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 if "check_url" in postprocessing:
-                    url_dict.extend(correct_url(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_url(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    url_dict.extend(correct_url(text=bucket_out, whitelist_path=whitelist_path)[1])
+                    bucket_out = correct_url(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 yield f"number_dict: {number_dict} mail_dict: {mail_dict} url_dict: {url_dict} data: {json.dumps(bucket_out)}\n\n"
                 # yield of the last sentence
@@ -264,10 +290,14 @@ def start_stream(
                 ):  # Checking all url's status code and fullfilling url_dict with full urls having a status code = 200
                     for dict in url_dict:
                         if dict["old_url"] == check_url(
-                            url=dict["old_url"], whitelist_path=whitelist_path, check_status_code=True
+                            url=dict["old_url"],
+                            whitelist_path=whitelist_path,
+                            check_status_code=True,
                         ):
                             dict["new_url_full"] = check_url(
-                                url=dict["old_url"], whitelist_path=whitelist_path, check_status_code=True
+                                url=dict["old_url"],
+                                whitelist_path=whitelist_path,
+                                check_status_code=True,
                             )
                         else:
                             dict["new_url_full"] = ""

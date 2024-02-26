@@ -53,6 +53,7 @@ class Stream(Base):
     mode = Column(Text)
     query = Column(Text)
     limit = Column(Integer)
+    with_history = Column(Boolean, nullable=True)
     user_text = Column(Text)
     context = Column(Text)
     institution = Column(Text)
