@@ -182,6 +182,15 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 
 ### API
 
+#### Avec docker
+
+* Exportez les variables d'environnement suivantes :
+
+	* `POSTGRES_PASSWORD`
+    * `POSTGRES_PORT`
+    * `POSTGRES_HOST`
+
+
 ## Installation avec Docker
 
 L'installation avec Docker se fait dans le cadre d'un pipeline de CI/CD Gitlab. Reférez-vous au fichier [.gitlab-ci.yml](../../.gitlab-ci.yml) pour plus d'information sur les étapes de déploiement réalisée. Afin d'exécuter cette pipeline il est nécessaire de configurer au préalable certaines variables d'environnement dans Gitlab. Pour cela rendez vous sur la documentation [environments.md](environments.md).

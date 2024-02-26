@@ -36,12 +36,12 @@ def get_url():
         db_url = "sqlite:///" + os.path.join(ROOT_DIR, "sqlite3.db")
     else:
         db_user = "postgres"
-        db_pass = POSTGRES_PASSWORD
-        db_host = "localhost"
-        db_port = 5455
+        db_pass = os.environ["POSTGRES_PASSWORD"]
+        db_host = os.environ.get("POSTGRES_HOST", "localhost")
+        db_port = os.environ.get("POSTGRES_PORT", "5432")
         db_name = "postgres"
-        db_url = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-    return db_url
+        db_uri = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+    return db_uri
 
 
 def run_migrations_offline():

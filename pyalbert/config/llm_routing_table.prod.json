@@ -1,19 +1,21 @@
 {
     "albert-light-dinum": {
         "env": "dinum",
-        "api": "albert-light",
+        "api_port": 8000,
         "hf_repo_id": "AgentPublic/albert-light",
         "driver": "vllm",
         "model_port": 8082,
+        "model_host": "localhost",
         "gpu_mem_use": 0.4,
         "tensor_parralel_size": 1,
         "force_download": false
     },
     "fabrique-reference-2-franceservices": {
         "env": "franceservices",
-        "api": "albert-light",
+        "api_port": 8000,
         "hf_repo_id": "AgentPublic/fabrique-reference-2",
         "model_port": 8082,
+        "model_host": "localhost",
         "gpu_mem_use": 0.4,
         "tensor_parralel_size": 1,
         "force_download": false

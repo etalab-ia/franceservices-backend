@@ -1,7 +1,9 @@
 stages:
   - build
   - setup
-  - deploy
+  - deploy-database
+  - deploy-llm
+  - deploy-api
   - test
 
 ############################################
@@ -26,7 +28,7 @@ before_script:
       fi
     fi
 
-config:clean gitlab runner:
+config:clean gitlab runner: # manual job to clean gitlab runner
   rules:
     - when: manual
       allow_failure: true  # to avoid blocked state
@@ -50,7 +52,7 @@ deploy:database:dinum:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  stage: deploy
+  stage: deploy-database
   image: alpine:latest
   script:
     - | # ssh connection setup
@@ -86,7 +88,7 @@ deploy:database:france services:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  stage: deploy
+  stage: deploy-database
   image: alpine:latest
   script:
     - | # ssh connection setup
@@ -179,9 +181,8 @@ setup:llm:dinum:
       source ~/${CI_JOB_ID}/venv/bin/activate
       pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
-      export ENV=${CI_ENVIRONMENT_NAME}
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-      bash ./setup.sh -r ./pyalbert/config/llm_routing_table.json
+      bash ./setup.sh -r ./pyalbert/config/llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       deactivate
       rm -rf ~/${CI_JOB_ID}
       "
@@ -193,7 +194,7 @@ deploy:llm:dinum:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  stage: deploy
+  stage: deploy-llm
   image: alpine:latest
   script:
     - | # ssh connection setup
@@ -212,9 +213,8 @@ deploy:llm:dinum:
       export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
       export CI_VLLM_IMAGE_TAG=${CI_VLLM_IMAGE_TAG}
       export CI_GPT4ALL_IMAGE_TAG=${CI_GPT4ALL_IMAGE_TAG}
-      export ENV=${CI_ENVIRONMENT_NAME}
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-      bash ./deploy.sh -r ./llm_routing_table.json
+      bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       rm -rf ~/${CI_JOB_ID}
       "
 
@@ -241,12 +241,11 @@ test:llm:dinum:
     - | # test llm containers on remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       set -e
-      export ENV=${CI_ENVIRONMENT_NAME}
       python3.10 -m venv ~/${CI_JOB_ID}/venv
       source ~/${CI_JOB_ID}/venv/bin/activate
       pip install -r ~/${CI_JOB_ID}/tests/requirements.txt
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-      bash ./test.sh -r ./llm_routing_table.json
+      bash ./test.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       deactivate
       rm -rf ~/${CI_JOB_ID}
       "
@@ -279,9 +278,8 @@ setup:llm:france services:
       source ~/${CI_JOB_ID}/venv/bin/activate
       pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
-      export ENV=${CI_ENVIRONMENT_NAME}
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-      bash ./setup.sh -r ./pyalbert/config/llm_routing_table.json
+      bash ./setup.sh -r ./pyalbert/config/llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       deactivate
       rm -rf ~/${CI_JOB_ID}
       "
@@ -293,7 +291,7 @@ deploy:llm:france services:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  stage: deploy
+  stage: deploy-llm
   image: alpine:latest
   script:
     - | # ssh connection setup
@@ -312,9 +310,8 @@ deploy:llm:france services:
       export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
       export CI_VLLM_IMAGE_TAG=${CI_VLLM_IMAGE_TAG}
       export CI_GPT4ALL_IMAGE_TAG=${CI_GPT4ALL_IMAGE_TAG}
-      export ENV=${CI_ENVIRONMENT_NAME}
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-      bash ./deploy.sh -r ./llm_routing_table.json
+      bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       rm -rf ~/${CI_JOB_ID}
       "
 
@@ -341,12 +338,11 @@ test:llm:france services:
     - | # test llm containers on remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       set -e
-      export ENV=${CI_ENVIRONMENT_NAME}
       python3.10 -m venv ~/${CI_JOB_ID}/venv
       source ~/${CI_JOB_ID}/venv/bin/activate
       pip install -r ~/${CI_JOB_ID}/tests/requirements.txt
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-      bash ./test.sh -r ./llm_routing_table.json
+      bash ./test.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       deactivate
       rm -rf ~/${CI_JOB_ID}
       "
@@ -374,8 +370,8 @@ build:api:
     - | # build and push api image to gitlab registry
       cp $ENV_FILE api/app/.env
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker build --rm --build-context commons=./commons --build-context pyalbert=./pyalbert --tag ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2 --file ./api/Dockerfile ./api
-      docker push ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2
+      docker build --rm --build-context commons=./commons --build-context pyalbert=./pyalbert --tag ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG} --file ./api/Dockerfile ./api
+      docker push ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}
 
 ################## DINUM ###################
 
@@ -416,19 +412,31 @@ deploy:api:dinum:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  stage: deploy
+  stage: deploy-api
   image: alpine:latest
   script:
     - | # ssh connection setup
       chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
       apk update
       apk add openssh-client
-    - | # deploy api containers to remote server
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      cp ./api/deploy.sh ./${CI_JOB_ID}/deploy.sh
+      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # deploy vllm containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker container rm --force api-v2 || true
-      docker image rm ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2 || true
-      docker run --env API_URL=${CI_DEPLOY_URL} --env FRONT_URL=${CI_DEPLOY_URL} --restart 'always' --gpus all --detach --publish 8090:8090 --name api-v2 ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2
+      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+      export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
+      export CI_API_IMAGE_TAG=${CI_API_IMAGE_TAG}
+      export CI_DEPLOY_URL=${CI_DEPLOY_URL}
+      export POSTGRES_HOST=${CI_DEPLOY_HOST}
+      export POSTGRES_PORT=${POSTGRES_PORT}
+      export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
+      rm -rf ~/${CI_JOB_ID}
       "
 
 ############# FRANCE SERVICES ##############
@@ -470,17 +478,29 @@ deploy:api:france services:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  stage: deploy
+  stage: deploy-api
   image: alpine:latest
   script:
     - | # ssh connection setup
       chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
       apk update
       apk add openssh-client
-    - | # deploy api to remote server
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      cp ./api/deploy.sh ./${CI_JOB_ID}/deploy.sh
+      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # deploy vllm containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker container rm --force api-v2 || true
-      docker image rm ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2 || true
-      docker run --env API_URL=${CI_DEPLOY_URL} --env FRONT_URL=${CI_DEPLOY_URL} --restart 'always' --gpus all --detach --publish 8090:8090 --name api-v2 ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}-v2
+      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+      export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
+      export CI_API_IMAGE_TAG=${CI_API_IMAGE_TAG}
+      export CI_DEPLOY_URL=${CI_DEPLOY_URL}
+      export POSTGRES_HOST=${CI_DEPLOY_HOST}
+      export POSTGRES_PORT=${POSTGRES_PORT}
+      export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
+      rm -rf ~/${CI_JOB_ID}
       "
