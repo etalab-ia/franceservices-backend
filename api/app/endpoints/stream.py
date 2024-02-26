@@ -123,7 +123,7 @@ def start_stream(
     if db_stream.with_history:
         if not db_stream.chat_id:
             raise HTTPException(
-                400, detail="No chat_id found. Stream with history requires chat session, ."
+                403, detail="No chat_id found. Stream with history requires a chat session."
             )
 
         history = [

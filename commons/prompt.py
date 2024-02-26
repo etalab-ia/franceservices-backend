@@ -159,8 +159,6 @@ class Prompter:
 
         # format prompt
         history = kwargs.get("history")
-        print("=== history ===")
-        print(history)
         if prompt is None:
             # no formatting
             pass
@@ -200,8 +198,11 @@ class Prompter:
         sheet_chunks: list[dict]
         """
         data = passed_data.copy()
-        query = data.get("query")
+        for k, v in default.items():
+            if not data.get(k):
+                data[k] = v
 
+        query = data.get("query")
         client = get_legacy_client()
 
         # Extract one similar value in a collection from query
@@ -210,7 +211,7 @@ class Prompter:
             # rep1 = vllm_generate(prompt, streaming=False,  max_tokens=500, **FabriquePrompter.SAMPLING_PARAMS)
             # rep1 = "".join(rep1)
             # Using similar experience
-            skip_first = passed_data.get("skip_first", default.get("skip_first"))
+            skip_first = data.get("skip_first")
             n_exp = 1
             if skip_first:
                 n_exp = 2
@@ -219,11 +220,11 @@ class Prompter:
                 query,
                 limit=n_exp,
                 similarity="e5",
-                institution=passed_data.get("institution"),
+                institution=data.get("institution"),
             )
             if skip_first:
                 hits = hits[1:]
-            data["similar_experience"] = hits[0]["description"]
+            data["most_similar_experience"] = hits[0]["description"]
 
         # List of semantic similar value from query
         chunks_allowed = ["experience_chunks", "sheet_chunks"]
@@ -238,23 +239,24 @@ class Prompter:
             else:
                 raise ValueError("chunks identifier (%s) unknown in prompt template." % v)
 
-            limit = passed_data.get("limit", default.get("limit")) or 3
-            skip_first = passed_data.get("skip_first", default.get("skip_first"))
+            limit = data.get("limit") or 3
+            skip_first = data.get("skip_first")
             if skip_first:
                 limit += 1
             hits = client.search(
                 collection_name,
                 query,
-                institution=passed_data.get("institution", default.get("institution")),
+                institution=data.get("institution"),
                 limit=limit,
                 similarity="e5",
-                sources=passed_data.get("sources", default.get("sources")),
-                should_sids=passed_data.get("should_sids", default.get("should_sids")),
-                must_not_sids=passed_data.get("must_not_sids", default.get("must_not_sids")),
+                sources=data.get("sources"),
+                should_sids=data.get("should_sids"),
+                must_not_sids=data.get("must_not_sids"),
             )
             if skip_first:
                 hits = hits[1:]
             self.sources = [x[id_key] for x in hits]
+            data[v] = hits
 
         return data
 
