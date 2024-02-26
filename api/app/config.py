@@ -74,17 +74,23 @@ if ENV == "dev":
 else:
     API_ROUTE_VER = "/api/v2"
 
-# Search Engines
-ELASTICSEARCH_URL = "http://127.0.0.1:9202"
-ELASTICSEARCH_CREDS = ("elastic", "changeme")
-QDRANT_URL = "http://127.0.0.1:6333"
-ELASTICSEARCH_IX_VER = "v3"
-QDRANT_IX_VER = "v3"
-SHEET_SOURCES = ["service-public", "travail-emploi"]
-EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
-EMBEDDING_BOOTSTRAP_PATH = os.path.join(
-    "_data", "embeddings", EMBEDDING_MODEL.split("/")[-1]
-)
+if os.environ.get("DISABLED_RAG", 0) == 1:
+
+    # Elasticsearch
+    ELASTICSEARCH_URL = f"http://{os.environ.get('ELASTIC_HOST', 'localhost')}:{os.environ.get('ELASTIC_PORT', '9202')}"
+    ELASTICSEARCH_CREDS = ("elastic", os.environ["ELASTIC_PASSWORD"])
+    ELASTICSEARCH_IX_VER = "v3"
+
+    # Qdrant
+    QDRANT_URL = f"http://{os.environ.get('QDRANT_HOST', 'localhost')}:{os.environ.get('QDRANT_REST_PORT', '6333')}"
+    QDRANT_GRPC_PORT = os.environ.get("QDRANT_GRPC_PORT", "6334")
+    QDRANT_IX_VER = "v3"
+
+    SHEET_SOURCES = ["service-public", "travail-emploi"]
+    EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
+    EMBEDDING_BOOTSTRAP_PATH = os.path.join(
+        "_data", "embeddings", EMBEDDING_MODEL.split("/")[-1]
+    )
 
 # LLM Routing Table.
 LLM_TABLE = os.getenv("LLM_TABLE")
