@@ -18,7 +18,7 @@ COPY --from=commons . ./commons
 COPY --from=pyalbert . ./pyalbert
 
 RUN chmod +x /code/start.sh
-RUN pip install --no-cache-dir --upgrade -r ./requirements.txt
+RUN pip install --no-cache-dir --default-timeout=100 --upgrade -r ./requirements.txt
 RUN pip install --no-cache-dir --upgrade -r ./pyalbert/requirements.txt
 
 CMD ["bash", "start.sh"]

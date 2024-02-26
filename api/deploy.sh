@@ -49,14 +49,12 @@ for model in $(jq -r 'keys[]' $routing_table); do
         echo "error: api_port is required for $model. Skipping api-v2 container" && exit 1
     fi
 
-    echo "info: api port: $api_port"
     if [[ -z $port_list ]]; then
         port_list=$api_port
 
     elif ! [[ $port_list =~ (^|[[:space:]])$api_port($|[[:space:]]) ]]; then
         port_list="$port_list $api_port"
     else
-        echo "info: port $api_port already treated. Skipping"
         continue
     fi
 
@@ -65,7 +63,6 @@ for model in $(jq -r 'keys[]' $routing_table); do
         if ! [[ -z $env ]]; then
             model_env=$(jq -r '.["'$model'"] | .env' $routing_table)
             if [[ $model_env != "${env}" ]]; then
-                echo "info: skipping $model because of env mismatch"
                 continue
             fi
         fi
@@ -97,8 +94,6 @@ for model in $(jq -r 'keys[]' $routing_table); do
 
 done
 
-echo "info: api table: ${api_table[@]}"
-
 # for i in range length of api_table
 for (( i=0; i<${#api_table[@]}; i++ ));do
     api_port=$(echo ${api_table[$i]} | cut -d',' -f1 | tr -d '()' | tr -d '[:space:]')
@@ -115,9 +110,9 @@ for (( i=0; i<${#api_table[@]}; i++ ));do
 
     echo "info: deploying ${COMPOSE_PROJECT_NAME}-${API_PORT}-api-v2 container"
     docker container rm --force ${COMPOSE_PROJECT_NAME}-${API_PORT}-api-v2 || true
-    #docker image rm ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG} || true
+    docker image rm ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG} || true
     
-    docker run --gpus all -it --publish ${API_PORT}:8090 --restart always --name ${COMPOSE_PROJECT_NAME}-${API_PORT}-api-v2 \
+    docker run --gpus all --detach --publish ${API_PORT}:8090 --restart always --name ${COMPOSE_PROJECT_NAME}-${API_PORT}-api-v2 \
     --env POSTGRES_HOST=${POSTGRES_HOST} \
     --env POSTGRES_PORT=${POSTGRES_PORT} \
     --env POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \

@@ -11,7 +11,7 @@
     },
     "tiny-albert-franceservices": {
         "env": "franceservices",
-        "api_port": 8000,
+        "api_port": 8090,
         "hf_repo_id": "AgentPublic/tiny-albert",
         "driver": "gpt4all",
         "model_port": 8081,
@@ -21,7 +21,7 @@
     },
     "albert-light-franceservices": {
         "env": "franceservices",
-        "api_port": 8000,
+        "api_port": 8090,
         "hf_repo_id": "AgentPublic/albert-light",
         "driver": "vllm",
         "model_port": 8082,
