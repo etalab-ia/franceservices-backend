@@ -5,9 +5,8 @@ from typing import AsyncGenerator
 
 import uvicorn
 import yaml
-from fastapi import BackgroundTasks, FastAPI, Request
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-from fastapi import HTTPException
 from huggingface_hub import hf_hub_download
 from huggingface_hub.utils._errors import LocalEntryNotFoundError
 from vllm.engine.arg_utils import AsyncEngineArgs
@@ -23,7 +22,25 @@ TIMEOUT_KEEP_ALIVE = 5  # seconds.
 TIMEOUT_TO_PREVENT_DEADLOCK = 1  # seconds.
 app = FastAPI()
 engine = None
-model_dir = None
+
+# **model_taget** can be either a huggingface repod_id, or a absolute path.
+# In the first case, the huggingface cache directory are used to download and access the model.
+# In the other case, we assume the model is already downloaded in the given path.
+model_target = None
+
+
+def get_model_file(model_target: str, filename: str) -> str:
+    if model_target.startswith("/"):
+        model_dir = model_target
+        file_path = os.path.join(model_dir, filename)
+        if not os.path.exists(file_path):
+            raise FileNotFoundError
+    else:
+        # vllm auto-download the model if not found, but do not download extra files,
+        # like prompt configuration files.
+        file_path = hf_hub_download(repo_id=model_target, filename=filename)
+    return file_path
+
 
 @app.post("/generate")
 async def generate(request: Request) -> Response:
@@ -79,26 +96,40 @@ async def generate(request: Request) -> Response:
     "/get_prompt_config",
     status_code=200,
     summary="Get the templates files",
-    description="For a given model, get the prompte templates.",
+    description="For a given model, get the prompte templates. If no config_file is given, we lookup for the file named 'prompt_config.ya?ml'",
 )
 async def get_prompt_config(
     request: Request,
-    config_file: str = "prompt_config.yml",
+    config_file: str | None = None,
 ) -> Response:
-    file_path = os.path.join(model_dir, config_file)
-
-    if os.path.exists(file_path):
-        with open(file_path, "r") as file:
-            config = yaml.safe_load(file)
+    if not config_file:
+        config_files = ["prompt_config.yml",  "prompt_config.yaml"]
     else:
-        raise HTTPException(404, detail=f"{config_file} not found.")
+        config_files = [config_file]
+
+    for i, conf_file in enumerate(config_files):
+        try:
+            file_path = get_model_file(model_target, conf_file)
+        except Exception as err:
+            if i < len(config_files) - 1:
+                continue
+            raise HTTPException(
+                404, detail=f"{conf_file} not found in model {model_target}."
+            ) from err
+
+    with open(file_path, "r") as file:
+        config = yaml.safe_load(file)
 
     for i, prompt in enumerate(config.get("prompts", [])):
-        file_name = prompt["template"]
-        file_path = os.path.join(model_dir, file_name)
-        if os.path.exists(file_path):
-            with open(file_path, "r") as file:
-                config["prompts"][i]["template"] = file.read()
+        try:
+            file_path = get_model_file(model_target, prompt["template"])
+        except (FileNotFoundError, LocalEntryNotFoundError) as err:
+            raise HTTPException(
+                404, detail=f'{prompt["template"]} not found in model {model_target}.'
+            ) from err
+
+        with open(file_path, "r") as file:
+            config["prompts"][i]["template"] = file.read()
 
     return JSONResponse(config)
 
@@ -110,7 +141,7 @@ if __name__ == "__main__":
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
 
-    model_dir = args.model
+    model_target = args.model
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
 
