@@ -3,6 +3,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.config import LLM_TABLE
+
 from .feedback import Feedback
 from .search import IndexSource
 from .user import User
@@ -71,6 +73,8 @@ class StreamBase(BaseModel):
         #         raise ValueError("Incompatible mode")
         #     if self.mode is None:
         #         self.mode = "rag"  # default
+        if self.model_name not in [m[0] for m in LLM_TABLE]:
+            raise ValueError("Unknown model: %s" % self.model_name)
 
         # For SQLAlchemy relationship compatibility
         if not self.sources:
