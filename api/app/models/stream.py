@@ -58,10 +58,8 @@ class Stream(Base):
     institution = Column(Text)
     links = Column(Text)
     temperature = Column(Integer, nullable=False, default=20)
-    # pylint: disable=not-callable
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    # pylint: enable=not-callable
 
     response = Column(Text, nullable=True)
     rag_sources = Column(JSON, nullable=True)
@@ -81,7 +79,7 @@ class Stream(Base):
 
     # __table_args__ = (
     #    CheckConstraint(
-    #        "(user_id IS NULL OR chat_id IS NULL) AND (user_id IS NOT NULL OR chat_id IS NOT NULL)",  # pylint: disable=line-too-long
+    #        "(user_id IS NULL OR chat_id IS NULL) AND (user_id IS NOT NULL OR chat_id IS NOT NULL)",
     #        name="_streams_user_id_chat_id_cc",
     #    ),
     # )

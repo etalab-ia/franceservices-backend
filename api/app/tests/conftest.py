@@ -1,5 +1,3 @@
-# pylint: disable=wrong-import-position
-
 import os
 
 os.environ["ENV"] = "unittest"
