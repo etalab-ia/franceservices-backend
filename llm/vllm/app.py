@@ -110,6 +110,7 @@ async def get_prompt_config(
     for i, conf_file in enumerate(config_files):
         try:
             file_path = get_model_file(model_target, conf_file)
+            break
         except Exception as err:
             if i < len(config_files) - 1:
                 continue
