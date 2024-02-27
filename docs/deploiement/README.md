@@ -165,7 +165,8 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
     * `POSTGRES_PORT`
     * `ELASTIC_PASSWORD`
   	* `ELASTIC_PORT`
-    * `QDRANT_PORT`
+    * `QDRANT_REST_PORT`
+	* `QDRANT_GRPC_PORT`
     * `COMPOSE_FILE`
     * `COMPOSE_PROJECT_NAME`
 
@@ -186,10 +187,46 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 
 * Exportez les variables d'environnement suivantes :
 
+	* `API_PORT`
+	* `LLM_TABLE`
+	* `API_URL`
+	* `FRONT_URL`
 	* `POSTGRES_PASSWORD`
     * `POSTGRES_PORT`
     * `POSTGRES_HOST`
 
+	Si vous souhaitez utilisez l'API sans la fonctionnalité de RAG, ajoutez la variable :
+
+	* `DISABLE_RAG=0`
+
+	> 💡 En désactivant le RAG, ils n'est plus nécessaire de déployer une base de données Elasticsearch et Qdrant, tel que mentionnée dans la section *Databases*
+	
+	Sinon exportez les variables suivantes pour spécifiés où trouver les bases de données nécessaires pour le RAG : 
+
+	* `ELASTIC_HOST`
+  	* `ELASTIC_PORT`
+	* `ELASTIC_PASSWORD`
+	* `QDRANT_HOST`
+    * `QDRANT_REST_PORT`
+	* `QDRANT_GRPC_PORT`
+
+* Déployé un container d'API : 
+	
+	```bash
+    docker run --gpus all -it --publish ${API_PORT}:8090 --restart always --name albert-api-v2 \
+    --env POSTGRES_HOST=${POSTGRES_HOST} \
+    --env POSTGRES_PORT=${POSTGRES_PORT} \
+    --env POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
+    --env QDRANT_HOST=${QDRANT_HOST} \
+    --env QDRANT_REST_PORT=${QDRANT_REST_PORT} \
+    --env QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT} \
+    --env ELASTIC_HOST=${ELASTIC_HOST} \
+    --env ELASTIC_PORT=${ELASTIC_PORT} \
+    --env API_URL=${CI_DEPLOY_URL} \
+    --env FRONT_URL=${CI_DEPLOY_URL} \
+    --env "LLM_TABLE=${LLM_TABLE}" \
+    ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}
+	```
 
 ## Installation avec Docker
 
