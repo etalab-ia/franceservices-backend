@@ -37,9 +37,18 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
             print(f"Error: Failed to fetch templates file for url {model_url} ({err}), passing...")
             continue
 
+        # Default sampling paramerters
         sampling_params = {}
-        if "max_tokens" in config:
-            sampling_params["max_tokens"] = config["max_tokens"]
+        sampling_params_supported = [
+            "temperature",
+            "max_tokens",
+            "top_p",
+            "top_k",
+            "presence_penalty",
+        ]
+        for param in sampling_params_supported:
+            if param in config:
+                sampling_params[param] = config[param]
 
         prompt_format = config.get("prompt_format")
         prompt_template = {}
@@ -79,6 +88,7 @@ class Prompter:
     # Default sampling params fo a given child class
     SAMPLING_PARAMS = {
         "temperature": 20,
+        "max_tokens": 4096,
     }
 
     def __init__(self, url: str, template: Prompt | None = None):
@@ -125,7 +135,7 @@ class Prompter:
             text_span = (
                 prompt[max(0, start - look_around) : start] + " " + prompt[end : end + look_around]
             )
-            if not acronym["text"].lower() in text_span.lower():
+            if acronym["text"].lower() not in text_span.lower():
                 # I suppose we go here most of the time...
                 # but I also suppose the test should be fast enough to be negligible.
                 expanded = " (" + acronym["text"] + ")"
@@ -144,6 +154,13 @@ class Prompter:
         if expand_acronyms and "query" in kwargs:
             kwargs["query"] = self.preprocess_prompt(kwargs["query"])
 
+        history = kwargs.get("history")
+        if history:
+            # Use the three last user prompt to build the search query (embedding)
+            kwargs["search_query"] = "; ".join(
+                [x["content"] for i, x in enumerate(history) if i % 2 != 0][-3:]
+            )
+
         # Build template and render prompt with variables if any
         if self.template:
             data = self.make_variables(kwargs, self.template["variables"], self.template["default"])
@@ -157,23 +174,35 @@ class Prompter:
         if not prompt_format and self.template:
             prompt_format = self.template.get("prompt_format")
 
-        # format prompt
-        history = kwargs.get("history")
-        if prompt is None:
-            # no formatting
-            pass
-        elif prompt_format == "llama-chat":
-            return format_llama2chat_prompt(prompt, system_prompt=system_prompt, history=history)[
-                "text"
-            ]
-        elif prompt_format == "chatml":
-            return format_chatml_prompt(prompt, system_prompt=system_prompt, history=history)[
-                "text"
-            ]
-        else:
-            raise ValueError("Prompt format unkown: %s" % prompt_format)
+        # Format prompt
+        # --
+        if prompt_format:
+            if prompt_format == "llama-chat":
+                chat_formatter = format_llama2chat_prompt
+            elif prompt_format == "chatml":
+                chat_formatter = format_chatml_prompt
+            else:
+                raise ValueError("Prompt format unkown: %s" % prompt_format)
 
-        return prompt
+            raw_prompt = chat_formatter(prompt, system_prompt=system_prompt, history=history)[
+                "text"
+            ]
+
+            # Cut history to fit the max_tokens model para
+            while (
+                history
+                and len(raw_prompt.split()) * 1.25 > self.sampling_params["max_tokens"] * 0.8
+            ):
+                # Keep the same history parity to avoid a confusion between a inference and a fine-tuning prompt
+                for _ in range(2):
+                    history.pop(0)
+                raw_prompt = chat_formatter(prompt, system_prompt=system_prompt, history=history)[
+                    "text"
+                ]
+        else:
+            raw_prompt = prompt
+
+        return raw_prompt
 
     def make_variables(
         self, passed_data: dict[str, Any], variables: list[str], default: dict[str, Any]
@@ -190,6 +219,7 @@ class Prompter:
         Available Variables in Prompt Templates
         ===
         query: str        # passed in the query
+        search_query: str # passed in the query
         context: str      # passed in the query
         links: str        # passed in the query
         institution: str  # passed in the query
@@ -202,7 +232,7 @@ class Prompter:
             if not data.get(k):
                 data[k] = v
 
-        query = data.get("query")
+        search_query = data.get("search_query", data.get("query"))
         client = get_legacy_client()
 
         # Extract one similar value in a collection from query
@@ -217,7 +247,7 @@ class Prompter:
                 n_exp = 2
             hits = client.search(
                 "experiences",
-                query,
+                search_query,
                 limit=n_exp,
                 similarity="e5",
                 institution=data.get("institution"),
@@ -245,7 +275,7 @@ class Prompter:
                 limit += 1
             hits = client.search(
                 collection_name,
-                query,
+                search_query,
                 institution=data.get("institution"),
                 limit=limit,
                 similarity="e5",
@@ -264,67 +294,84 @@ class Prompter:
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
 # see also to implement this part in the driver management module of the llm API: https://gitlab.com/etalab-datalab/llm/albert-backend/-/issues/119
 def format_llama2chat_prompt(
-    item: dict | str, system_prompt: str | None = None, history=list[dict] | None
-):
-    # An item as at least one {prompt} entry, and on optionnal {answer} entry
-    # in the case of a formatting for a finetuning step.
-    if isinstance(item, str):
-        item = {"prompt": item}
+    query: str, system_prompt: str | None = None, history=list[dict] | None
+) -> dict:
+    messages = history or []
+    if history:
+        if history[-1]["role"] == "user":
+            messages[-1]["content"] = query
+        elif (
+            len(history) > 1
+            and history[-1]["role"] == "assistant"
+            and history[-1]["role"] == "user"
+        ):
+            messages[-2]["content"] = query
+    else:
+        messages = [{"role": "user", "content": query}]
 
-    bos, eos = "<s>", "</s>"
+    BOS, EOS = "<s>", "</s>"
     B_INST, E_INST = "[INST]", "[/INST]"
     B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
-    sysprompt = ""
     if system_prompt:
-        sysprompt = B_SYS + system_prompt + E_SYS
+        messages = [{"role": "system", "content": system_prompt}] + messages
+        messages = [
+            {
+                "role": messages[1]["role"],
+                "content": B_SYS + messages[0]["content"] + E_SYS + messages[1]["content"],
+            }
+        ] + messages[1:]
 
-    if "answer" in item:
-        # Finetuning format
-        prompt = f"{B_INST} {sysprompt}{item['prompt'].strip()} {E_INST} {item['answer'].strip()} "
-        prompt = bos + prompt + eos
-    else:
-        # Inference format
-        prompt = f"{B_INST} {sysprompt}{item['prompt'].strip()} {E_INST}"
-        prompt = bos + prompt
+    messages_list = [
+        f"{BOS}{B_INST} {(prompt['content']).strip()} {E_INST} {(answer['content']).strip()} {EOS}"
+        for prompt, answer in zip(messages[::2], messages[1::2])
+    ]
+
+    if len(messages) % 2 != 0:
+        messages_list.append(f"{BOS}{B_INST} {(messages[-1]['content']).strip()} {E_INST}")
+
+    prompt = "".join(messages_list)
 
     # @huggingface: it still keeps other features :o
     return {"text": prompt}
 
 
 def format_chatml_prompt(
-    item: dict | str, system_prompt: str | None = None, history=list[dict] | None
-):
-    # An item as at least one {prompt} entry, and on optionnal {answer} entry
-    # in the case of a formatting for a finetuning step.
-    if isinstance(item, str):
-        item = {"prompt": item}
+    query: str, system_prompt: str | None = None, history=list[dict] | None
+) -> dict:
+    messages = history or []
+    if history:
+        if history[-1]["role"] == "user":
+            messages[-1]["content"] = query
+        elif (
+            len(history) > 1
+            and history[-1]["role"] == "assistant"
+            and history[-1]["role"] == "user"
+        ):
+            messages[-2]["content"] = query
+    else:
+        messages = [{"role": "user", "content": query}]
 
-    # chat_template = "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}"
     sysprompt = ""
     if system_prompt:
         sysprompt = "<|im_start|>system\n" + system_prompt + "<|im_end|>\n"
 
-    if "answer" in item:
-        # Finetuning format
-        prompt = (
-            "<|im_start|>user\n"
-            + item["prompt"].strip()
-            + "<|im_end|>\n"
-            + "<|im_start|>assistant\n"
-            + item["answer"].strip()
-            + "<|im_end|>"
-        )
-    else:
-        # Inference format
-        prompt = (
-            "<|im_start|>user\n"
-            + item["prompt"].strip()
+    first_even = len(messages) if len(messages) % 2 == 0 else len(messages) - 1
+    messages_list = [
+        f"<|im_start|>{message['role']}\n" + message["content"].strip() + "<|im_end|>\n"
+        for message in messages[:first_even]
+    ]
+
+    if len(messages) % 2 != 0:
+        messages_list.append(
+            f"<|im_start|>{messages[-1]['role']}\n"
+            + messages[-1]["content"].strip()
             + "<|im_end|>\n"
             + "<|im_start|>assistant\n"
         )
 
-    prompt = sysprompt + prompt
+    messages_list = [sysprompt] + messages_list
+    prompt = "".join(messages_list)
 
     # @huggingface: it still keeps other features :o
     return {"text": prompt}

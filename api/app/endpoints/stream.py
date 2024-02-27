@@ -101,6 +101,8 @@ def start_stream(
     if current_user.id not in (db_stream.user_id, getattr(db_stream.chat, "user_id", None)):
         raise HTTPException(403, detail="Forbidden")
 
+    # Get and configure the request parameters
+    # --
     stream_id = db_stream.id
     model_name = db_stream.model_name
     mode = db_stream.mode
@@ -126,50 +128,53 @@ def start_stream(
                 403, detail="No chat_id found. Stream with history requires a chat session."
             )
 
-        history = [
-            [
+        history = []
+        for stream in db_stream.chat.streams:
+            history.extend([
                 {"role": "user", "content": stream.query},
                 {"role": "assistant", "content": stream.response},
-            ]
-            for stream in db_stream.chat.streams
-        ]
+            ])
+        history = [item for item in history if item["content"] is not None]
+
+    # Build the prompt
+    # --
+    # Build prompt
+    prompter = get_prompter(model_name, mode)
+    # We pass a mix of all kw arguments used by all prompters...
+    # This is allowed because each prompter accepts **kwargs arguments...
+    prompt = prompter.make_prompt(
+        query=query,
+        institution=institution,
+        context=context,
+        links=links,
+        limit=limit,
+        sources=sources,
+        should_sids=should_sids,
+        must_not_sids=must_not_sids,
+        history=history,
+    )
+
+    if (
+        "max_tokens" in prompter.sampling_params
+        and len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8
+    ):
+        raise HTTPException(413, detail="Prompt too large")
+
+    # Keep reference of rag used sources if any
+    rag_sources = []
+    if prompter.sources:
+        rag_sources = prompter.sources
+
+    # Allow client to tune the sampling parameters.
+    sampling_params = prompter.sampling_params
+    for k in ["max_tokens", "temperature", "top_p"]:
+        v = getattr(db_stream, k, None)
+        if v:
+            sampling_params.update({k: v})
 
     # TODO: turn into async
     # Streaming case
     def generate():
-        # Build prompt (warning, it's extra sensitive + avoid carriage return):
-        prompter = get_prompter(model_name, mode)
-        # We pass a mix of all kw arguments used by all prompters...
-        # This is allowed because each prompter accepts **kwargs arguments...
-        prompt = prompter.make_prompt(
-            query=query,
-            institution=institution,
-            context=context,
-            links=links,
-            limit=limit,
-            sources=sources,
-            should_sids=should_sids,
-            must_not_sids=must_not_sids,
-            history=history,
-        )
-
-        if (
-            "max_tokens" in prompter.sampling_params
-            and len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8
-        ):
-            raise HTTPException(413, detail="Prompt too large")
-
-        # Keep reference of rag used sources if any
-        rag_sources = []
-        if prompter.sources:
-            rag_sources = prompter.sources
-
-        # Allow client to tune the sampling parameters.
-        sampling_params = prompter.sampling_params
-        for k in ["max_tokens", "temperature", "top_p"]:
-            v = getattr(db_stream, k, None)
-            if v:
-                sampling_params.update({k: v})
 
         # Get the right stream generator
         if WITH_GPU:
