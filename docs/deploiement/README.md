@@ -195,13 +195,7 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
     * `POSTGRES_PORT`
     * `POSTGRES_HOST`
 
-	Si vous souhaitez utilisez l'API sans la fonctionnalité de RAG, ajoutez la variable :
-
-	* `DISABLE_RAG=0`
-
-	> 💡 En désactivant le RAG, ils n'est plus nécessaire de déployer une base de données Elasticsearch et Qdrant, tel que mentionnée dans la section *Databases*
-	
-	Sinon exportez les variables suivantes pour spécifiés où trouver les bases de données nécessaires pour le RAG : 
+	Exportez les variables suivantes pour spécifier où trouver les bases de données nécessaires au RAG : 
 
 	* `ELASTIC_HOST`
   	* `ELASTIC_PORT`

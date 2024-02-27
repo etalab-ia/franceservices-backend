@@ -73,36 +73,36 @@ if ENV == "dev":
 else:
     API_ROUTE_VER = "/api/v2"
 
-if os.environ.get("DISABLED_RAG", 0) == 1:
+# Elasticsearch
+ELASTIC_HOST = os.environ.get("ELASTIC_HOST", "localhost")
+ELASTIC_PORT = os.environ.get("ELASTIC_PORT", "9200")
+ELASTICSEARCH_URL = f"http://{ELASTIC_HOST}:{ELASTIC_PORT}"
+ELASTIC_PASSWORD = os.environ.get("ELASTIC_PASSWORD", None)
+ELASTICSEARCH_CREDS = ("elastic", ELASTIC_PASSWORD)
+ELASTICSEARCH_IX_VER = "v3"
 
-    # Elasticsearch
-    ELASTICSEARCH_URL = f"http://{os.environ.get('ELASTIC_HOST', 'localhost')}:{os.environ.get('ELASTIC_PORT', '9202')}"
-    ELASTICSEARCH_CREDS = ("elastic", os.environ["ELASTIC_PASSWORD"])
-    ELASTICSEARCH_IX_VER = "v3"
+# Qdrant
+QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")
+QDRANT_GRPC_PORT = os.environ.get("QDRANT_GRPC_PORT", "6334")
+QDRANT_REST_PORT = os.environ.get("QDRANT_REST_PORT", "6333")
+QDRANT_URL = f"http://{QDRANT_HOST}:{QDRANT_REST_PORT}"
+QDRANT_IX_VER = "v3"
 
-    # Qdrant
-    QDRANT_URL = f"http://{os.environ.get('QDRANT_HOST', 'localhost')}:{os.environ.get('QDRANT_REST_PORT', '6333')}"
-    QDRANT_GRPC_PORT = os.environ.get("QDRANT_GRPC_PORT", "6334")
-    QDRANT_IX_VER = "v3"
+# Embedding
+SHEET_SOURCES = ["service-public", "travail-emploi"]
+EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
+EMBEDDING_BOOTSTRAP_PATH = os.path.join(
+    "_data", "embeddings", EMBEDDING_MODEL.split("/")[-1]
+)
 
-    SHEET_SOURCES = ["service-public", "travail-emploi"]
-    EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
-    EMBEDDING_BOOTSTRAP_PATH = os.path.join(
-        "_data", "embeddings", EMBEDDING_MODEL.split("/")[-1]
-    )
+# LLM
+LLM_DEFAULT_MODEL = os.environ.get("LLM_DEFAULT_MODEL", "albert-light")
+LLM_TABLE = os.environ.get("LLM_TABLE", "[]")
 
-# LLM Routing Table.
-LLM_TABLE = os.getenv("LLM_TABLE")
-if not LLM_TABLE:  # default
-    LLM_TABLE = [
-        # model_name/api URL
-        ("albert-light", "http://127.0.0.1:8082")
-    ]
-else:
-    try:
-        LLM_TABLE = ast.literal_eval(LLM_TABLE)
-    except Exception as e:
-        raise ValueError("LLM_TABLE is not valid: %s" % e)
+try:
+    LLM_TABLE = ast.literal_eval(LLM_TABLE)
+except Exception as e:
+    raise ValueError("LLM_TABLE is not valid: %s" % e)
 
 
 PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
@@ -113,9 +113,13 @@ if ENV == "unittest":
 
 # If local, download the model Tiny Albert from HuggingFace
 if ENV == "dev":
-    TINY_ALBERT_LOCAL_PATH = Path("../../../pyalbert/models/tiny_albert/ggml-model-expert-q4_K.bin").resolve()
+    TINY_ALBERT_LOCAL_PATH = Path(
+        "../../../pyalbert/models/tiny_albert/ggml-model-expert-q4_K.bin"
+    ).resolve()
     if not TINY_ALBERT_LOCAL_PATH.exists():
-        print("Le modèle Tiny Albert n'est pas présent localement. Téléchargez-le depuis HuggingFace à l'aide du script pyalbert/albert.py en utilisant la configuration vllm_routing_table.json, puis relancez l'API.")
+        print(
+            "Le modèle Tiny Albert n'est pas présent localement. Téléchargez-le depuis HuggingFace à l'aide du script pyalbert/albert.py en utilisant la configuration vllm_routing_table.json, puis relancez l'API."
+        )
 
 if torch.cuda.is_available():
     WITH_GPU = True
