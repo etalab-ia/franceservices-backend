@@ -120,7 +120,7 @@ if ENV == "unittest":
 #    if not TINY_ALBERT_LOCAL_PATH.exists():
 #        print("Le modèle Tiny Albert n'est pas présent localement. Téléchargez-le depuis HuggingFace à l'aide du script pyalbert/albert.py en utilisant la configuration vllm_routing_table.json, puis relancez l'API.")
 
-if torch.cuda.is_available():
+if torch.cuda.is_available() and os.getenv("DISABLE_CUDA", "").lower() not in ["y", "yes", "1", "true"]:
     WITH_GPU = True
     DEVICE_MAP = "cuda:0"
 else:
