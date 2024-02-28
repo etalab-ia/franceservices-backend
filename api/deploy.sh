@@ -23,8 +23,8 @@ do
 done
 
 # check if required env variables are set
-if [[ -z $CI_REGISTRY_IMAGE ]] || [[ -z $CI_API_IMAGE_TAG ]] || [[ -z $CI_DEPLOY_URL ]] || [[ -z $POSTGRES_HOST ]] || [[ -z $POSTGRES_PASSWORD ]] || [[ -z $POSTGRES_PORT ]];  then
-    echo "error: CI_REGISTRY_IMAGE, CI_API_IMAGE_TAG, CI_DEPLOY_URL, POSTGRES_HOST, POSTGRES_PASSWORD, POSTGRES_PORT env variables are required" && exit 1
+if [[ -z $CI_REGISTRY_IMAGE ]] || [[ -z $CI_API_IMAGE_TAG ]] || [[ -z $CI_DEPLOY_URL ]] || [[ -z $POSTGRES_HOST ]] || [[ -z $POSTGRES_PASSWORD ]] || [[ -z $POSTGRES_PORT ]] || [[ -z $QDRANT_HOST ]] || [[ -z $QDRANT_REST_PORT ]] || [[ -z $QDRANT_GRPC_PORT ]] || [[ -z $ELASTIC_HOST ]] || [[ -z $ELASTIC_PORT ]] || [[ -z $ELASTIC_PASSWORD ]]; then
+    echo "error: CI_REGISTRY_IMAGE, CI_API_IMAGE_TAG, CI_DEPLOY_URL, POSTGRES_HOST, POSTGRES_PASSWORD, POSTGRES_PORT, QDRANT_HOST, QDRANT_REST_PORT, QDRANT_GRPC_PORT, ELASTIC_HOST, ELASTIC_PORT, ELASTIC_PASSWORD env variables are required" && exit 1
 fi
 
 if [[ -z $routing_table ]]; then
