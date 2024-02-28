@@ -434,6 +434,12 @@ deploy:api:dinum:
       export POSTGRES_HOST=${CI_DEPLOY_HOST}
       export POSTGRES_PORT=${POSTGRES_PORT}
       export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      export QDRANT_REST_PORT=${QDRANT_REST_PORT}
+      export QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT}
+      export QDRANT_HOST=${CI_DEPLOY_HOST}
+      export ELASTIC_HOST=${CI_DEPLOY_HOST}
+      export ELASTIC_PORT=${ELASTIC_PORT}
+      export ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       rm -rf ~/${CI_JOB_ID}
@@ -500,6 +506,12 @@ deploy:api:france services:
       export POSTGRES_HOST=${CI_DEPLOY_HOST}
       export POSTGRES_PORT=${POSTGRES_PORT}
       export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      export QDRANT_REST_PORT=${QDRANT_REST_PORT}
+      export QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT}
+      export QDRANT_HOST=${CI_DEPLOY_HOST}
+      export ELASTIC_HOST=${CI_DEPLOY_HOST}
+      export ELASTIC_PORT=${ELASTIC_PORT}
+      export ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       rm -rf ~/${CI_JOB_ID}
