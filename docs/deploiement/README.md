@@ -181,6 +181,41 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 	docker compose --env-file=PATH_TO_ENV_FILE down && docker compose --env-file=PATH_TO_ENV_FILE up --detach
 	```
 
+### RAG
+
+> Par défaut les fichiers téléchargés et générés dans cette section seront mis dans un dossier *./_data*.
+
+* Pour activer la fonctionnalité de RAG, vous devez tout d'abord téléchargez les documents qui vont alimenter le système : 
+
+	```bash
+    python3 ./pyalbert.py download_corpus
+	```
+
+* Vous devez ensuite appliquer un preprocessing sur ces documents : 
+
+	```bash
+    python3 ./pyalbert.py make_chunks --structured
+	```
+
+* Puis, vous devez créer des vecteurs à l'aide d'un modèle d'embeddings 
+
+	```bash
+    python3 ./pyalbert.py make_embeddings
+	```
+
+* Enfin vous devez intégrer les documents et ces vectors dans les bases de données dédiés qui ont été déployées dans la section précédente
+
+	```bash
+    # Elasticsearch indexes
+    python3 ./pyalbert.py index experiences --index-type bm25
+    python3 ./pyalbert.py index sheets --index-type bm25
+    python3 ./pyalbert.py index chunks --index-type bm25
+
+    # Qdrant indexes (aka collections)
+    python3 ./pyalbert.py index experiences --index-type e5
+    python3 ./pyalbert.py index chunks --index-type e5
+	```
+
 ### API
 
 #### Avec docker
@@ -195,7 +230,7 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
     * `POSTGRES_PORT`
     * `POSTGRES_HOST`
 
-	Exportez les variables suivantes pour spécifier où trouver les bases de données nécessaires au RAG : 
+	Exportez également les variables suivantes pour spécifier où trouver les bases de données nécessaires au RAG : 
 
 	* `ELASTIC_HOST`
   	* `ELASTIC_PORT`
