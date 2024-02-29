@@ -177,7 +177,7 @@ def start_stream(
 
         # Get the right stream generator
         if WITH_GPU:
-            llm_client = get_llm_client(url=prompter.url)
+            llm_client = get_llm_client(model_name)
             generator = llm_client.generate(prompt, stream=True, **sampling_params)
         else:
             callback = gpt4all_callback(db, stream_id)

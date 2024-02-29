@@ -15,7 +15,7 @@ def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | None
         prompt = prompter.make_prompt(query=query)
 
         # Generate
-        llm_client = get_llm_client(prompter.url)
+        llm_client = get_llm_client(model_name)
         chat_name = llm_client.generate(prompt, temperature=20)
 
         # Update db_chat

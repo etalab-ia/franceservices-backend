@@ -378,9 +378,8 @@ def format_chatml_prompt(
 def get_prompter(model_name: str, mode: str | None = None):
     model = next((m for m in LLM_TABLE if m[0] == model_name), None)
     if not model:
-        raise ValueError("Prompt model unknown: %s" % model_name)
+        raise ValueError("LLM model not found: %s" % model_name)
 
-    model_name = model[0]
     model_url = model[1]
     global TEMPLATES
     if model_name not in TEMPLATES:

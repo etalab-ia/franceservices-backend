@@ -7,9 +7,21 @@ from requests.exceptions import ConnectionError
 
 # @IMPROVE: commons & app.config unification (relative imports...)
 try:
-    from app.config import API_ROUTE_VER, API_URL, FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
+    from app.config import (
+        API_ROUTE_VER,
+        API_URL,
+        FIRST_ADMIN_PASSWORD,
+        FIRST_ADMIN_USERNAME,
+        LLM_TABLE,
+    )
 except ModuleNotFoundError:
-    from api.app.config import API_ROUTE_VER, API_URL, FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
+    from api.app.config import (
+        API_ROUTE_VER,
+        API_URL,
+        FIRST_ADMIN_PASSWORD,
+        FIRST_ADMIN_USERNAME,
+        LLM_TABLE,
+    )
 
 
 class ApiClient:
@@ -144,5 +156,10 @@ def get_legacy_client() -> ApiClient:
     )
 
 
-def get_llm_client(url: str) -> ApiVllmClient:
-    return ApiVllmClient(url)
+def get_llm_client(model_name: str) -> ApiVllmClient:
+    model = next((m for m in LLM_TABLE if m[0] == model_name), None)
+    if not model:
+        raise ValueError("LLM model not found: %s" % model_name)
+
+    model_url = model[1]
+    return ApiVllmClient(model_url)
