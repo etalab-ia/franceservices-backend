@@ -7,14 +7,13 @@ from spacy.lang.fr import French
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.clients.api_vllm_client import ApiVllmClient
 from app.config import ENV, WITH_GPU
 from app.deps import get_current_user, get_db
 from app.core.llm import auto_set_chat_name
 
 if not WITH_GPU:
     from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
-from commons import get_prompter
+from commons import get_prompter, get_llm_client
 from pyalbert.postprocessing import check_url, correct_mail, correct_number, correct_url
 
 
@@ -178,8 +177,8 @@ def start_stream(
 
         # Get the right stream generator
         if WITH_GPU:
-            api_vllm_client = ApiVllmClient(url=prompter.url)
-            generator = api_vllm_client.generate(prompt, **sampling_params)
+            llm_client = get_llm_client(url=prompter.url)
+            generator = llm_client.generate(prompt, stream=True, **sampling_params)
         else:
             callback = gpt4all_callback(db, stream_id)
             generator = gpt4all_generate(prompt, callback=callback, temp=temperature)
