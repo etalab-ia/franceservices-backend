@@ -11,6 +11,7 @@ from app.clients.api_vllm_client import ApiVllmClient
 from app.config import ENV, WITH_GPU
 from app.deps import get_current_user, get_db
 from app.core.llm import auto_set_chat_name
+
 if not WITH_GPU:
     from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
 from commons import get_prompter
@@ -100,6 +101,8 @@ def start_stream(
     if current_user.id not in (db_stream.user_id, getattr(db_stream.chat, "user_id", None)):
         raise HTTPException(403, detail="Forbidden")
 
+    # Get and configure the request parameters
+    # --
     stream_id = db_stream.id
     model_name = db_stream.model_name
     mode = db_stream.mode
@@ -113,45 +116,65 @@ def start_stream(
     should_sids = db_stream.should_sids
     must_not_sids = db_stream.must_not_sids
     postprocessing = db_stream.postprocessing
+
     sources = None
     if db_stream.sources:
         sources = [source.source_name for source in db_stream.sources]
 
+    history = None
+    if db_stream.with_history:
+        if not db_stream.chat_id:
+            raise HTTPException(
+                403, detail="No chat_id found. Stream with history requires a chat session."
+            )
+
+        history = []
+        for stream in db_stream.chat.streams:
+            history.extend([
+                {"role": "user", "content": stream.query},
+                {"role": "assistant", "content": stream.response},
+            ])
+        history = [item for item in history if item["content"] is not None]
+
+    # Build the prompt
+    # --
+    # Build prompt
+    prompter = get_prompter(model_name, mode)
+    # We pass a mix of all kw arguments used by all prompters...
+    # This is allowed because each prompter accepts **kwargs arguments...
+    prompt = prompter.make_prompt(
+        query=query,
+        institution=institution,
+        context=context,
+        links=links,
+        limit=limit,
+        sources=sources,
+        should_sids=should_sids,
+        must_not_sids=must_not_sids,
+        history=history,
+    )
+
+    if (
+        "max_tokens" in prompter.sampling_params
+        and len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8
+    ):
+        raise HTTPException(413, detail="Prompt too large")
+
+    # Keep reference of rag used sources if any
+    rag_sources = []
+    if prompter.sources:
+        rag_sources = prompter.sources
+
+    # Allow client to tune the sampling parameters.
+    sampling_params = prompter.sampling_params
+    for k in ["max_tokens", "temperature", "top_p"]:
+        v = getattr(db_stream, k, None)
+        if v:
+            sampling_params.update({k: v})
+
     # TODO: turn into async
     # Streaming case
     def generate():
-        # Build prompt (warning, it's extra sensitive + avoid carriage return):
-        prompter = get_prompter(model_name, mode)
-        # We pass a mix of all kw arguments used by all prompters...
-        # This is allowed because each prompter accepts **kwargs arguments...
-        prompt = prompter.make_prompt(
-            query=query,
-            institution=institution,
-            context=context,
-            links=links,
-            limit=limit,
-            sources=sources,
-            should_sids=should_sids,
-            must_not_sids=must_not_sids,
-        )
-
-        if (
-            "max_tokens" in prompter.sampling_params
-            and len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8
-        ):
-            raise HTTPException(413, detail="Prompt too large")
-
-        # Keep reference of rag used sources if any
-        rag_sources = []
-        if prompter.sources:
-            rag_sources = prompter.sources
-
-        # Allow client to tune the sampling parameters.
-        sampling_params = prompter.sampling_params
-        for k in ["max_tokens", "temperature", "top_p"]:
-            v = getattr(db_stream, k, None)
-            if v:
-                sampling_params.update({k: v})
 
         # Get the right stream generator
         if WITH_GPU:
@@ -200,7 +223,7 @@ def start_stream(
         bucket_out = ""
         eos_code = "[DONE]"
         url_dict, mail_dict, number_dict = [], [], []
-        whitelist_path=os.environ.get("API_WHITELIST_FILE", "/data/whitelist/whitelist.json")
+        whitelist_path = os.environ.get("API_WHITELIST_FILE", "/data/whitelist/whitelist.json")
 
         for words in generate():
             try:
@@ -219,16 +242,20 @@ def start_stream(
                 bucket_out = str(list(doc.sents)[0])
 
                 if "check_mail" in postprocessing:
-                    mail_dict.extend(correct_mail(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_mail(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    mail_dict.extend(
+                        correct_mail(text=bucket_out, whitelist_path=whitelist_path)[1]
+                    )
+                    bucket_out = correct_mail(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 if "check_number" in postprocessing:
-                    number_dict.extend(correct_number(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_number(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    number_dict.extend(
+                        correct_number(text=bucket_out, whitelist_path=whitelist_path)[1]
+                    )
+                    bucket_out = correct_number(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 if "check_url" in postprocessing:
-                    url_dict.extend(correct_url(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_url(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    url_dict.extend(correct_url(text=bucket_out, whitelist_path=whitelist_path)[1])
+                    bucket_out = correct_url(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 if bucket_out[-1] == "." or bucket_out[-1] == "?":
                     bucket_out += " "  # Adding a space after "." or "?" at the end of each sentence
@@ -244,16 +271,20 @@ def start_stream(
                 bucket_out = bucket_out.replace(eos_code, "")
 
                 if "check_mail" in postprocessing:
-                    mail_dict.extend(correct_mail(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_mail(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    mail_dict.extend(
+                        correct_mail(text=bucket_out, whitelist_path=whitelist_path)[1]
+                    )
+                    bucket_out = correct_mail(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 if "check_number" in postprocessing:
-                    number_dict.extend(correct_number(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_number(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    number_dict.extend(
+                        correct_number(text=bucket_out, whitelist_path=whitelist_path)[1]
+                    )
+                    bucket_out = correct_number(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 if "check_url" in postprocessing:
-                    url_dict.extend(correct_url(text=bucket_out,whitelist_path=whitelist_path)[1])
-                    bucket_out = correct_url(text=bucket_out,whitelist_path=whitelist_path)[0]
+                    url_dict.extend(correct_url(text=bucket_out, whitelist_path=whitelist_path)[1])
+                    bucket_out = correct_url(text=bucket_out, whitelist_path=whitelist_path)[0]
 
                 yield f"number_dict: {number_dict} mail_dict: {mail_dict} url_dict: {url_dict} data: {json.dumps(bucket_out)}\n\n"
                 # yield of the last sentence
@@ -264,10 +295,14 @@ def start_stream(
                 ):  # Checking all url's status code and fullfilling url_dict with full urls having a status code = 200
                     for dict in url_dict:
                         if dict["old_url"] == check_url(
-                            url=dict["old_url"], whitelist_path=whitelist_path, check_status_code=True
+                            url=dict["old_url"],
+                            whitelist_path=whitelist_path,
+                            check_status_code=True,
                         ):
                             dict["new_url_full"] = check_url(
-                                url=dict["old_url"], whitelist_path=whitelist_path, check_status_code=True
+                                url=dict["old_url"],
+                                whitelist_path=whitelist_path,
+                                check_status_code=True,
                             )
                         else:
                             dict["new_url_full"] = ""

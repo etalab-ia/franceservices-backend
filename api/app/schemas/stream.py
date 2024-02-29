@@ -3,6 +3,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.config import LLM_TABLE
+
 from .feedback import Feedback
 from .search import IndexSource
 from .user import User
@@ -19,6 +21,9 @@ class StreamBase(BaseModel):
         description='The user query. It the query exceed a certain size wich depends on the contextual window of the model, the model will return an  HTTPException(413, detail="Prompt too large")',
     )
     limit: int | None = None
+    with_history: bool | None = Field(
+        default=None, description="Use the conversation history to generate a new response."
+    )
     # For instruct/fabrique like prompt.
     context: str = ""
     institution: str = ""
@@ -68,6 +73,8 @@ class StreamBase(BaseModel):
         #         raise ValueError("Incompatible mode")
         #     if self.mode is None:
         #         self.mode = "rag"  # default
+        if self.model_name not in [m[0] for m in LLM_TABLE]:
+            raise ValueError("Unknown model: %s" % self.model_name)
 
         # For SQLAlchemy relationship compatibility
         if not self.sources:

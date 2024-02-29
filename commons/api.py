@@ -92,15 +92,11 @@ class ApiClient:
     def get_prompt_config(self, url):
         headers = {}
 
-        response = requests.get(
-            f"{url}/get_prompt_config",
-            headers=headers,
-            params={"config_file": "prompt_config.yml"},
-        )
+        response = requests.get( f"{url}/get_prompt_config", headers=headers)
         response.raise_for_status()
 
         return response.json()
-    
+
 # TODO: factorize with api/app/clients/api_vllm_client.py
 def generate(url, conf, text):
     """OpenAI-like completion API"""

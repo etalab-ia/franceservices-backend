@@ -25,15 +25,24 @@ headers = {
 }
 data = {
     "query": "Quelles sont les conditions pour obtenir les APL? Sur quels site web de puis je faire ma demande ?",
-    #"query": "Quel est la limite d'age pour voter en france, et quelle sont les échances électorales ?",
-    #"query": "Qu'est ce que la DITP et la DINUM ?",
-    #"model_name": "albert-light",
+    # "query": "Quel est la limite d'age pour voter en france, et quelle sont les échances électorales ?",
+    # "query": "Qu'est ce que la DITP et la DINUM ?",
+    "model_name": "albert-light",
+    "mode": "rag",
     # "sources": ["travail-emploi"],
     # "should_sids": ["F35789"],
     # "must_not_sids": ["F35789"],
-    "postprocessing": ["check_url", "check_mail", "check_number"],
+    # "postprocessing": ["check_url", "check_mail", "check_number"],
+    # "with_history": True,
 }
+#response = requests.post(f"{url}/stream/chat/1", json=data, headers=headers)
 response = requests.post(f"{url}/stream", json=data, headers=headers)
+if not response.ok:
+    error_detail = response.json().get("detail")
+    print(f"Error: {error_detail}")
+    response.raise_for_status()
+
+stream_id = response.json()["id"]
 
 try:
     if json.loads(response.text)["postprocessing"]:
@@ -44,15 +53,15 @@ except KeyError:
     postprocessing_activated = False
     pass
 
-try:
-    stream_id = response.json()["id"]
-except Exception:
-    print(response, response.text)
-    exit()
 
 # Start Stream:
 data = {"stream_id": stream_id}
 response = requests.get(f"{url}/stream/{stream_id}/start", json=data, headers=headers, stream=True)
+if not response.ok:
+    error_detail = response.json().get("detail")
+    print(f"Error: {error_detail}")
+    response.raise_for_status()
+
 final_text = ""
 print("-> Waiting for the response stream:")
 for line in response.iter_lines():
