@@ -1,9 +1,7 @@
 import os
 import re
 from typing import Any
-import requests
 
-import yaml
 from jinja2 import BaseLoader, Environment, FileSystemLoader, meta
 from requests.exceptions import RequestException
 
@@ -294,7 +292,7 @@ class Prompter:
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
 # see also to implement this part in the driver management module of the llm API: https://gitlab.com/etalab-datalab/llm/albert-backend/-/issues/119
 def format_llama2chat_prompt(
-    query: str, system_prompt: str | None = None, history=list[dict] | None
+    query: str, system_prompt: str | None = None, history: list[dict] | None = None
 ) -> dict:
     messages = history or []
     if history:
@@ -337,7 +335,7 @@ def format_llama2chat_prompt(
 
 
 def format_chatml_prompt(
-    query: str, system_prompt: str | None = None, history=list[dict] | None
+    query: str, system_prompt: str | None = None, history: list[dict] | None = None
 ) -> dict:
     messages = history or []
     if history:
