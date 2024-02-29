@@ -96,13 +96,17 @@ EMBEDDING_BOOTSTRAP_PATH = os.path.join(
 )
 
 # LLM
-LLM_DEFAULT_MODEL = os.environ.get("LLM_DEFAULT_MODEL", "albert-light")
-LLM_TABLE = os.environ.get("LLM_TABLE", "[]")
-
-try:
-    LLM_TABLE = ast.literal_eval(LLM_TABLE)
-except Exception as e:
-    raise ValueError("LLM_TABLE is not valid: %s" % e)
+LLM_TABLE = os.getenv("LLM_TABLE")
+if LLM_TABLE:  # default
+    try:
+        LLM_TABLE = ast.literal_eval(LLM_TABLE)
+    except Exception as e:
+        raise ValueError("LLM_TABLE is not valid: %s" % e)
+else: # default
+    LLM_TABLE = [
+        # model_name/api URL
+        ("AgentPuclic/albert-light", "http://127.0.0.1:8082")
+    ]
 
 
 PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
