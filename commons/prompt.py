@@ -194,7 +194,7 @@ class Prompter:
                 and len(raw_prompt.split()) * 1.25 > self.sampling_params["max_tokens"] * 0.8
             ):
                 # Keep the same history parity to avoid a confusion between a inference and a fine-tuning prompt
-                for _ in range(2):
+                for _ in history[:2]:
                     history.pop(0)
                 raw_prompt = chat_formatter(prompt, system_prompt=system_prompt, history=history)[
                     "text"
