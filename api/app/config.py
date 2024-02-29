@@ -97,12 +97,12 @@ EMBEDDING_BOOTSTRAP_PATH = os.path.join(
 
 # LLM
 LLM_TABLE = os.getenv("LLM_TABLE")
-if LLM_TABLE:  # default
+if LLM_TABLE:
     try:
         LLM_TABLE = ast.literal_eval(LLM_TABLE)
     except Exception as e:
         raise ValueError("LLM_TABLE is not valid: %s" % e)
-else: # default
+else:  # default
     LLM_TABLE = [
         # model_name/api URL
         ("AgentPuclic/albert-light", "http://127.0.0.1:8082")
