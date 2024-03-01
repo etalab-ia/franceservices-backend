@@ -130,7 +130,12 @@ def start_stream(
 
         history = []
         history_size = len(db_stream.chat.streams)
-        for i, stream in enumerate(db_stream.chat.streams):
+        history_ = (
+            db.query(models.Stream)
+            .filter(models.Stream.chat_id == db_stream.chat.id)
+            .order_by(models.Stream.id.asc())
+        )
+        for i, stream in enumerate(history_):
             if not stream.query:
                 # Occurs is a previous generation failed
                 continue
