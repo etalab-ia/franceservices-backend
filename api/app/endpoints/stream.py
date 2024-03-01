@@ -129,11 +129,20 @@ def start_stream(
             )
 
         history = []
-        for stream in db_stream.chat.streams:
-            history.extend([
-                {"role": "user", "content": stream.query},
-                {"role": "assistant", "content": stream.response},
-            ])
+        history_size = len(db_stream.chat.streams)
+        for i, stream in enumerate(db_stream.chat.streams):
+            if not stream.query:
+                # Occurs is a previous generation failed
+                continue
+            if not stream.response and i < history_size - 1:
+                # Occurs if a generation was early stopped
+                continue
+            history.extend(
+                [
+                    {"role": "user", "content": stream.query},
+                    {"role": "assistant", "content": stream.response},
+                ]
+            )
         history = [item for item in history if item["content"] is not None]
 
     # Build the prompt
@@ -154,10 +163,22 @@ def start_stream(
         history=history,
     )
 
-    if (
-        "max_tokens" in prompter.sampling_params
-        and len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8
-    ):
+    while len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8 and limit > 1:
+        print("WARNING: promt size overflow, reducing limit...")
+        limit -= 1
+        prompt = prompter.make_prompt(
+            query=query,
+            institution=institution,
+            context=context,
+            links=links,
+            limit=limit,
+            sources=sources,
+            should_sids=should_sids,
+            must_not_sids=must_not_sids,
+            history=history,
+        )
+
+    if len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8:
         raise HTTPException(413, detail="Prompt too large")
 
     # Keep reference of rag used sources if any
@@ -175,7 +196,6 @@ def start_stream(
     # TODO: turn into async
     # Streaming case
     def generate():
-
         # Get the right stream generator
         if WITH_GPU:
             api_vllm_client = ApiVllmClient(url=prompter.url)
