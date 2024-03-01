@@ -159,7 +159,7 @@ class Prompter:
         if history:
             # Use the three last user prompt to build the search query (embedding)
             kwargs["search_query"] = "; ".join(
-                [x["content"] for i, x in enumerate(history) if i % 2 == 0][-3:]
+                [x["content"] for i, x in enumerate(history) if x["role"] == "user"][-3:]
             )
 
         # Build template and render prompt with variables if any
