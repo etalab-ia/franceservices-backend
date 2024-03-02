@@ -375,7 +375,7 @@ def format_chatml_prompt(
     return {"text": prompt}
 
 
-def get_prompter(model_name: str, mode: str | None = None):
+def get_prompter(model_name: str, mode: str | None = None) -> Prompter:
     model = next((m for m in LLM_TABLE if m[0] == model_name), None)
     if not model:
         raise ValueError("LLM model not found: %s" % model_name)
