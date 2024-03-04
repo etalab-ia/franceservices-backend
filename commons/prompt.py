@@ -1,10 +1,7 @@
-import os
 import re
 from typing import Any
-import requests
 
-import yaml
-from jinja2 import BaseLoader, Environment, FileSystemLoader, meta
+from jinja2 import BaseLoader, Environment, meta
 from requests.exceptions import RequestException
 
 from commons.api import get_legacy_client

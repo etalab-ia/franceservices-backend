@@ -21,7 +21,7 @@ fileConfig(config.config_file_name)
 # target_metadata = None
 
 from app.db.base import Base  # noqa
-from app.config import ENV, POSTGRES_PASSWORD, ROOT_DIR
+from app.config import ENV, ROOT_DIR
 
 target_metadata = Base.metadata
 

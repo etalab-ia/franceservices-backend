@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.config import ENV, POSTGRES_PASSWORD, ROOT_DIR
+from app.config import ENV, ROOT_DIR
 
 if ENV in ("unittest", "dev"):
     # sqlite3:

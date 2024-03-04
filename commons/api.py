@@ -2,7 +2,6 @@ import json
 from datetime import datetime, timedelta
 
 import requests
-from requests.exceptions import ConnectionError
 
 # @IMPROVE: commons & app.config unification (relative imports...)
 try:

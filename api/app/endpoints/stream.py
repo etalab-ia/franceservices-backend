@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.clients.api_vllm_client import ApiVllmClient
-from app.config import ENV, WITH_GPU
+from app.config import WITH_GPU
 from app.deps import get_current_user, get_db
 from app.core.llm import auto_set_chat_name
 

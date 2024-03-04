@@ -4,8 +4,6 @@ import ast
 import torch
 from dotenv import load_dotenv
 
-from pathlib import Path
-
 
 def collate_ix_name(name, version):
     if version:
