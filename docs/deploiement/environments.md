@@ -15,12 +15,15 @@ Il est nécessaire pour un déploiement par la pipeline Gitlab de CI/CD (voir [.
 
 | key | environment | type | protected | info |
 | --- | --- | --- | --- | --- |
-| STAGING__ENV_FILE | dinum \| franceservices | file | no | Environment variables file for staging branch of dinum environment [(1)](#1-env-files) | 
-| PROD__ENV_FILE | dinum \| franceservices | file |  yes | Environment variables file for main branch (protected) of dinum environment [(1)](#1-env-files) |
+| STAGING__ENV_FILE | dinum \| franceservices | file | no | Environment variables file for staging environments [(1)](#1-env-files) | 
+| PROD__ENV_FILE | dinum \| franceservices | file |  yes | Environment variables file for production environments [(1)](#1-env-files) |
+| STAGING__LLM_ROUTING_TABLE | * | file | no | LLM routing table file for staging environments [(2)](#2-config-table-files) |
+| PROD__LLM_ROUTING_TABLE | * | file | yes | LLM routing table file for production environments [(2)](#2-config-table-files) |
 | CI_DEPLOY_USER | gitlab | * | User name of the deployment service account |
 | CI_DEPLOY_USER_SSH_PRIVATE_KEY | * | file | no | Private SSH key of deployment service account (gitlab) |
 | CI_API_IMAGE_TAG | * | variable | no | Docker tag of API image (ex: 1.0.0), upgrade it with each build |
 | CI_VLLM_IMAGE_TAG | * | variable | no | Docker tag of VLLM image (ex: 1.0.0), upgrade it with each build |
+| CI_GPT4ALL_IMAGE_TAG | * | variable | no | Docker tag of GPT4All image (ex: 1.0.0), upgrade it with each build |
 
 #### 1. Env files
 
@@ -41,7 +44,7 @@ Le fichier de variable d'environnement (*STAGING__ENV_FILE* ou *PROD__ENV_FILE*)
 | POSTGRES_PORT | *** | * | Port de la base de données PostgreSQL. |
 | ELASTIC_PASSWORD | *** | * | Mot de passe de la basede données Elasticsearch. |
 | ELASTIC_PORT | *** | * |  Port de la base de données Elasticsearch. |
-| QDRANT_PORT | *** | * |  Port de la base de données Qdrant. |
+| QDRANT_REST_PORT | *** | * |  Port REST de la base de données Qdrant. |
 
 #### 2. Fichiers de configuration
 
