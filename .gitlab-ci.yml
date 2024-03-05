@@ -438,7 +438,6 @@ deploy:api:dinum:
       export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
       export CI_API_IMAGE_TAG=${CI_API_IMAGE_TAG}
       export CI_DEPLOY_URL=${CI_DEPLOY_URL}
-      export $(grep -v "^#" /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env | xargs)
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       rm -rf ~/${CI_JOB_ID}
@@ -503,7 +502,6 @@ deploy:api:france services:
       export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
       export CI_API_IMAGE_TAG=${CI_API_IMAGE_TAG}
       export CI_DEPLOY_URL=${CI_DEPLOY_URL}
-      export $(grep -v "^#" /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env | xargs)
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       rm -rf ~/${CI_JOB_ID}

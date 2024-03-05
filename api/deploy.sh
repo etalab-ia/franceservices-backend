@@ -22,11 +22,6 @@ do
     esac
 done
 
-# check if required env variables are set
-if [[ -z $CI_REGISTRY_IMAGE ]] || [[ -z $CI_API_IMAGE_TAG ]] || [[ -z $CI_DEPLOY_URL ]] || [[ -z $POSTGRES_HOST ]] || [[ -z $POSTGRES_PASSWORD ]] || [[ -z $POSTGRES_PORT ]] || [[ -z $QDRANT_HOST ]] || [[ -z $QDRANT_REST_PORT ]] || [[ -z $QDRANT_GRPC_PORT ]] || [[ -z $ELASTIC_HOST ]] || [[ -z $ELASTIC_PORT ]] || [[ -z $ELASTIC_PASSWORD ]]; then
-    echo "error: CI_REGISTRY_IMAGE, CI_API_IMAGE_TAG, CI_DEPLOY_URL, POSTGRES_HOST, POSTGRES_PASSWORD, POSTGRES_PORT, QDRANT_HOST, QDRANT_REST_PORT, QDRANT_GRPC_PORT, ELASTIC_HOST, ELASTIC_PORT, ELASTIC_PASSWORD env variables are required" && exit 1
-fi
-
 if [[ -z $routing_table ]]; then
     echo "-r argument is required. Help:" && Help && exit 0
 elif ! [[ -f $routing_table ]]; then
@@ -114,26 +109,9 @@ for (( i=0; i<${#api_table[@]}; i++ ));do
     
     docker run --gpus all --detach --publish ${API_PORT}:8090 --restart always --name ${COMPOSE_PROJECT_NAME}-${API_PORT}-api-v2 \
     --env ENV=prod \
-    --env SECRET_KEY=${SECRET_KEY} \
-    --env ELASTIC_HOST=${ELASTIC_HOST} \
-    --env ELASTIC_PORT=${ELASTIC_PORT} \
-    --env ELASTIC_PASSWORD=${ELASTIC_PASSWORD} \
-    --env QDRANT_HOST=${QDRANT_HOST} \
-    --env QDRANT_REST_PORT=${QDRANT_REST_PORT} \
-    --env QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT} \
-    --env POSTGRES_HOST=${POSTGRES_HOST} \
-    --env POSTGRES_PORT=${POSTGRES_PORT} \
-    --env POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
-    --env FIRST_ADMIN_USERNAME=${FIRST_ADMIN_USERNAME} \
-    --env FIRST_ADMIN_EMAIL=${FIRST_ADMIN_EMAIL} \
-    --env FIRST_ADMIN_PASSWORD=${FIRST_ADMIN_PASSWORD} \
-    --env MJ_API_KEY=${MJ_API_KEY} \
-    --env MJ_API_SECRET=${MJ_API_SECRET} \
-    --env CONTACT_EMAIL=${CONTACT_EMAIL} \
-    --env DISABLE_CUDA=${DISABLE_CUDA} \
+    --env-file .env \
     --env API_URL=${CI_DEPLOY_URL} \
     --env FRONT_URL=${CI_DEPLOY_URL} \
     --env "LLM_TABLE=${LLM_TABLE}" \
-    --env BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-"*"} \
     ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}
 done
