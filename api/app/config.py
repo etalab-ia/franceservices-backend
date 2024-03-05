@@ -2,7 +2,6 @@ import ast
 import os
 
 import torch
-from dotenv import load_dotenv
 
 
 def collate_ix_name(name, version):
@@ -24,9 +23,6 @@ CONTACT = {
 
 # Root directory:
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Environment:
-load_dotenv(os.path.join(ROOT_DIR, ".env"))
 
 ENV = os.getenv("ENV", "dev")
 if ENV not in ("unittest", "dev", "prod"):

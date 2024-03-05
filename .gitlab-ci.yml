@@ -374,7 +374,6 @@ build:api:
       apk update
       apk add openssh-client
     - | # build and push api image to gitlab registry
-      cp $ENV_FILE api/app/.env
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
       docker build --rm --build-context commons=./commons --build-context pyalbert=./pyalbert --tag ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG} --file ./api/Dockerfile ./api
       docker push ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}
