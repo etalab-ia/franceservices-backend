@@ -34,7 +34,7 @@ if ENV not in ("unittest", "dev", "prod"):
 
 # CORS
 # Env variable must be a string with comma separated values
-# i.e.: BACKEND_CORS_ORIGINS="http://localhost:4173,http://localhost:8080,http://albert.etalab.gouv.fr,https://albert.etalab.gouv.fr"
+# i.e.: BACKEND_CORS_ORIGINS="http://localhost:4173,http://albert.etalab.gouv.fr,https://albert.etalab.gouv.fr"
 BACKEND_CORS_ORIGINS = os.getenv("BACKEND_CORS_ORIGINS", "").split(",")
 
 # JWT token

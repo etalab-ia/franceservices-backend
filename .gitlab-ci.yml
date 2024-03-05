@@ -14,15 +14,19 @@ before_script:
   - | # export env file and copy routing table to pyalbert config
     if [[ -z $CI_ENVIRONMENT_NAME ]]; then
       echo "info: CI_ENVIRONMENT_NAME is empty, skip the export"
+
     else
       if [[ $CI_COMMIT_BRANCH = "staging" ]]; then
         echo "info: export staging env file of $CI_ENVIRONMENT_NAME environment"
         export $(grep -v "^#" $STAGING__ENV_FILE | xargs)
+        cp $STAGING__ENV_FILE ./.env
         echo "info: copy staging routing table to pyalbert config"
         cp $STAGING__LLM_ROUTING_TABLE ./llm_routing_table.json
+
       elif [[ $CI_COMMIT_BRANCH = "main" ]]; then
         echo "info: export production env file of $CI_ENVIRONMENT_NAME environment"
         export $(grep -v "^#" $PROD__ENV_FILE | xargs)
+        cp $PROD__ENV_FILE ./.env
         echo "info: copy production routing table to pyalbert config"
         cp $PROD__LLM_ROUTING_TABLE ./llm_routing_table.json
       fi
@@ -424,24 +428,17 @@ deploy:api:dinum:
     - | # send deployment files to remote server
       mkdir -p ./${CI_JOB_ID}
       cp ./api/deploy.sh ./${CI_JOB_ID}/deploy.sh
+      cp ./.env ./${CI_JOB_ID}/.env
       cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-    - | # deploy vllm containers to remote server
+    - | # deploy API containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
       docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
       export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
       export CI_API_IMAGE_TAG=${CI_API_IMAGE_TAG}
       export CI_DEPLOY_URL=${CI_DEPLOY_URL}
-      export POSTGRES_HOST=${CI_DEPLOY_HOST}
-      export POSTGRES_PORT=${POSTGRES_PORT}
-      export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      export QDRANT_REST_PORT=${QDRANT_REST_PORT}
-      export QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT}
-      export QDRANT_HOST=${CI_DEPLOY_HOST}
-      export ELASTIC_HOST=${CI_DEPLOY_HOST}
-      export ELASTIC_PORT=${ELASTIC_PORT}
-      export ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      export $(grep -v "^#" /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env | xargs)
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       rm -rf ~/${CI_JOB_ID}
@@ -496,24 +493,17 @@ deploy:api:france services:
     - | # send deployment files to remote server
       mkdir -p ./${CI_JOB_ID}
       cp ./api/deploy.sh ./${CI_JOB_ID}/deploy.sh
+      cp ./.env ./${CI_JOB_ID}/.env
       cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-    - | # deploy vllm containers to remote server
+    - | # deploy API containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
       docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
       export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
       export CI_API_IMAGE_TAG=${CI_API_IMAGE_TAG}
       export CI_DEPLOY_URL=${CI_DEPLOY_URL}
-      export POSTGRES_HOST=${CI_DEPLOY_HOST}
-      export POSTGRES_PORT=${POSTGRES_PORT}
-      export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      export QDRANT_REST_PORT=${QDRANT_REST_PORT}
-      export QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT}
-      export QDRANT_HOST=${CI_DEPLOY_HOST}
-      export ELASTIC_HOST=${CI_DEPLOY_HOST}
-      export ELASTIC_PORT=${ELASTIC_PORT}
-      export ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      export $(grep -v "^#" /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env | xargs)
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       rm -rf ~/${CI_JOB_ID}
