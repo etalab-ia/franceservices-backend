@@ -61,9 +61,9 @@ def create_whitelist(storage_dir: str, config_file: str, debug: bool = False):
                 pass
             elif domain not in domain_list:
                 domain_list.append(domain)
-        except KeyError as e:
+        except KeyError:
             continue
-        except IndexError as e:
+        except IndexError:
             continue
         except Exception as e:
             print(e)
@@ -99,7 +99,7 @@ def create_whitelist(storage_dir: str, config_file: str, debug: bool = False):
                         phone_list.append(match)
         except ValueError:
             continue
-        except IndexError as e:
+        except IndexError:
             continue
         except Exception as e:
             print(e)
@@ -115,7 +115,7 @@ def create_whitelist(storage_dir: str, config_file: str, debug: bool = False):
                     mail_list.append(match)
         except ValueError:
             continue
-        except IndexError as e:
+        except IndexError:
             continue
         except Exception as e:
             print(e)

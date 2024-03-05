@@ -19,12 +19,12 @@ before_script:
         echo "info: export staging env file of $CI_ENVIRONMENT_NAME environment"
         export $(grep -v "^#" $STAGING__ENV_FILE | xargs)
         echo "info: copy staging routing table to pyalbert config"
-        cp ./pyalbert/config/llm_routing_table.staging.json ./pyalbert/config/llm_routing_table.json
+        cp $STAGING__LLM_ROUTING_TABLE ./llm_routing_table.json
       elif [[ $CI_COMMIT_BRANCH = "main" ]]; then
         echo "info: export production env file of $CI_ENVIRONMENT_NAME environment"
         export $(grep -v "^#" $PROD__ENV_FILE | xargs)
         echo "info: copy production routing table to pyalbert config"
-        cp ./pyalbert/config/llm_routing_table.prod.json ./pyalbert/config/llm_routing_table.json
+        cp $PROD__LLM_ROUTING_TABLE ./llm_routing_table.json
       fi
     fi
 
@@ -172,6 +172,7 @@ setup:llm:dinum:
     - | # send pyalbert files to remote server
       mkdir -p ./${CI_JOB_ID}/venv
       cp ./llm/setup.sh ./${CI_JOB_ID}/setup.sh
+      cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
       cp -r ./pyalbert ./${CI_JOB_ID}
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # download model on remote server
@@ -182,7 +183,7 @@ setup:llm:dinum:
       pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-      bash ./setup.sh -r ./pyalbert/config/llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
+      bash ./setup.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       deactivate
       rm -rf ~/${CI_JOB_ID}
       "
@@ -204,7 +205,7 @@ deploy:llm:dinum:
     - | # send deployment files to remote server
       mkdir -p ./${CI_JOB_ID}
       cp ./llm/deploy.sh ./${CI_JOB_ID}/deploy.sh
-      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # deploy vllm containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
@@ -236,7 +237,7 @@ test:llm:dinum:
       mkdir -p ./${CI_JOB_ID}/venv
       cp ./llm/test.sh ./${CI_JOB_ID}/test.sh
       cp -r ./llm/tests ./${CI_JOB_ID}
-      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # test llm containers on remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
@@ -269,6 +270,7 @@ setup:llm:france services:
     - | # send pyalbert files to remote server
       mkdir -p ./${CI_JOB_ID}/venv
       cp ./llm/setup.sh ./${CI_JOB_ID}/setup.sh
+      cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
       cp -r ./pyalbert ./${CI_JOB_ID}
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # download model on remote server
@@ -279,7 +281,7 @@ setup:llm:france services:
       pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-      bash ./setup.sh -r ./pyalbert/config/llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
+      bash ./setup.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       deactivate
       rm -rf ~/${CI_JOB_ID}
       "
@@ -301,7 +303,7 @@ deploy:llm:france services:
     - | # send deployment files to remote server
       mkdir -p ./${CI_JOB_ID}
       cp ./llm/deploy.sh ./${CI_JOB_ID}/deploy.sh
-      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # deploy vllm containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
@@ -333,7 +335,7 @@ test:llm:france services:
       mkdir -p ./${CI_JOB_ID}/venv
       cp ./llm/test.sh ./${CI_JOB_ID}/test.sh
       cp -r ./llm/tests ./${CI_JOB_ID}
-      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # test llm containers on remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
@@ -422,7 +424,7 @@ deploy:api:dinum:
     - | # send deployment files to remote server
       mkdir -p ./${CI_JOB_ID}
       cp ./api/deploy.sh ./${CI_JOB_ID}/deploy.sh
-      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # deploy vllm containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
@@ -434,6 +436,12 @@ deploy:api:dinum:
       export POSTGRES_HOST=${CI_DEPLOY_HOST}
       export POSTGRES_PORT=${POSTGRES_PORT}
       export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      export QDRANT_REST_PORT=${QDRANT_REST_PORT}
+      export QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT}
+      export QDRANT_HOST=${CI_DEPLOY_HOST}
+      export ELASTIC_HOST=${CI_DEPLOY_HOST}
+      export ELASTIC_PORT=${ELASTIC_PORT}
+      export ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       rm -rf ~/${CI_JOB_ID}
@@ -488,7 +496,7 @@ deploy:api:france services:
     - | # send deployment files to remote server
       mkdir -p ./${CI_JOB_ID}
       cp ./api/deploy.sh ./${CI_JOB_ID}/deploy.sh
-      cp ./pyalbert/config/llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # deploy vllm containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
@@ -500,6 +508,12 @@ deploy:api:france services:
       export POSTGRES_HOST=${CI_DEPLOY_HOST}
       export POSTGRES_PORT=${POSTGRES_PORT}
       export POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      export QDRANT_REST_PORT=${QDRANT_REST_PORT}
+      export QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT}
+      export QDRANT_HOST=${CI_DEPLOY_HOST}
+      export ELASTIC_HOST=${CI_DEPLOY_HOST}
+      export ELASTIC_PORT=${ELASTIC_PORT}
+      export ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./deploy.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       rm -rf ~/${CI_JOB_ID}

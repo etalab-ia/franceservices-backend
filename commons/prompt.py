@@ -1,8 +1,7 @@
-import os
 import re
 from typing import Any
 
-from jinja2 import BaseLoader, Environment, FileSystemLoader, meta
+from jinja2 import BaseLoader, Environment, meta
 from requests.exceptions import RequestException
 
 from commons.api import get_legacy_client
@@ -152,11 +151,12 @@ class Prompter:
         if expand_acronyms and "query" in kwargs:
             kwargs["query"] = self.preprocess_prompt(kwargs["query"])
 
+        kwargs["seach_query"] = kwargs.get("query")
         history = kwargs.get("history")
         if history:
             # Use the three last user prompt to build the search query (embedding)
             kwargs["search_query"] = "; ".join(
-                [x["content"] for i, x in enumerate(history) if i % 2 != 0][-3:]
+                [x["content"] for i, x in enumerate(history) if x["role"] == "user"][-3:]
             )
 
         # Build template and render prompt with variables if any
@@ -192,7 +192,7 @@ class Prompter:
                 and len(raw_prompt.split()) * 1.25 > self.sampling_params["max_tokens"] * 0.8
             ):
                 # Keep the same history parity to avoid a confusion between a inference and a fine-tuning prompt
-                for _ in range(2):
+                for _ in history[:2]:
                     history.pop(0)
                 raw_prompt = chat_formatter(prompt, system_prompt=system_prompt, history=history)[
                     "text"

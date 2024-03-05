@@ -7,7 +7,8 @@ from spacy.lang.fr import French
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.config import ENV, WITH_GPU
+from app.clients.api_vllm_client import ApiVllmClient
+from app.config import WITH_GPU
 from app.deps import get_current_user, get_db
 from app.core.llm import auto_set_chat_name
 
@@ -128,11 +129,25 @@ def start_stream(
             )
 
         history = []
-        for stream in db_stream.chat.streams:
-            history.extend([
-                {"role": "user", "content": stream.query},
-                {"role": "assistant", "content": stream.response},
-            ])
+        history_ = (
+            db.query(models.Stream)
+            .filter(models.Stream.chat_id == db_stream.chat.id)
+            .order_by(models.Stream.id.asc())
+        )
+        history_size = history_.count()
+        for i, stream in enumerate(history_):
+            if not stream.query:
+                # Occurs is a previous generation failed
+                continue
+            if not stream.response and i < history_size - 1:
+                # Occurs if a generation was early stopped
+                continue
+            history.extend(
+                [
+                    {"role": "user", "content": stream.query},
+                    {"role": "assistant", "content": stream.response},
+                ]
+            )
         history = [item for item in history if item["content"] is not None]
 
     # Build the prompt
@@ -153,10 +168,22 @@ def start_stream(
         history=history,
     )
 
-    if (
-        "max_tokens" in prompter.sampling_params
-        and len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8
-    ):
+    while len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8 and limit > 1:
+        print("WARNING: promt size overflow, reducing limit...")
+        limit -= 1
+        prompt = prompter.make_prompt(
+            query=query,
+            institution=institution,
+            context=context,
+            links=links,
+            limit=limit,
+            sources=sources,
+            should_sids=should_sids,
+            must_not_sids=must_not_sids,
+            history=history,
+        )
+
+    if len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8:
         raise HTTPException(413, detail="Prompt too large")
 
     # Keep reference of rag used sources if any
@@ -174,7 +201,6 @@ def start_stream(
     # TODO: turn into async
     # Streaming case
     def generate():
-
         # Get the right stream generator
         if WITH_GPU:
             llm_client = get_llm_client(model_name)

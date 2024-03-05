@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from transformers import AutoModel, AutoTokenizer
 
-from app.config import DEVICE_MAP, EMBEDDING_MODEL, ENV, WITH_GPU
+from app.config import DEVICE_MAP, EMBEDDING_MODEL, WITH_GPU
 
 _model_name_ebd = EMBEDDING_MODEL
 tokenizer_ebd = AutoTokenizer.from_pretrained(_model_name_ebd)

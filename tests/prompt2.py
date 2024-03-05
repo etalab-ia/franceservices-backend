@@ -1,7 +1,7 @@
 #!/bin/python
 
-import sys, os
-from pprint import pprint
+import sys
+import os
 from jinja2 import Environment, FileSystemLoader, meta
 import yaml
 
