@@ -10,7 +10,7 @@ Help()
    echo "options:"
    echo "h          display this help and exit"
    echo "r          path to routing table file"
-   echo "e          environment name. Only services in routing table with this environment will be deployed. If not specified, all services will be deployed"
+   echo "e          CI environment name. Only services in routing table with this CI environment will be deployed. If not specified, all services will be deployed"
 }
 
 while getopts "hr:e:" flag
@@ -18,7 +18,7 @@ do
     case "${flag}" in
         h)  Help && exit 1;;
         r)  routing_table=${OPTARG};;
-        e)  env=${OPTARG};;
+        e)  ci_environment_name=${OPTARG};;
     esac
 done
 
@@ -30,10 +30,10 @@ fi
 
 for model in $(jq -r 'keys[]' $routing_table); do
 
-    if ! [[ -z $env ]]; then
-        model_env=$(jq -r '.["'$model'"] | .env' $routing_table)
-        if [[ $model_env != "${env}" ]]; then
-            echo "info: skipping $model because of env mismatch"
+    if ! [[ -z $ci_environment_name ]]; then
+        routing_table_ci_environment_name=$(jq -r '.["'$model'"] | .ci_environment_name' $routing_table)
+        if [[ $routing_table_ci_environment_name != "${ci_environment_name}" ]]; then
+            echo "info: skipping $model because of ci_environment_name mismatch"
             continue
         fi
     fi
@@ -55,9 +55,9 @@ for model in $(jq -r 'keys[]' $routing_table); do
 
     for model in $(jq -r 'keys[]' $routing_table); do
 
-        if ! [[ -z $env ]]; then
-            model_env=$(jq -r '.["'$model'"] | .env' $routing_table)
-            if [[ $model_env != "${env}" ]]; then
+        if ! [[ -z $ci_environment_name ]]; then
+            routing_table_ci_environment_name=$(jq -r '.["'$model'"] | .ci_environment_name' $routing_table)
+            if [[ $routing_table_ci_environment_name != "${ci_environment_name}" ]]; then
                 continue
             fi
         fi
@@ -98,7 +98,7 @@ for (( i=0; i<${#api_table[@]}; i++ ));do
     # get string from start_index to the end of the string
     model_list=$(echo ${api_table[$i]} | cut -c$(($start_index+1))- | rev | cut -c 2- | rev)
 
-    export COMPOSE_PROJECT_NAME=$env
+    export COMPOSE_PROJECT_NAME=$ci_environment_name
     export LLM_TABLE=$model_list
     export API_PORT=$api_port
     echo "info: LLM_TABLE: $LLM_TABLE"
