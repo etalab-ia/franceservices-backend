@@ -14,17 +14,32 @@ except ModuleNotFoundError:
     from api.app.core.acronyms import ACRONYMS
 
 
-class Prompt:
+class PromptTemplate:
     mode: str
     template: str
     variables: set[str]
     default: dict
     system_prompt: str | None
-    prompt_format: str | None
+    # Overwrite the default config
     sampling_params: dict
+    prompt_format: str | None
 
 
-def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
+class PromptConfig:
+    # Global prompt config
+    config: dict
+    # The key is the prompt **mode**
+    templates: dict[str, PromptTemplate] | None
+
+
+def prompts_from_llm_table(table: list[tuple]) -> dict[str, PromptConfig]:
+    sampling_params_supported = [
+        "temperature",
+        "max_tokens",
+        "top_p",
+        "top_k",
+        "presence_penalty",
+    ]
     templates = {}
     client = get_albert_client()
     for model_name, model_url in table:
@@ -36,21 +51,27 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
 
         # Default sampling paramerters
         sampling_params = {}
-        sampling_params_supported = [
-            "temperature",
-            "max_tokens",
-            "top_p",
-            "top_k",
-            "presence_penalty",
-        ]
         for param in sampling_params_supported:
             if param in config:
                 sampling_params[param] = config[param]
+        config["sampling_params"] = sampling_params
 
+        # Default prompt format
         prompt_format = config.get("prompt_format")
-        prompt_template = {}
+
+        # Parse templates
+        prompt_templates = {}
         for prompt in config.get("prompts", []):
+            # Overwrite sampling params
+            mode_sampling_params = sampling_params.copy()
+            for param in sampling_params_supported:
+                if param in prompt:
+                    mode_sampling_params[param] = prompt[param]
+            # Overwrite prompt format
+            prompt_format = prompt.get("prompt_format", prompt_format)
+
             # Template from file template
+            # --
             # template_file = hf_hub_download(repo_id=model["hf_repo_id"], filename=prompt["template"])
             # env = Environment(loader=FileSystemLoader(os.path.dirname(template_file)))
             # template = env.get_template(prompt["template"])
@@ -60,17 +81,17 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
             env = Environment(loader=BaseLoader())
             template = env.from_string(template_string)
             variables = meta.find_undeclared_variables(env.parse(template_string))
-            prompt_template[prompt["mode"]] = {
+            prompt_templates[prompt["mode"]] = {
                 "mode": prompt["mode"],
                 "system_prompt": prompt.get("system_prompt"),
                 "template": template,
                 "variables": variables,
                 "default": prompt.get("default", {}),
-                "prompt_format": prompt.get("prompt_format", prompt_format),
-                "sampling_params": sampling_params,
+                "prompt_format": prompt_format,
+                "sampling_params": mode_sampling_params,
             }
 
-        templates[model_name] = prompt_template
+        templates[model_name] = {"config": config, "templates": prompt_templates}
     return templates
 
 
@@ -78,7 +99,7 @@ def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
 ACRONYMS_KEYS = [acronym["symbol"].lower() for acronym in ACRONYMS]
 
 # Preload all prompt template to be faster
-TEMPLATES = prompt_templates_from_llm_table(LLM_TABLE)
+PROMPTS = prompts_from_llm_table(LLM_TABLE)
 
 
 class Prompter:
@@ -88,8 +109,11 @@ class Prompter:
         "max_tokens": 4096,
     }
 
-    def __init__(self, url: str, template: Prompt | None = None):
+    def __init__(
+        self, url: str, config= dict | None, template: PromptTemplate | None = None,
+    ):
         # The prompt template
+        self.config = config
         self.template = template
         # Eventually stores the sources returned by the last RAG prompt built
         self.sources = None
@@ -97,8 +121,8 @@ class Prompter:
         self.url = url
         # The sampling params to pass to LLM generate function for inference.
         self.sampling_params = self.SAMPLING_PARAMS
-        if template and "sampling_params" in template:
-            self.sampling_params.update(template["sampling_params"])
+        if "sampling_params" in config:
+            self.sampling_params.update(config["sampling_params"])
 
     @classmethod
     def preprocess_prompt(cls, prompt: str) -> str:
@@ -169,8 +193,8 @@ class Prompter:
             system_prompt = None
 
         # Set prompt_format
-        if not prompt_format and self.template:
-            prompt_format = self.template.get("prompt_format")
+        if not prompt_format and self.config.get("prompt_format"):
+            prompt_format = self.config["prompt_format"]
 
         # Format prompt
         # --
@@ -381,15 +405,28 @@ def get_prompter(model_name: str, mode: str | None = None) -> Prompter:
         raise ValueError("LLM model not found: %s" % model_name)
 
     model_url = model[1]
-    global TEMPLATES
-    if model_name not in TEMPLATES:
-        # Try again to rebuild TEMPLATES
-        TEMPLATES = prompt_templates_from_llm_table(LLM_TABLE)
+    global PROMPTS
+    if model_name not in PROMPTS:
+        # Try again to rebuild PROMPTS
+        PROMPTS = prompts_from_llm_table(LLM_TABLE)
 
-    template = TEMPLATES[model_name].get(mode)
+    prompt_config = PROMPTS[model_name]
+    config = prompt_config["config"]
+    template = None
+
+    # Find template according to mode
+    templates = prompt_config.get("templates", {})
+    if templates.get(mode):
+        template = templates[mode]
+        if "sampling_params" in template:
+            config["sampling_params"].update(template["sampling_params"])
+        if "prompt_format" in template:
+            config["prompt_format"] = template["prompt_format"]
+
     if mode and not template:
         raise ValueError(
-            "Prompt mode unknown: %s (available: %s)" % (mode, list(TEMPLATES[model_name]))
+            "Prompt mode unknown: %s (available: %s)"
+            % (mode, list(prompt_config.get("templates", {})))
         )
 
-    return Prompter(model_url, template)
+    return Prompter(model_url, config=config, template=template)
