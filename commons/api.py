@@ -146,7 +146,7 @@ class ApiVllmClient:
             prev_len = len(output)
 
 
-def get_legacy_client() -> ApiClient:
+def get_albert_client() -> ApiClient:
     return ApiClient(
         API_URL.rstrip("/") + "/" + API_ROUTE_VER.strip("/"),
         FIRST_ADMIN_USERNAME,

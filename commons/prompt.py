@@ -4,7 +4,7 @@ from typing import Any
 from jinja2 import BaseLoader, Environment, meta
 from requests.exceptions import RequestException
 
-from commons.api import get_legacy_client
+from commons.api import get_albert_client
 
 try:
     from app.config import LLM_TABLE
@@ -26,7 +26,7 @@ class Prompt:
 
 def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
     templates = {}
-    client = get_legacy_client()
+    client = get_albert_client()
     for model_name, model_url in table:
         try:
             config = client.get_prompt_config(model_url)
@@ -231,7 +231,7 @@ class Prompter:
                 data[k] = v
 
         search_query = data.get("search_query", data.get("query"))
-        client = get_legacy_client()
+        client = get_albert_client()
 
         # Extract one similar value in a collection from query
         if "most_similar_experience" in variables:
