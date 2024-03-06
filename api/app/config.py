@@ -25,7 +25,7 @@ CONTACT = {
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 ENV = os.getenv("ENV", "dev")
-if ENV not in ("unittest", "dev", "prod"):
+if ENV not in ("unittest", "dev", "staging", "prod"):
     raise EnvironmentError("Wrong ENV value")
 
 # CORS
