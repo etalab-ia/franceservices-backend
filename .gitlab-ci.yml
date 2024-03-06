@@ -30,6 +30,9 @@ before_script:
         echo "info: copy production routing table to pyalbert config"
         cp $PROD__LLM_ROUTING_TABLE ./llm_routing_table.json
       fi
+      echo "POSTGRES_HOST=${CI_DEPLOY_HOST}" >> ./.env
+      echo "QDRANT_HOST=${CI_DEPLOY_HOST}" >> ./.env
+      echo "ELASTIC_HOST=${CI_DEPLOY_HOST}" >> ./.env
     fi
 
 config:clean gitlab runner: # manual job to clean gitlab runner
