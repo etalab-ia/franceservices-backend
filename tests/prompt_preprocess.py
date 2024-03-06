@@ -6,7 +6,6 @@ sys.path.append(".")
 
 from commons.prompt import Prompter
 
-# from api.app.config import (ELASTICSEARCH_CREDS, ELASTICSEARCH_IX_VER,
 
 if __name__ == "__main__":
     p = Prompter()
