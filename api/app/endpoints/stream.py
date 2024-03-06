@@ -206,7 +206,7 @@ def start_stream(
             generator = llm_client.generate(prompt, stream=True, **sampling_params)
         else:
             callback = gpt4all_callback(db, stream_id)
-            generator = gpt4all_generate(prompt, callback=callback, temp=temperature)
+            generator = gpt4all_generate(prompt, callback=callback, temp=temperature, stream=True)
 
         # Stream !
         crud.stream.set_is_streaming(db, db_stream, True)

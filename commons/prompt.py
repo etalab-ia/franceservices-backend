@@ -236,7 +236,7 @@ class Prompter:
         # Extract one similar value in a collection from query
         if "most_similar_experience" in variables:
             # Using LLM
-            # rep1 = llm_client.generate(prompt, streaming=False,  max_tokens=500, **FabriquePrompter.SAMPLING_PARAMS)
+            # rep1 = llm_client.generate(prompt, stream=False,  max_tokens=500, **FabriquePrompter.SAMPLING_PARAMS)
             # rep1 = "".join(rep1)
             # Using similar experience
             skip_first = data.get("skip_first")

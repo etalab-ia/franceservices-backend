@@ -25,16 +25,16 @@ def gpt4all_callback(db: Session, stream_id):
 
 
 # TODO: turn into async
-def gpt4all_generate(prompt, callback=None, max_tokens=512, temp=20, streaming=True):
+def gpt4all_generate(prompt, callback=None, max_tokens=512, temp=20, stream=False):
     kwargs = {
         "max_tokens": max_tokens,
         "temp": temp / 100,
-        "streaming": streaming,
+        "streaming": stream,
     }
     if callback:
         kwargs["callback"] = callback
 
-    if streaming:
+    if stream:
         yield from gpt4all_model.generate(prompt, **kwargs)
     else:
         return gpt4all_model.generate(prompt, **kwargs)

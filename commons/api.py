@@ -107,7 +107,7 @@ class ApiVllmClient:
 
     # TODO: turn into async
     def generate(
-        self, prompt, max_tokens=512, temperature=20, top_p=1, streaming=False
+        self, prompt, max_tokens=512, temperature=20, top_p=1, stream=False
     ) -> str | Iterable[str]:
         url = f"{self.url}/generate"
         data = {
@@ -115,11 +115,11 @@ class ApiVllmClient:
             "max_tokens": max_tokens,
             "temperature": temperature / 100,  # I think its better to keep value in [0,2] to stay compatible with opanai api.
             "top_p": top_p,  # not intended to final user but for dev and research.
-            "stream": streaming,
+            "stream": stream,
         } # fmt: skip
-        response = requests.post(url, json=data, stream=streaming)
+        response = requests.post(url, json=data, stream=stream)
 
-        if streaming:
+        if stream:
             return self._get_streaming_response(response)
         else:
             return self._get_response(response)
