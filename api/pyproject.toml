@@ -17,7 +17,6 @@ dependencies = [
     "bcrypt==4.1.2",
     "pydantic==2.3.0",
     "pydantic-core==2.6.3",
-    "python-dotenv==1.0.0",
     "python-jose==3.3.0",
     "psycopg2-binary==2.9.8",
     "qdrant-client==1.5.4",

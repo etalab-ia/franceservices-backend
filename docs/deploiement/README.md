@@ -162,13 +162,13 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 * Créer un fichier de variable d'environnement avec les variables suivantes :
 
 	* `POSTGRES_PASSWORD`
-    * `POSTGRES_PORT`
-    * `ELASTIC_PASSWORD`
+	* `POSTGRES_PORT`
+	* `ELASTIC_PASSWORD`
   	* `ELASTIC_PORT`
-    * `QDRANT_REST_PORT`
+	* `QDRANT_REST_PORT`
 	* `QDRANT_GRPC_PORT`
-    * `COMPOSE_FILE`
-    * `COMPOSE_PROJECT_NAME`
+	* `COMPOSE_FILE`
+	* `COMPOSE_PROJECT_NAME`
 
 	Pour plus d'informations sur la valeur des variables voir la documentation dédiées [environments.md](environments.md).
 
@@ -188,32 +188,32 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 * Pour activer la fonctionnalité de RAG, vous devez tout d'abord téléchargez les documents qui vont alimenter le système : 
 
 	```bash
-    python3 ./pyalbert.py download_corpus
+	python3 ./pyalbert.py download_corpus
 	```
 
 * Vous devez ensuite appliquer un preprocessing sur ces documents : 
 
 	```bash
-    python3 ./pyalbert.py make_chunks --structured
+	python3 ./pyalbert.py make_chunks --structured
 	```
 
 * Puis, vous devez créer des vecteurs à l'aide d'un modèle d'embeddings 
 
 	```bash
-    python3 ./pyalbert.py make_embeddings
+	python3 ./pyalbert.py make_embeddings
 	```
 
 * Enfin vous devez intégrer les documents et ces vectors dans les bases de données dédiés qui ont été déployées dans la section précédente
 
 	```bash
-    # Elasticsearch indexes
-    python3 ./pyalbert.py index experiences --index-type bm25
-    python3 ./pyalbert.py index sheets --index-type bm25
-    python3 ./pyalbert.py index chunks --index-type bm25
+	# Elasticsearch indexes
+	python3 ./pyalbert.py index experiences --index-type bm25
+	python3 ./pyalbert.py index sheets --index-type bm25
+	python3 ./pyalbert.py index chunks --index-type bm25
 
-    # Qdrant indexes (aka collections)
-    python3 ./pyalbert.py index experiences --index-type e5
-    python3 ./pyalbert.py index chunks --index-type e5
+	# Qdrant indexes (aka collections)
+	python3 ./pyalbert.py index experiences --index-type e5
+	python3 ./pyalbert.py index chunks --index-type e5
 	```
 
 ### API
@@ -222,39 +222,66 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 
 * Exportez les variables d'environnement suivantes :
 
-	* `API_PORT`
-	* `LLM_TABLE`
-	* `API_URL`
-	* `FRONT_URL`
-	* `POSTGRES_PASSWORD`
-    * `POSTGRES_PORT`
-    * `POSTGRES_HOST`
+Vous pouvez utilser le fichier `/api/app/.env.example` comme base pour créer un fichier `.env` exportant toutes ces variables d'environnement. Vous pouvez aussi faire en sorte que les variables d'environnement situées dans votre fichier `.env` soient automatiquement chargées lorsque vous naviguez dans le dossier du projet en utilisant [direnv](https://direnv.net/).
 
-	Exportez également les variables suivantes pour spécifier où trouver les bases de données nécessaires au RAG : 
-
+	* `ENV`
+	* `SECRET_KEY`
 	* `ELASTIC_HOST`
-  	* `ELASTIC_PORT`
+	* `ELASTIC_PORT`
 	* `ELASTIC_PASSWORD`
 	* `QDRANT_HOST`
-    * `QDRANT_REST_PORT`
 	* `QDRANT_GRPC_PORT`
+	* `QDRANT_REST_PORT`
+	* `POSTGRES_HOST`
+	* `POSTGRES_PASSWORD`
+	* `POSTGRES_PORT`
+	* `FIRST_ADMIN_USERNAME`
+	* `FIRST_ADMIN_EMAIL`
+	* `FIRST_ADMIN_PASSWORD`
+	* `MJ_API_KEY`
+	* `MJ_API_SECRET`
+	* `CONTACT_EMAIL`
+	* `DISABLE_CUDA`
+	* `BACKEND_CORS_ORIGINS`
 
-* Déployé un container d'API : 
+Vous pouvez aussi faire en sorte que les variables d'env soient automatiquement chargées lorsque vous entrez dans le dossier du projet en utilisant [direnv](https://direnv.net/).
+
+	* `ENV`
+	* `SECRET_KEY`
+	* `ELASTIC_HOST`
+	* `ELASTIC_PORT`
+	* `ELASTIC_PASSWORD`
+	* `QDRANT_HOST`
+	* `QDRANT_GRPC_PORT`
+	* `QDRANT_REST_PORT`
+	* `POSTGRES_HOST`
+	* `POSTGRES_PASSWORD`
+	* `POSTGRES_PORT`
+	* `FIRST_ADMIN_USERNAME`
+	* `FIRST_ADMIN_EMAIL`
+	* `FIRST_ADMIN_PASSWORD`
+	* `MJ_API_KEY`
+	* `MJ_API_SECRET`
+	* `CONTACT_EMAIL`
+	* `DISABLE_CUDA`
+	* `BACKEND_CORS_ORIGINS`
+
+* Déployez un container d'API : 
 	
 	```bash
-    docker run --gpus all -it --publish ${API_PORT}:8090 --restart always --name albert-api-v2 \
-    --env POSTGRES_HOST=${POSTGRES_HOST} \
-    --env POSTGRES_PORT=${POSTGRES_PORT} \
-    --env POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
-    --env QDRANT_HOST=${QDRANT_HOST} \
-    --env QDRANT_REST_PORT=${QDRANT_REST_PORT} \
-    --env QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT} \
-    --env ELASTIC_HOST=${ELASTIC_HOST} \
-    --env ELASTIC_PORT=${ELASTIC_PORT} \
-    --env API_URL=${CI_DEPLOY_URL} \
-    --env FRONT_URL=${CI_DEPLOY_URL} \
-    --env "LLM_TABLE=${LLM_TABLE}" \
-    ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}
+	docker run --gpus all -it --publish ${API_PORT}:8090 --restart always --name albert-api-v2 \
+	--env POSTGRES_HOST=${POSTGRES_HOST} \
+	--env POSTGRES_PORT=${POSTGRES_PORT} \
+	--env POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
+	--env QDRANT_HOST=${QDRANT_HOST} \
+	--env QDRANT_REST_PORT=${QDRANT_REST_PORT} \
+	--env QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT} \
+	--env ELASTIC_HOST=${ELASTIC_HOST} \
+	--env ELASTIC_PORT=${ELASTIC_PORT} \
+	--env API_URL=${CI_DEPLOY_URL} \
+	--env FRONT_URL=${CI_DEPLOY_URL} \
+	--env "LLM_TABLE=${LLM_TABLE}" \
+	${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}
 	```
 
 ## Installation avec Docker
@@ -270,17 +297,17 @@ title: "Albert deployment flow"
 graph TD
 
 subgraph VLLM["VLLM"]
-    job_vllm_build["build"]
-    -.-> job_vllm_setup["setup\n[pyalbert/albert.py]\ndownload_models"]
-    -.-> job_vllm_deploy["deploy\n(manual)"]
-    -.-> job_vllm_test["test"]
+	job_vllm_build["build"]
+	-.-> job_vllm_setup["setup\n[pyalbert/albert.py]\ndownload_models"]
+	-.-> job_vllm_deploy["deploy\n(manual)"]
+	-.-> job_vllm_test["test"]
 end
 
 subgraph API["API"]
-    job_api_build["build"]
-    -.-> job_api_setup["setup\n[pyalbert/albert.py]\ncreate_whitelist"]
-    -.-> job_api_deploy["deploy\n(manual)"]
-    -.-> job_api_test["test"]
+	job_api_build["build"]
+	-.-> job_api_setup["setup\n[pyalbert/albert.py]\ncreate_whitelist"]
+	-.-> job_api_deploy["deploy\n(manual)"]
+	-.-> job_api_test["test"]
 
 end
 
