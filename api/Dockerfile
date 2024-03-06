@@ -4,10 +4,6 @@ RUN apt-get update && \
     apt-get install -y python3-pip python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-ARG API_URL http://localhost
-ENV API_URL $API_URL
-ARG FRONT_URL http://localhost
-ENV FRONT_URL $FRONT_URL
 ENV PYTHONPATH="$PYTHONPATH:/code"
 
 WORKDIR /code

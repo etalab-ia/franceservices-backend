@@ -22,11 +22,6 @@ do
     esac
 done
 
-# check if required env variables are set
-if [[ -z $CI_REGISTRY_IMAGE ]] || [[ -z $CI_API_IMAGE_TAG ]] || [[ -z $CI_DEPLOY_URL ]] || [[ -z $POSTGRES_HOST ]] || [[ -z $POSTGRES_PASSWORD ]] || [[ -z $POSTGRES_PORT ]] || [[ -z $QDRANT_HOST ]] || [[ -z $QDRANT_REST_PORT ]] || [[ -z $QDRANT_GRPC_PORT ]] || [[ -z $ELASTIC_HOST ]] || [[ -z $ELASTIC_PORT ]] || [[ -z $ELASTIC_PASSWORD ]]; then
-    echo "error: CI_REGISTRY_IMAGE, CI_API_IMAGE_TAG, CI_DEPLOY_URL, POSTGRES_HOST, POSTGRES_PASSWORD, POSTGRES_PORT, QDRANT_HOST, QDRANT_REST_PORT, QDRANT_GRPC_PORT, ELASTIC_HOST, ELASTIC_PORT, ELASTIC_PASSWORD env variables are required" && exit 1
-fi
-
 if [[ -z $routing_table ]]; then
     echo "-r argument is required. Help:" && Help && exit 0
 elif ! [[ -f $routing_table ]]; then
@@ -113,15 +108,8 @@ for (( i=0; i<${#api_table[@]}; i++ ));do
     docker image rm ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG} || true
     
     docker run --gpus all --detach --publish ${API_PORT}:8090 --restart always --name ${COMPOSE_PROJECT_NAME}-${API_PORT}-api-v2 \
-    --env POSTGRES_HOST=${POSTGRES_HOST} \
-    --env POSTGRES_PORT=${POSTGRES_PORT} \
-    --env POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
-    --env QDRANT_HOST=${QDRANT_HOST} \
-    --env QDRANT_REST_PORT=${QDRANT_REST_PORT} \
-    --env QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT} \
-    --env ELASTIC_HOST=${ELASTIC_HOST} \
-    --env ELASTIC_PORT=${ELASTIC_PORT} \
-    --env ELASTIC_PASSWORD=${ELASTIC_PASSWORD} \
+    --env ENV=prod \
+    --env-file .env \
     --env API_URL=${CI_DEPLOY_URL} \
     --env FRONT_URL=${CI_DEPLOY_URL} \
     --env "LLM_TABLE=${LLM_TABLE}" \

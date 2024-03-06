@@ -1,8 +1,7 @@
-import os
 import ast
+import os
 
 import torch
-from dotenv import load_dotenv
 
 
 def collate_ix_name(name, version):
@@ -25,28 +24,14 @@ CONTACT = {
 # Root directory:
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Environment:
-load_dotenv(os.path.join(ROOT_DIR, ".env"))
-
 ENV = os.getenv("ENV", "dev")
 if ENV not in ("unittest", "dev", "prod"):
     raise EnvironmentError("Wrong ENV value")
 
 # CORS
-BACKEND_CORS_ORIGINS = [
-    "http://localhost:4173",
-    "http://localhost:8080",
-    "http://ia.etalab.gouv.fr",
-    "http://albert.etalab.gouv.fr",
-    "http://albert.staging.etalab.gouv.fr",
-    "http://franceservices.etalab.gouv.fr",
-    "http://franceservices.staging.etalab.gouv.fr",
-    "https://ia.etalab.gouv.fr",
-    "https://albert.etalab.gouv.fr",
-    "https://albert.staging.etalab.gouv.fr",
-    "https://franceservices.etalab.gouv.fr",
-    "https://franceservices.staging.etalab.gouv.fr",
-]
+# Env variable must be a string with comma separated values
+# i.e.: BACKEND_CORS_ORIGINS="http://localhost:4173,http://albert.etalab.gouv.fr,https://albert.etalab.gouv.fr"
+BACKEND_CORS_ORIGINS = os.getenv("BACKEND_CORS_ORIGINS", "").split(",")
 
 # JWT token
 SECRET_KEY = os.environ["SECRET_KEY"]
