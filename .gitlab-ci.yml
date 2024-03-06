@@ -35,17 +35,6 @@ before_script:
       echo "ELASTIC_HOST=${CI_DEPLOY_HOST}" >> ./.env
     fi
 
-config:clean gitlab runner: # manual job to clean gitlab runner
-  rules:
-    - when: manual
-      allow_failure: true  # to avoid blocked state
-  stage: .pre
-  image: docker:latest
-  services:
-    - docker:dind
-  script:
-    - docker system prune -af --volumes
-
 ############################################
 ################# DATABASE #################
 ############################################
