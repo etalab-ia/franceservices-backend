@@ -4,7 +4,7 @@ from typing import Any
 from jinja2 import BaseLoader, Environment, meta
 from requests.exceptions import RequestException
 
-from commons.api import get_legacy_client
+from commons.api import get_albert_client
 
 try:
     from app.config import LLM_TABLE
@@ -26,7 +26,7 @@ class Prompt:
 
 def prompt_templates_from_llm_table(table: list[tuple]) -> dict[str, Prompt]:
     templates = {}
-    client = get_legacy_client()
+    client = get_albert_client()
     for model_name, model_url in table:
         try:
             config = client.get_prompt_config(model_url)
@@ -231,12 +231,12 @@ class Prompter:
                 data[k] = v
 
         search_query = data.get("search_query", data.get("query"))
-        client = get_legacy_client()
+        client = get_albert_client()
 
         # Extract one similar value in a collection from query
         if "most_similar_experience" in variables:
             # Using LLM
-            # rep1 = vllm_generate(prompt, streaming=False,  max_tokens=500, **FabriquePrompter.SAMPLING_PARAMS)
+            # rep1 = llm_client.generate(prompt, streaming=False,  max_tokens=500, **FabriquePrompter.SAMPLING_PARAMS)
             # rep1 = "".join(rep1)
             # Using similar experience
             skip_first = data.get("skip_first")
@@ -292,7 +292,7 @@ class Prompter:
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
 # see also to implement this part in the driver management module of the llm API: https://gitlab.com/etalab-datalab/llm/albert-backend/-/issues/119
 def format_llama2chat_prompt(
-    query: str, system_prompt: str | None = None, history=list[dict] | None
+    query: str, system_prompt: str | None = None, history: list[dict] | None = None
 ) -> dict:
     messages = history or []
     if history:
@@ -335,7 +335,7 @@ def format_llama2chat_prompt(
 
 
 def format_chatml_prompt(
-    query: str, system_prompt: str | None = None, history=list[dict] | None
+    query: str, system_prompt: str | None = None, history: list[dict] | None = None
 ) -> dict:
     messages = history or []
     if history:
@@ -375,12 +375,11 @@ def format_chatml_prompt(
     return {"text": prompt}
 
 
-def get_prompter(model_name: str, mode: str | None = None):
+def get_prompter(model_name: str, mode: str | None = None) -> Prompter:
     model = next((m for m in LLM_TABLE if m[0] == model_name), None)
     if not model:
-        raise ValueError("Prompt model unknown: %s" % model_name)
+        raise ValueError("LLM model not found: %s" % model_name)
 
-    model_name = model[0]
     model_url = model[1]
     global TEMPLATES
     if model_name not in TEMPLATES:

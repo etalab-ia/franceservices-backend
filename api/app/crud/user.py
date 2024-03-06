@@ -1,18 +1,21 @@
-from passlib.context import CryptContext
+import bcrypt
 from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def get_hashed_password(password):
-    return pwd_context.hash(password)
+    # Use solely bcrypt instead of passlib, due do this issue: see https://github.com/pyca/bcrypt/issues/684#issuecomment-1902590553
+    pwd_bytes = password.encode("utf-8")
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password=pwd_bytes, salt=salt)
+    return hashed_password
 
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    password_byte_enc = plain_password.encode("utf-8")
+    return bcrypt.checkpw(password=password_byte_enc, hashed_password=hashed_password)
 
 
 def get_pending_users(db: Session):
