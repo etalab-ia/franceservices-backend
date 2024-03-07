@@ -19,10 +19,9 @@ class PromptTemplate:
     template: str
     variables: set[str]
     default: dict
-    system_prompt: str | None
     # Overwrite the default config
+    system_prompt: str | None
     sampling_params: dict
-    prompt_format: str | None
 
 
 class PromptConfig:
@@ -49,6 +48,9 @@ def prompts_from_llm_table(table: list[tuple]) -> dict[str, PromptConfig]:
             print(f"Error: Failed to fetch templates file for url {model_url} ({err}), passing...")
             continue
 
+        # Default prompt system
+        system_prompt = config.get("system_prompt")
+
         # Default sampling paramerters
         sampling_params = {}
         for param in sampling_params_supported:
@@ -56,19 +58,16 @@ def prompts_from_llm_table(table: list[tuple]) -> dict[str, PromptConfig]:
                 sampling_params[param] = config[param]
         config["sampling_params"] = sampling_params
 
-        # Default prompt format
-        prompt_format = config.get("prompt_format")
-
         # Parse templates
         prompt_templates = {}
         for prompt in config.get("prompts", []):
+            # Overwrite system prompt
+            mode_system_prompt = prompt.get("system_prompt", system_prompt)
             # Overwrite sampling params
             mode_sampling_params = sampling_params.copy()
             for param in sampling_params_supported:
                 if param in prompt:
                     mode_sampling_params[param] = prompt[param]
-            # Overwrite prompt format
-            prompt_format = prompt.get("prompt_format", prompt_format)
 
             # Template from file template
             # --
@@ -83,11 +82,10 @@ def prompts_from_llm_table(table: list[tuple]) -> dict[str, PromptConfig]:
             variables = meta.find_undeclared_variables(env.parse(template_string))
             prompt_templates[prompt["mode"]] = {
                 "mode": prompt["mode"],
-                "system_prompt": prompt.get("system_prompt"),
                 "template": template,
                 "variables": variables,
                 "default": prompt.get("default", {}),
-                "prompt_format": prompt_format,
+                "system_prompt": mode_system_prompt,
                 "sampling_params": mode_sampling_params,
             }
 
@@ -110,7 +108,10 @@ class Prompter:
     }
 
     def __init__(
-        self, url: str, config= dict | None, template: PromptTemplate | None = None,
+        self,
+        url: str,
+        config=dict | None,
+        template: PromptTemplate | None = None,
     ):
         # The prompt template
         self.config = config
@@ -164,7 +165,7 @@ class Prompter:
 
         return prompt
 
-    def make_prompt(self, prompt_format=None, expand_acronyms=True, **kwargs):
+    def make_prompt(self, system_prompt=None, prompt_format=None, expand_acronyms=True, **kwargs):
         """Render simple to RAG prompt from template.
 
         Supported prompt_format
@@ -175,26 +176,27 @@ class Prompter:
         if expand_acronyms and "query" in kwargs:
             kwargs["query"] = self.preprocess_prompt(kwargs["query"])
 
+        # Set search query
         kwargs["seach_query"] = kwargs.get("query")
         history = kwargs.get("history")
         if history:
+            history = history.copy()
             # Use the three last user prompt to build the search query (embedding)
             kwargs["search_query"] = "; ".join(
                 [x["content"] for i, x in enumerate(history) if x["role"] == "user"][-3:]
             )
 
+        # Set default prompt_format
+        prompt_format = prompt_format or self.config.get("prompt_format")
+
         # Build template and render prompt with variables if any
         if self.template:
             data = self.make_variables(kwargs, self.template["variables"], self.template["default"])
             prompt = self.template["template"].render(**data)
-            system_prompt = self.template.get("system_prompt")
+            system_prompt = system_prompt or self.template.get("system_prompt") or self.config.get("system_prompt")  # fmt: skip
         else:
             prompt = kwargs.get("query")
-            system_prompt = None
-
-        # Set prompt_format
-        if not prompt_format and self.config.get("prompt_format"):
-            prompt_format = self.config["prompt_format"]
+            system_prompt = system_prompt or self.config.get("system_prompt")
 
         # Format prompt
         # --
@@ -216,8 +218,7 @@ class Prompter:
                 and len(raw_prompt.split()) * 1.25 > self.sampling_params["max_tokens"] * 0.8
             ):
                 # Keep the same history parity to avoid a confusion between a inference and a fine-tuning prompt
-                for _ in history[:2]:
-                    history.pop(0)
+                [history.pop(0) for _ in history[:2] if history]
                 raw_prompt = chat_formatter(prompt, system_prompt=system_prompt, history=history)[
                     "text"
                 ]
@@ -321,12 +322,14 @@ def format_llama2chat_prompt(
     messages = history or []
     if history:
         if history[-1]["role"] == "user":
+            messages[-1] = messages[-1].copy()
             messages[-1]["content"] = query
         elif (
             len(history) > 1
             and history[-1]["role"] == "assistant"
-            and history[-1]["role"] == "user"
+            and history[-2]["role"] == "user"
         ):
+            messages[-2] = messages[-2].copy()
             messages[-2]["content"] = query
     else:
         messages = [{"role": "user", "content": query}]
@@ -336,11 +339,10 @@ def format_llama2chat_prompt(
     B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
     if system_prompt:
-        messages = [{"role": "system", "content": system_prompt}] + messages
         messages = [
             {
-                "role": messages[1]["role"],
-                "content": B_SYS + messages[0]["content"] + E_SYS + messages[1]["content"],
+                "role": messages[0]["role"],
+                "content": B_SYS + system_prompt + E_SYS + messages[0]["content"],
             }
         ] + messages[1:]
 
@@ -364,12 +366,14 @@ def format_chatml_prompt(
     messages = history or []
     if history:
         if history[-1]["role"] == "user":
+            messages[-1] = messages[-1].copy()
             messages[-1]["content"] = query
         elif (
             len(history) > 1
             and history[-1]["role"] == "assistant"
-            and history[-1]["role"] == "user"
+            and history[-2]["role"] == "user"
         ):
+            messages[-2] = messages[-2].copy()
             messages[-2]["content"] = query
     else:
         messages = [{"role": "user", "content": query}]

@@ -60,7 +60,7 @@ else:
 ELASTIC_HOST = os.environ.get("ELASTIC_HOST", "localhost")
 ELASTIC_PORT = os.environ.get("ELASTIC_PORT", "9200")
 ELASTICSEARCH_URL = f"http://{ELASTIC_HOST}:{ELASTIC_PORT}"
-ELASTIC_PASSWORD = os.environ.get("ELASTIC_PASSWORD", None)
+ELASTIC_PASSWORD = os.environ.get("ELASTIC_PASSWORD", "")
 ELASTICSEARCH_CREDS = ("elastic", ELASTIC_PASSWORD)
 ELASTICSEARCH_IX_VER = "v3"
 
@@ -88,7 +88,7 @@ if LLM_TABLE:
 else:  # default
     LLM_TABLE = [
         # model_name/api URL
-        ("AgentPuclic/albert-light", "http://127.0.0.1:8082")
+        ("AgentPublic/albert-light", "http://127.0.0.1:8082")
     ]
 
 
