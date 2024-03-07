@@ -108,7 +108,6 @@ for (( i=0; i<${#api_table[@]}; i++ ));do
     docker image rm ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG} || true
     
     docker run --gpus all --detach --publish ${API_PORT}:8090 --restart always --name ${COMPOSE_PROJECT_NAME}-${API_PORT}-api-v2 \
-    --env ENV=prod \
     --env-file .env \
     --env API_URL=${CI_DEPLOY_URL} \
     --env FRONT_URL=${CI_DEPLOY_URL} \
