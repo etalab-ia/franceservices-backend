@@ -1,5 +1,6 @@
 import ast
 import os
+from pathlib import Path
 
 import torch
 
@@ -110,10 +111,7 @@ if ENV == "unittest":
 #         - or by a ci/cd pipeline
 #         - or again, in dev, we could use a dummy api that stream hardcoded string just efor the purpose of testing the main api.
 #
-#if ENV == "dev":
-#    TINY_ALBERT_LOCAL_PATH = Path("../../../pyalbert/models/tiny_albert/ggml-model-expert-q4_K.bin").resolve()
-#    if not TINY_ALBERT_LOCAL_PATH.exists():
-#        print("Le modèle Tiny Albert n'est pas présent localement. Téléchargez-le depuis HuggingFace à l'aide du script pyalbert/albert.py en utilisant la configuration vllm_routing_table.json, puis relancez l'API.")
+TINY_ALBERT_LOCAL_PATH = Path("../../../pyalbert/models/tiny_albert/ggml-model-expert-q4_K.bin").resolve()
 
 if torch.cuda.is_available() and os.getenv("DISABLE_CUDA", "").lower() not in ["y", "yes", "1", "true"]:
     WITH_GPU = True
