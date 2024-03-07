@@ -147,7 +147,7 @@ def start_stream(
                     {"role": "assistant", "content": stream.response},
                 ]
             )
-        # This should be only remove the last (empty) assitant item.
+        # This should only remove the last (empty) assistant item.
         history = [item for item in history if item["content"] is not None]
 
     # Build the prompt
