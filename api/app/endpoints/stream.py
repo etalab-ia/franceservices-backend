@@ -147,6 +147,7 @@ def start_stream(
                     {"role": "assistant", "content": stream.response},
                 ]
             )
+        # This should be only remove the last (empty) assitant item.
         history = [item for item in history if item["content"] is not None]
 
     # Build the prompt
@@ -213,9 +214,17 @@ def start_stream(
         try:
             acc = []
             raw_response = ""
+            stream_activate = False
             for t in generator:
-                acc.append(t)
+                # Strip stream
+                if not stream_activate and t.isspace():
+                    continue
+                else:
+                    stream_activate = True
+
+                # Accumulate word
                 raw_response += t
+                acc.append(t)
                 if t.endswith((" ", "\n")) or t.startswith((" ", "\n")):
                     yield "data: " + json.dumps("".join(acc)) + "\n\n"
                     acc = []
@@ -233,7 +242,7 @@ def start_stream(
             _db_stream = crud.stream.get_stream(db, stream_id)
             db.refresh(_db_stream)
             crud.stream.set_is_streaming(db, _db_stream, False, commit=False)
-            crud.stream.set_rag_output(db, _db_stream, raw_response, rag_sources)
+            crud.stream.set_rag_output(db, _db_stream, raw_response.strip(), rag_sources)
 
     # TODO : directly manage the if below in generate_and_postprocess?
     if not postprocessing:

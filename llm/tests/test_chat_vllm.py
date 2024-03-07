@@ -8,7 +8,7 @@ import requests
 sys.path.append(".")
 from commons import get_prompter
 
-prompter = get_prompter("albert-light", mode="rag")
+prompter = get_prompter("AgentPublic/albert-light", mode="rag")
 
 while 1:
     query = input(">>> Dis-moi quelque chose : ")

@@ -129,7 +129,7 @@ class ApiVllmClient:
         data = json.loads(response.content)
         output = data["text"]
         # Beams ignored
-        return output[0]
+        return output[0].strip()
 
     @staticmethod
     def _get_streaming_response(response: requests.Response) -> Iterable[str]:
