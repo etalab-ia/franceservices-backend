@@ -17,6 +17,20 @@ model_name = "AgentPublic/albert-light"
 # To integrate into pyalbert
 ################################################################################
 
+WELCOME = """Welcome to Albert chat
+type ".help" for more information.
+"""
+
+HELP = {
+    ".mode": 'Change the mode (e.g ".mode rag", ".mode analysis"). Enter ".mode" to unset it.',
+    ".format": 'Change the format of the prompt (e.g ".format chatml", ".format llama-chat"). Enter ".format" to unset it.',
+    ".system": 'Change the system prompt. Enter ".system" to unset it.',
+    ".limit": 'Change the limit of the RAG reference. Enter ".limit" to unset it.',
+    ".clear": "Clear the chat history",
+    ".debug": "Toggle debug mode: It will print the current prompt instead of generating.",
+}
+
+
 with_history = True
 mode = "rag"
 limit = 7
@@ -26,9 +40,14 @@ debug_prompt = False
 prompt_format = None
 system_prompt = None
 
+print(WELCOME)
+
 while 1:
     # REPL
-    query = input(">>> ")
+    if debug_prompt:
+        query = input("(debug)>>> ")
+    else:
+        query = input(">>> ")
     query = query.strip()
 
     if query == ".clear":
@@ -52,6 +71,12 @@ while 1:
     elif query.startswith(".system"):
         s = query.split()
         system_prompt = " ".join(s[1:]) if len(s) > 1 else None
+        continue
+    elif query.strip() == ".help":
+        max_length = max(len(c) for c in HELP)
+        for command, description in HELP.items():
+            print(f"{command:<{max_length*3}} {description}")
+        print()
         continue
 
     # Make prompt replace the last user query by the prompt provided
