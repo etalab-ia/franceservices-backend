@@ -86,7 +86,7 @@ echo "tensor_parralel_size: $tensor_parralel_size"
 
 python3 $base_path/../pyalbert/albert.py download_models --storage-dir=$storage_dir --hf-repo-id=$hf_repo_id $force_download --debug
 
-# lauch gpt4all
+# launch gpt4all
 if [[ $driver == "gpt4all" ]]; then
     python3 $base_path/../llm/gpt4all/app.py --host=0.0.0.0 --port=$port --model=$storage_dir/$hf_repo_id/$model_file
 

@@ -57,7 +57,6 @@ if __name__ == "__main__":
             if args["--config-file"] is None
             else args["--config-file"]
         )  # if --config-file is not provided, use default path /config/whitelist_config.json
-
         download_directory(
             storage_dir=storage_dir, config_file=config_file, debug=debug
         )
