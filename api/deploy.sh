@@ -33,7 +33,7 @@ for model in $(jq -r 'keys[]' $routing_table); do
     if ! [[ -z $ci_environment_name ]]; then
         routing_table_ci_environment_name=$(jq -r '.["'$model'"] | .ci_environment_name' $routing_table)
         if [[ $routing_table_ci_environment_name != "${ci_environment_name}" ]]; then
-            echo "info: skipping $model because of ci_environment_name mismatch"
+            echo "info: skipping $model because of ci_environment_name mismatch ($routing_table_ci_environment_name != $ci_environment_name)"
             continue
         fi
     fi
