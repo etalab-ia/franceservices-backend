@@ -20,7 +20,8 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME}-qdrant
     restart: always
     ports:
-      - ${QDRANT_PORT}:6333
+      - ${QDRANT_REST_PORT}:6333
+      - ${QDRANT_GRPC_PORT}:6334
     volumes:
       - qdrant:/qdrant/storage
   postgres:
