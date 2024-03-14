@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.config import ENV, POSTGRES_PASSWORD, ROOT_DIR
+from app.config import ENV, ROOT_DIR
 
 if ENV in ("unittest", "dev"):
     # sqlite3:
@@ -13,9 +13,9 @@ if ENV in ("unittest", "dev"):
 else:
     # PostgreSQL:
     db_user = "postgres"
-    db_pass = POSTGRES_PASSWORD
-    db_host = "localhost"
-    db_port = 5455
+    db_pass = os.environ["POSTGRES_PASSWORD"]
+    db_host = os.environ.get("POSTGRES_HOST", "localhost")
+    db_port = os.environ.get("POSTGRES_PORT", "5432")
     db_name = "postgres"
     DB_URL = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
     engine = create_engine(DB_URL)

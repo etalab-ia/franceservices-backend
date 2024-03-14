@@ -20,10 +20,8 @@ class User(Base):
     is_confirmed = Column(Boolean, nullable=True, default=None)
 
     is_admin = Column(Boolean, default=False)
-    # pylint: disable=not-callable
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    # pylint: enable=not-callable
 
     chats = relationship("Chat", back_populates="user")
     streams = relationship("Stream", back_populates="user")

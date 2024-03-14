@@ -53,21 +53,21 @@ class Stream(Base):
     mode = Column(Text)
     query = Column(Text)
     limit = Column(Integer)
+    with_history = Column(Boolean, nullable=True)
     user_text = Column(Text)
     context = Column(Text)
     institution = Column(Text)
     links = Column(Text)
     temperature = Column(Integer, nullable=False, default=20)
-    # pylint: disable=not-callable
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    # pylint: enable=not-callable
 
     response = Column(Text, nullable=True)
     rag_sources = Column(JSON, nullable=True)
     should_sids = Column(JSON, nullable=True)
     must_not_sids = Column(JSON, nullable=True)
     search_sids = Column(JSON, nullable=True)
+    postprocessing = Column(JSON, nullable=True)
 
     # one-to-one / use use_list=False ?
     feedback = relationship("Feedback", back_populates="stream", uselist=False)
@@ -80,7 +80,7 @@ class Stream(Base):
 
     # __table_args__ = (
     #    CheckConstraint(
-    #        "(user_id IS NULL OR chat_id IS NULL) AND (user_id IS NOT NULL OR chat_id IS NOT NULL)",  # pylint: disable=line-too-long
+    #        "(user_id IS NULL OR chat_id IS NULL) AND (user_id IS NOT NULL OR chat_id IS NOT NULL)",
     #        name="_streams_user_id_chat_id_cc",
     #    ),
     # )

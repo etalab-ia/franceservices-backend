@@ -10,10 +10,8 @@ class Chat(Base):
     __tablename__ = "chats"
 
     id = Column(Integer, primary_key=True, index=True)
-    # pylint: disable=not-callable
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    # pylint: enable=not-callable
 
     chat_name = Column(Text, nullable=True)
     chat_type = Column(Text)

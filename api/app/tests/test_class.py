@@ -1,4 +1,3 @@
-from app.db import base  # noqa: F401  # pylint: disable=unused-import
 from app.db.base_class import Base
 from app.db.init_db import init_db
 from app.db.session import engine

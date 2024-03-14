@@ -7,6 +7,7 @@ from app.config import (
     ELASTICSEARCH_IX_VER,
     ELASTICSEARCH_URL,
     QDRANT_IX_VER,
+    QDRANT_GRPC_PORT,
     QDRANT_URL,
     collate_ix_name,
 )
@@ -116,7 +117,7 @@ def search_indexes(
             do_unique_sheets = True
 
         embeddings = make_embeddings(query)
-        client = QdrantClient(url=QDRANT_URL, grpc_port=6334, prefer_grpc=True)
+        client = QdrantClient(url=QDRANT_URL, grpc_port=QDRANT_GRPC_PORT, prefer_grpc=True)
         # Eventually set filters
         must_filter = []
         should_filter = []

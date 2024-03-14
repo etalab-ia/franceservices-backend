@@ -5,8 +5,7 @@ The default LangChain text splitters split either based on sentences (NLTKTextSp
 We would like to base chunk sizes on token count, but never split in the middle of a sentence - a behaviour that TokenTextSplitter does exhibit.
 The HybridSplitter class implements a custom splitter that combines both criteria.
 """
-from typing import (AbstractSet, Any, Callable, Collection, List, Literal,
-                    Optional, Union)
+from typing import AbstractSet, Any, Callable, Collection, Literal
 
 import nltk
 from langchain.text_splitter import NLTKTextSplitter
@@ -19,9 +18,9 @@ except LookupError:
 
 def get_token_length_function(
     encoding_name: str = "gpt2",
-    model_name: Optional[str] = None,
-    allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
-    disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+    model_name: str | None = None,
+    allowed_special: Literal["all"] | AbstractSet[str] = set(),
+    disallowed_special: Literal["all"] | Collection[str] = "all",
     *args,
     **kwargs,
 ) -> Callable[[str], int]:
@@ -138,9 +137,9 @@ class HybridSplitter(NLTKTextSplitter):
         length_function: Callable[[str], int] = None,  # This argument should really not be overwritten
         separator: str = "\n\n",
         encoding_name: str = "gpt2",
-        model_name: Optional[str] = None,
-        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
-        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        model_name: str | None = None,
+        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ):
         super().__init__(
@@ -158,7 +157,7 @@ class HybridSplitter(NLTKTextSplitter):
             # We are obligated to use this kind of unwieldly ternary because the super() call needs to be the first statement
         )  # super().__init__() call to the parent NLTKTextSplitter class
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         # When looking at the code for NTLKTextSplitter.split_text(), notice that self._tokenizer splits into individual sentences,
         # then re-merges them into chunks.
 
@@ -184,7 +183,7 @@ class PartEnforceHybridSplitter(HybridSplitter):
         super().__init__(**kwargs)  # super().__init__() call to the parent NLTKTextSplitter class
         self.part_separator = part_separator
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         hybrid_split_function = super().split_text
         enforced_splits = text.split(self.part_separator)
 

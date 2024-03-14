@@ -1,39 +1,28 @@
-from enum import Enum
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-if TYPE_CHECKING:
-    from .user import User
+from app.config import LLM_TABLE
 
-from .search import IndexSource
 from .feedback import Feedback
-
-
-class ModelName(str, Enum):
-    fabrique_miaou = "fabrique-miaou"
-    fabrique_reference = "fabrique-reference"
-    albert_light = "albert-light"
+from .search import IndexSource
+from .user import User
 
 
 class StreamBase(BaseModel):
     # Pydantic configuration:
     model_config = ConfigDict(use_enum_values=True)
 
-    model_name: ModelName = ModelName.fabrique_reference.value
-    # For chat/albert (+RAG) like prompt
-    mode: str | None = None  # Possible value should be documented by each model/prompt
+    model_name: str
+    mode: str | None = None
     query: str = Field(
         default="",
         description='The user query. It the query exceed a certain size wich depends on the contextual window of the model, the model will return an  HTTPException(413, detail="Prompt too large")',
     )
-    # @obselete: replace user_text (use by fabrique model) by query and remove this entry (db copy user_text->query)
-    user_text: str = Field(
-        default="",
-        description='The user query. It the query exceed a certain size wich depends on the contextual window of the model, the model will return an  HTTPException(413, detail="Prompt too large")',
-    )
     limit: int | None = None
+    with_history: bool | None = Field(
+        default=None, description="Use the conversation history to generate a new response."
+    )
     # For instruct/fabrique like prompt.
     context: str = ""
     institution: str = ""
@@ -59,25 +48,32 @@ class StreamBase(BaseModel):
         description="List of chunks used with a rag generation. The list of id can be used to retrieved a chunk on the route /get_chunk/{uid}",
     )
 
+    postprocessing: list[str] | None = Field(
+        default=None,
+        description="List of postprocessing steps to apply",
+    )
+
     # TODO: add other checks
     # --
     @model_validator(mode="after")
     def validate_model(self):
-        if self.model_name == ModelName.fabrique_miaou:
-            if self.mode is not None:
-                raise ValueError("Incompatible mode")
+        # if self.model_name == ModelName.fabrique_miaou:
+        #     if self.mode is not None:
+        #         raise ValueError("Incompatible mode")
 
-        elif self.model_name == ModelName.fabrique_reference:
-            if self.mode not in (None, "simple", "experience", "expert"):
-                raise ValueError("Incompatible mode")
-            if self.mode is None:
-                self.mode = "simple"  # default
+        # elif self.model_name == ModelName.fabrique_reference:
+        #     if self.mode not in (None, "simple", "experience", "expert"):
+        #         raise ValueError("Incompatible mode")
+        #     if self.mode is None:
+        #         self.mode = "simple"  # default
 
-        elif self.model_name == ModelName.albert_light:
-            if self.mode not in (None, "simple", "rag"):
-                raise ValueError("Incompatible mode")
-            if self.mode is None:
-                self.mode = "rag"  # default
+        # elif self.model_name == ModelName.albert_light:
+        #     if self.mode not in (None, "simple", "rag"):
+        #         raise ValueError("Incompatible mode")
+        #     if self.mode is None:
+        #         self.mode = "rag"  # default
+        if self.model_name not in [m[0] for m in LLM_TABLE]:
+            raise ValueError("Unknown model: %s" % self.model_name)
 
         # For SQLAlchemy relationship compatibility
         if not self.sources:
@@ -99,10 +95,11 @@ class Stream(StreamBase):
     chat_id: int | None
     search_sids: list[str] | None
     feedback: Feedback | None = None
+    postprocessing: list[str] | None = None
 
     class Config:
         from_attributes = True
 
 
 class StreamWithRelationships(Stream):
-    user: Optional["User"]
+    user: User | None

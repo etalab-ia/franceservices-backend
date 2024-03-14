@@ -4,7 +4,6 @@ import os
 import string
 import unicodedata
 from collections import defaultdict
-from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -42,7 +41,7 @@ def extract(soup: Tag, tag: str, pop=True, recursive=True) -> str:
     return get_text(t)
 
 
-def extract_all(soup: Tag, tag: str, pop=True) -> List[str]:
+def extract_all(soup: Tag, tag: str, pop=True) -> list[str]:
     if not soup.find(tag):
         return []
 
@@ -132,8 +131,8 @@ def _not_punctuation(s):
 
 
 def _parse_xml_text_structured(
-    current: List[str], context: List[str], soups: List[Tag], recurse=True, depth=0
-) -> List[dict]:
+    current: list[str], context: list[str], soups: list[Tag], recurse=True, depth=0
+) -> list[dict]:
     """
     Separate text on Situation and Chapitre.
     Keep the contexts (the history of titles) while iterating.
@@ -303,7 +302,7 @@ def _parse_xml_text(xml_file, structured=False) -> dict:
     extract_all(soup, "OuSAdresser")
     extract_all(soup, "RefActualite")
 
-    def drop_duplicates(data: List[dict], k: str):
+    def drop_duplicates(data: list[dict], k: str):
         seen = []
         keeps = []
         for x in data:
@@ -399,7 +398,7 @@ def _parse_xml_text(xml_file, structured=False) -> dict:
     return doc
 
 
-def _parse_xml_questions(xml_file: str) -> List[dict]:
+def _parse_xml_questions(xml_file: str) -> list[dict]:
     with open(xml_file, mode="r", encoding="utf-8") as f:
         soup = BeautifulSoup(f, "xml")
 
@@ -421,7 +420,7 @@ def _parse_xml_questions(xml_file: str) -> List[dict]:
     return docs
 
 
-def _parse_xml(path: str, parse_type: str, structured: bool = False) -> List[dict]:
+def _parse_xml(path: str, parse_type: str, structured: bool = False) -> list[dict]:
     if parse_type not in ("text", "questions"):
         raise ValueError()
 
@@ -450,7 +449,7 @@ def _parse_xml(path: str, parse_type: str, structured: bool = False) -> List[dic
     return docs
 
 
-def _parse_travailEmploi(basedir: str = "_data/", structured: bool = False) -> List[dict]:
+def _parse_travailEmploi(basedir: str = "_data/", structured: bool = False) -> list[dict]:
     with open("_data/fiches-travail.json") as f:
         data = json.load(f)
 
@@ -631,7 +630,7 @@ class RagSource:
 
     @classmethod
     def get_sheets(
-        cls, sources: Union[str, List[str]], structured: bool = False, path: Optional[str] = None
+        cls, sources: str | list[str], structured: bool = False, path: str | None = None
     ):
         if isinstance(sources, str):
             sources = [sources]

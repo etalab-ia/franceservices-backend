@@ -1,84 +1,71 @@
-# LIA - Legal Information Assistant
+# Albert backend
 
-This project contains the source code of LIA: the **L**egal **I**nformation **A**ssistant, also known as Albert.
-It is a conversational agent that uses official French data sources to answer the agent questions.
+Ce projet contient le code source d'Albert, l'agent conversationnel de l'administration française, développé par les équipes du Datalab de la Direction Interministérielle du Numérique (DINUM). Albert a été créé pour citer ses sources et est spécialisé pour répondre à des questions administratives en français.
+
+Albert est encore en développement et en amélioration continue. Il est conçu pour être utilisé sous la responsabilité d'un agent public.
+
+## Déploiement
+
+Pour déployer le projet Albert, vous référez à la documentation dédies : [docs/deploiment](./docs/deploiement/). 
+
+## Pré-requis : exécution de PyAlbert
+
+Utilisez l'outil en ligne de commande `pyalbert` pour créer les ensembles de données et les modèles nécessaires. La documentation peut être consultée en exécutant `./pyalbert.py --help` :
+
+1. [x] téléchargement du corpus de données en français -- `pyalbert download_corpus`.
+1. [x] téléchargement des modéles de langue -- `pyalbert download_models`.
+2. [x] prétraitement et mise en forme du corpus de données -- `pyalbert make_chunks`.
+3. [x] alimenter les moteurs de recherche d'indexation <index/vector> -- `pyalbert index`
+3. [ ] affiner les LLMs. Script indépendant situé dans le dépôt `pyalbert`, répertoire `finetuning/`.
+4. [x] évaluation des modèles -- `pyalbert evaluate`.
+
+**REMARQUE** : L'étape 3 cache une étape qui consiste à construire les embeddings à partir de morceaux de texte (chunks). Cette étape nécessite une grande puissance de calcul GPU et peut être réalisée avec la commande `pyalbert make_embeddings`. Cette commande créera les données requises pour les index vectoriels construits avec l'option `pyalbert index --index-type e5`. Vous pouvez consulter la [section de déploiement](/api/README.md#deploy) du fichier Lisez-moi de l'API pour voir toutes les étapes impliquées dans le processus de construction.
 
 
-## PyAlbert
+## Structure du dépôt
 
-`pyalbert` is a CLI tool that help build the sources and the model needed for the API.
+- \_data/ : contient des données volatiles et volumineuses téléchargées par pyalbert.
+- api/ : le code de l'API principale.
+- api_vllm/ : le code de l'API vllm.
+- commons/ : code partagé par différents modules, comme le client API Albert, et l'encodeur d'invite.
+- sourcing/ : code derrière `pyalbert download*` et `pyalbert make_chunks`.
+- ir/ : code derrière `pyalbert index ...`
+- évaluation/ : code derrière `pyalbert evaluate ...`
+- scripts/ : Divers scripts de tests, non (encore) intégrés à pyalbert.
+- tests/ : Divers scripts utilitaires, non (encore) intégrés à pyalbert.
+- contrib/ : fichiers de configuration pour déployer Albert.
+- docs/ : ressources documentaires.
+- wiki/ : ressources wiki.
 
-Once installed, the complete documentation can be view with the command:
+## Antisèche de commandes Docker pour débugguer
 
-    ./albert.py --help
-
-The process to build the data, and their corresponding `pyalbert` subcommands (checked if integrated to the CLI) are summarized below
-
-1. [x] fetching the French data corpus -- `pyalbert download`.
-2. [x] pre-processing and formatting the data corpus -- `pyalbert make_chunks`.
-3. [x] feed the <index/vector> search engines -- `pyalbert index`
-3. [ ] fine-tuning the LLMs. Independents script located in the folder `finetuning/`.
-4. [x] evaluating the models -- `pyalbert evaluate`.
-
-**NOTE**: The step 3 hides a step which consists of building the embeddings from pieces of text (chunks). This step requires a GPU and can be achieves with the command `pyalbert make_embeddings`. This command will create the data required for vector indexes build with the option `pyalbert index --index-type e5`. You can see the [deploy section](/api/README.md#deploy) of the API Readme to see all the step involved in the build process.
-
-### Install 
-
+Pour lister les containers actifs de manière claire :
 ```bash
-pip install -r requirements.txt
-```
-...or using `pyproject.toml` via a modern Python manager like [pip-tools](https://github.com/jazzband/pip-tools), [PDM](https://pdm.fming.dev/), [Poetry](https://python-poetry.org/docs/cli/#export) or [hatch](https://hatch.pypa.io/)
-
-
-### Export pinned dependencies from pyproject.toml to requirements.txt
-
-Using [PDM](https://pdm.fming.dev/
-```bash
-pdm export --output requirements.txt --production --without-hashes
-```
-
-Using [Poetry](https://python-poetry.org/docs/cli/#export)
-```bash
-poetry export --without-hashes -f requirements.txt -o requirements.txt
-```
-
-Using [pip-tools](https://github.com/jazzband/pip-tools)
-```bash
-pip-compile --output-file requirements.txt requirements.in
+docker ps --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}"
 ```
 
-## Albert APIs
+Pour afficher les logs d'erreur d'un container spécifique :
+```bash
+docker logs [CONTAINER_NAME]
+```
 
-The API is built upon multiple services :
+Acceder à la ligne de commande d'un container qui est deja en cours d'éxecution :
+```bash
+docker exec -e API_URL=[API_URL] -e FRONT_URL=[API_URL] --gpus all --network="host" -it --rm -p 8090:8090 --name miaou-api-v2 registry.gitlab.com/etalab-datalab/llm/albert-backend/api-v2:latest /bin/sh
+```
 
-* The LLM API (GPU intensive): This API is managed by vllm, and the executable is located in `api_vllm/`.
-* A vector database (for semantic search), based on Qdrant.
-* A search-engine (for full-text search), based on ElasticSearch.
-* The main/exposed API: the app executable and configurations are located in the folder `api/`.
+Arrêter et enlever un container qui tourne :
+```bash
+docker rm -f [CONTAINER_NAME]
+```
 
-See the dedicated [Readme](/api/README.md) for more information about the API configuration, testing, and  **deployment**.
-
-
-## Folder structure
-
-- \_data/: contains volatile and large data downloaded by pyalbert.
-- api/: the code of the main API.
-- api_vllm/: the code of the vllm API.
-- commons/: code shared by different modules, such as the Albert API client, and prompt encoder.
-- corpus_generation/: **Independent** scripts to generate Q/a or evaluation data using third party service (Mistral, Openai etc)
-- finetuning/: **Independent** fine-tuning scripts.
-- sourcing/: code behind `pyalbert download ...` and `pyalbert make_chunks`.
-- ir/: code behind `pyalbert index ...`
-- evaluation/: code behind `pyalbert evaluate ...`
-- scripts/: Various tests scripts, not integrated to pyalbert (yet).
-- tests/: Various util scripts, not integrated to pyalbert (yet).
-- contrib/: configuration files to deploy Albert.
-- notebooks/: Various notebooks used for testing, evaluation demo or fine-tuning.
-- docs/: documentation resources.
-- wiki/: wiki resources.
+Démarrer un conteneur en mode interactif pour le débugger, tout en le supprimant automatiquement après avoir quitté :
+```bash
+docker run -e API_URL=[API_URL] -e FRONT_URL=[API_URL] --rm --gpus all --network="host" -it -p 8090:8090 --name miaou-api-v2 registry.gitlab.com/etalab-datalab/llm/albert-backend/api-v2:latest /bin/sh
+```
 
 
-## Contributing
+## Contribuer
 
 TODO
 
@@ -88,6 +75,6 @@ TODO
 TODO
 
 
-## Acknowledgements
+## Remerciements
 
 TODO
