@@ -1,13 +1,10 @@
 from enum import Enum
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict
 
-if TYPE_CHECKING:
-    from .user import User
-
 from .stream import Stream
+from .user import User
 
 
 class ChatType(str, Enum):
@@ -46,4 +43,4 @@ class ChatArchive(Chat):
 
 
 class ChatWithRelationships(Chat):
-    user: Optional["User"]
+    user: User | None

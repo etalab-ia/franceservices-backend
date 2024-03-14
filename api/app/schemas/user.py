@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from app.config import PASSWORD_PATTERN
 from pydantic import BaseModel, EmailStr, Extra, constr
 
+from app.config import PASSWORD_PATTERN
 if TYPE_CHECKING:
     from .stream import Stream
 
@@ -41,7 +41,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: int
-    is_confirmed: Optional[bool] = None
+    is_confirmed: bool | None = None
     is_admin: bool
 
     class Config:

@@ -1,10 +1,8 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, model_validator, Field
 
-if TYPE_CHECKING:
-    from .user import User
+from .user import User
 
 
 class ReasonType(str, Enum):
@@ -58,4 +56,4 @@ class Feedback(FeedbackBase):
 
 
 class FeedbackWithRelationships(Feedback):
-    user: Optional["User"]
+    user: User | None

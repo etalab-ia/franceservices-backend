@@ -10,10 +10,8 @@ class Feedback(Base):
     __tablename__ = "feedbacks"
 
     id = Column(Integer, primary_key=True)
-    # pylint: disable=not-callable
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    # pylint: enable=not-callable
 
     is_good = Column(Boolean, nullable=True)
     message = Column(Text, nullable=True)
