@@ -30,6 +30,8 @@ requires-python = "==3.10.*"
 readme = "README.md"
 license = {text = "MIT"}
 
+[tool.ruff.lint]
+ignore-init-module-imports = true
 
 [tool.pdm]
 distribution = false
