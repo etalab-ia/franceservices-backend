@@ -17,6 +17,7 @@ class ReasonType(str, Enum):
     inconsistent = "inconsistent"
     too_long = "too_long"
     grammar_errors = "grammar_errors"
+    imprecise = "imprecise"
 
 
 class FeedbackBase(BaseModel):
