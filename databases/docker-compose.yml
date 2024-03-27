@@ -3,7 +3,6 @@ version: "3.8"
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.9.1
-    container_name: ${COMPOSE_PROJECT_NAME}-elasticsearch
     restart: always
     environment:
         discovery.type: single-node
@@ -17,7 +16,6 @@ services:
       - elasticsearch:/var/lib/elasticsearch/data
   qdrant:
     image: qdrant/qdrant:v1.5.0
-    container_name: ${COMPOSE_PROJECT_NAME}-qdrant
     restart: always
     ports:
       - ${QDRANT_REST_PORT}:6333
@@ -26,7 +24,6 @@ services:
       - qdrant:/qdrant/storage
   postgres:
     image: postgres:16.0-alpine
-    container_name: ${COMPOSE_PROJECT_NAME}-postgres
     restart: always
     environment:
         POSTGRES_USER: postgres

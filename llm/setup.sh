@@ -46,6 +46,6 @@ for model in $(jq -r 'keys[]' $routing_table); do
         force_download=""
     fi
 
-    echo "info: testing $model vllm container"
+    echo "info: download $hf_repo_id files."
     python3 ./pyalbert/albert.py download_models --storage-dir=/data/models --hf-repo-id=$hf_repo_id $force_download
 done

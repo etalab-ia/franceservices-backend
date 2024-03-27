@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, EmailStr, constr
 
-from app.config import PASSWORD_PATTERN
+from pyalbert.config import PASSWORD_PATTERN
 
 
 class App(str, Enum):

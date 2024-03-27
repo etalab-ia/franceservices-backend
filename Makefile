@@ -1,7 +1,15 @@
+.PHONY: help
 
-format_code:
+help:
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+format_code_black:
 	@# Format all python files
-	pylsp.black --line-length 125 .
+	pylsp.black --line-length 100 .
+
+format_code_ruff:
+	@# Format all python files
+	ruff format --line-length 100 .
 
 reorder_json_chunks:
 	@# Reorder and clean the json database.
@@ -18,6 +26,9 @@ info:
 fetch_colab_notebooks:
 	wget 'https://colab.research.google.com/drive/1_FQw20VjpKaE-Al-dh4jfVRtPawbD0fe' -O notebooks/llama-finetuning-7b-4bit.ipynb
 	wget 'https://colab.research.google.com/drive/148aZEs2-3hkCeTya1h4YPdfpqGIL5A4p' -O notebooks/llama-inference-7b-4bit.ipynb
+
+download_experiences:
+	wget https://opendata.plus.transformation.gouv.fr/api/explore/v2.1/catalog/datasets/export-expa-c-riences/exports/json
 
 download_servicepublic_sheets:
 	# Download xml files from:
@@ -55,16 +66,16 @@ acronyms: #acronyms_directory acronyms_sp
 
 
 sync_etalab_repo_outscale_prod:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i ~/.ssh/etalab-dulac"  "../albert-backend" adulac@171.33.114.210:~/
+	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i $$REMOTE_SSH_KEY"  "../albert-backend" $$REMOTE_USER@171.33.114.210:~/
 
 sync_etalab_repo_outscale_prod_2:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i ~/.ssh/etalab-dulac"  "../albert-backend" adulac@142.44.51.104:~/
+	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i $$REMOTE_SSH_KEY"  "../albert-backend" $$REMOTE_USER@142.44.51.104:~/
 
 sync_etalab_repo_outscale_sand:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i ~/.ssh/etalab-dulac"  "../albert-backend" adulac@217.75.171.132:~/
+	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i $$REMOTE_SSH_KEY"  "../albert-backend" $$REMOTE_USER@217.75.171.132:~/
 
 sync_etalab_repo_outscale_staging_v6:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i ~/.ssh/etalab-dulac"  "../albert-backend" adulac@109.232.233.152:~/
+	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i $$REMOTE_SSH_KEY"  "../albert-backend" $$REMOTE_USER@109.232.233.152:~/
 
 build_llama.cpp:
 	git clone https://github.com/ggerganov/llama.cpp
@@ -83,13 +94,6 @@ build_all_indexes: # not embeddings
 	python3 pyalbert.py index experiences --index-type bm25
 	python3 pyalbert.py index sheets --index-type bm25
 	python3 pyalbert.py index chunks --index-type bm25
-	# meilisearch
-	#python3 pyalbert.py index experiences --index-type bucket
-	#sleep 3 # debug @async..
-	#python3 pyalbert.py index sheets --index-type bucket
-	#sleep 3
-	#python3 pyalbert.py index chunks --index-type bucket
-	# qdrant | requires _data/embeddings_*.npy
 	python3 pyalbert.py index experiences --index-type e5
 	python3 pyalbert.py index chunks --index-type e5
 
@@ -109,8 +113,6 @@ clean_all_indexex: # not embeddings
 list_indexes:
 	# elasticsearch
 	curl -X GET "http://localhost:9202/_cat/indices?v"
-	# meilisearch
-	#curl -X GET "http://localhost:7700/indexes" | jq
 	# qdrant
 	curl -X GET "http://localhost:6333/collections" | jq 
 

@@ -183,37 +183,33 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 
 ### RAG
 
-> Par défaut les fichiers téléchargés et générés dans cette section seront mis dans un dossier *./_data*.
+> Par défaut les fichiers téléchargés et générés dans cette section seront mis dans un dossier /data
+
+* Placez vous dans le module pyalbert: `cd pyalbert`
 
 * Pour activer la fonctionnalité de RAG, vous devez tout d'abord téléchargez les documents qui vont alimenter le système : 
 
 	```bash
-	python3 ./pyalbert.py download_corpus
+	python3 ./albert.py download_rag_sources
 	```
 
-* Vous devez ensuite appliquer un preprocessing sur ces documents : 
+* Vous devez contruire les chunks afin de constuire les embeddings pour la recherche sémantique : 
 
 	```bash
-	python3 ./pyalbert.py make_chunks --structured
-	```
-
-* Puis, vous devez créer des vecteurs à l'aide d'un modèle d'embeddings 
-
-	```bash
-	python3 ./pyalbert.py make_embeddings
+	python3 ./albert.py make_chunks --structured
 	```
 
 * Enfin vous devez intégrer les documents et ces vectors dans les bases de données dédiés qui ont été déployées dans la section précédente
 
 	```bash
 	# Elasticsearch indexes
-	python3 ./pyalbert.py index experiences --index-type bm25
-	python3 ./pyalbert.py index sheets --index-type bm25
-	python3 ./pyalbert.py index chunks --index-type bm25
+	python3 ./albert.py index experiences --index-type bm25
+	python3 ./albert.py index sheets --index-type bm25
+	python3 ./albert.py index chunks --index-type bm25
 
 	# Qdrant indexes (aka collections)
-	python3 ./pyalbert.py index experiences --index-type e5
-	python3 ./pyalbert.py index chunks --index-type e5
+	python3 ./albert.py index experiences --index-type e5
+	python3 ./albert.py index chunks --index-type e5
 	```
 
 ### API
@@ -241,7 +237,6 @@ Vous pouvez utilser le fichier `/api/app/.env.example` comme base pour créer un
 	* `MJ_API_KEY`
 	* `MJ_API_SECRET`
 	* `CONTACT_EMAIL`
-	* `DISABLE_CUDA`
 	* `BACKEND_CORS_ORIGINS`
 
 Vous pouvez aussi faire en sorte que les variables d'env soient automatiquement chargées lorsque vous entrez dans le dossier du projet en utilisant [direnv](https://direnv.net/).
@@ -263,7 +258,6 @@ Vous pouvez aussi faire en sorte que les variables d'env soient automatiquement 
 	* `MJ_API_KEY`
 	* `MJ_API_SECRET`
 	* `CONTACT_EMAIL`
-	* `DISABLE_CUDA`
 	* `BACKEND_CORS_ORIGINS`
 
 * Déployez un container d'API : 

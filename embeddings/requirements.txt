@@ -1,0 +1,7 @@
+accelerate==0.28.0
+torch==2.0.1
+uvicorn==0.23.2
+fastapi==0.103.1
+transformers==4.38.1
+huggingface-hub==0.20.3
+numpy==1.26.4

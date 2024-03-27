@@ -4,9 +4,7 @@ import logging
 
 parser = argparse.ArgumentParser(description="Test the response of a LLM model.")
 parser.add_argument("--port", type=int, default=8082, help="Model port")
-parser.add_argument(
-    "--host", type=str, default="localhost", help="Model host (default: localhost)"
-)
+parser.add_argument("--host", type=str, default="localhost", help="Model host (default: localhost)")
 parser.add_argument(
     "--prompt", type=str, default="Hello, world!", help="Prompt to use for the model"
 )

@@ -3,9 +3,9 @@ import os
 import shutil
 import uuid
 
-from app.config import ROOT_DIR
-
-MAILJET_FOLDER = os.path.join(ROOT_DIR, "tests/test_data/mailjet")
+current_file_dir = os.path.dirname(os.path.abspath(__file__))
+currrent_parent_dir = os.path.dirname(current_file_dir)
+MAILJET_FOLDER = os.path.join(currrent_parent_dir, "tests/test_data/mailjet")
 
 
 def create_mailjet_folder():

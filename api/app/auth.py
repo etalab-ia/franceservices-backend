@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 
 from app import crud
-from app.config import ACCESS_TOKEN_TTL, SECRET_KEY
+from pyalbert.config import ACCESS_TOKEN_TTL, SECRET_KEY
 
 ALGORITHM = "HS256"
 

@@ -1,14 +1,16 @@
 import os
+import tempfile
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.config import ENV, ROOT_DIR
+
+from pyalbert.config import ENV
 
 if ENV in ("unittest", "dev"):
     # sqlite3:
-    DB_URL = "sqlite:///" + os.path.join(ROOT_DIR, "sqlite3.db")
+    DB_URL = "sqlite:///" + os.path.join(tempfile.gettempdir(), "albert-sqlite3.db")
     engine = create_engine(DB_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
 else:
     # PostgreSQL:

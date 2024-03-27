@@ -1,21 +1,16 @@
 import json
 import os
 
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from pyalbert.clients import LlmClient
+from pyalbert.prompt import check_url, correct_mail, correct_number, correct_url, get_prompter
 from spacy.lang.fr import French
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.config import WITH_GPU
-from app.deps import get_current_user, get_db
 from app.core.llm import auto_set_chat_name
-
-if not WITH_GPU:
-    from app.core.llm_gpt4all import gpt4all_callback, gpt4all_generate
-from commons import get_prompter, get_llm_client
-from pyalbert.postprocessing import check_url, correct_mail, correct_number, correct_url
-
+from app.deps import get_current_user, get_db
 
 router = APIRouter()
 
@@ -201,13 +196,9 @@ def start_stream(
     # TODO: turn into async
     # Streaming case
     def generate():
-        # Get the right stream generator
-        if WITH_GPU:
-            llm_client = get_llm_client(model_name)
-            generator = llm_client.generate(prompt, stream=True, **sampling_params)
-        else:
-            callback = gpt4all_callback(db, stream_id)
-            generator = gpt4all_generate(prompt, callback=callback, temp=temperature, stream=True)
+        # Get the stream generator
+        llm_client = LlmClient(model_name)
+        generator = llm_client.generate(prompt, stream=True, **sampling_params)
 
         # Stream !
         crud.stream.set_is_streaming(db, db_stream, True)
@@ -244,7 +235,7 @@ def start_stream(
             crud.stream.set_is_streaming(db, _db_stream, False, commit=False)
             crud.stream.set_rag_output(db, _db_stream, raw_response.strip(), rag_sources)
 
-    # TODO : directly manage the if below in generate_and_postprocess?
+    # TODO : directly manage the "if" below in generate_and_postprocess?
     if not postprocessing:
         # return token by token
         return StreamingResponse(generate(), media_type="text/event-stream")

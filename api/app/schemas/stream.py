@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.config import LLM_TABLE
+from pyalbert.config import LLM_TABLE
 
 from .feedback import Feedback
 from .search import IndexSource

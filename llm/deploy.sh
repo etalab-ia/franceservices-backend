@@ -65,7 +65,7 @@ for model in $(jq -r 'keys[]' $routing_table); do
         --env MODEL_REPO_ID=${MODEL_REPO_ID} \
         --volume ${GPT4ALL_MODEL_DIR}:/model \
         ${CI_REGISTRY_IMAGE}/gpt4all:${CI_GPT4ALL_IMAGE_TAG} \
-        python3 /code/app.py --model=/model/${GPT4ALL_MODEL} --port=8000 --host=0.0.0.0 --debug
+        python3 /code/app.py --model=/model --port=8000 --host=0.0.0.0 --debug
 
     # vllm driver
     elif [[ $driver == "vllm" ]]; then

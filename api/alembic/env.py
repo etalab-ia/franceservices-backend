@@ -1,10 +1,11 @@
 from __future__ import with_statement
 
 import os
+import tempfile
+from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
-from logging.config import fileConfig
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -20,8 +21,8 @@ fileConfig(config.config_file_name)
 # target_metadata = mymodel.Base.metadata
 # target_metadata = None
 
+from pyalbert.config import ENV
 from app.db.base import Base  # noqa
-from app.config import ENV, ROOT_DIR
 
 target_metadata = Base.metadata
 
@@ -33,7 +34,7 @@ target_metadata = Base.metadata
 
 def get_url():
     if ENV in ("unittest", "dev"):
-        db_url = "sqlite:///" + os.path.join(ROOT_DIR, "sqlite3.db")
+        db_url = "sqlite:///" + os.path.join(tempfile.gettempdir(), "albert-sqlite3.db")
     else:
         db_user = "postgres"
         db_pass = os.environ["POSTGRES_PASSWORD"]

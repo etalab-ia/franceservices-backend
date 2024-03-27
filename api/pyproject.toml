@@ -6,29 +6,31 @@ authors = [
     {name = "Etalab", email = "etalab@mail.numerique.gouv.fr"},
 ]
 dependencies = [
-    "accelerate==0.22.0",
     "alembic==1.12.0",
     "elasticsearch==8.9.0",
     "email-validator==2.0.0.post2",
     "fastapi==0.103.1",
     "gpt4all==2.0.2",
     "mailjet-rest==1.3.4",
-    "numpy==1.26.0",
     "bcrypt==4.1.2",
     "pydantic==2.3.0",
     "pydantic-core==2.6.3",
     "python-jose==3.3.0",
     "psycopg2-binary==2.9.8",
     "qdrant-client==1.5.4",
-    "spacy>=3.7.4",
     "requests==2.31.0",
+    "spacy>=3.7.4",
     "SQLAlchemy==2.0.20",
-    "transformers==4.33.2",
     "uvicorn==0.23.2",
+    "python-dotenv==1.0.0",
 ]
 requires-python = "==3.10.*"
 readme = "README.md"
 license = {text = "MIT"}
+
+[tool.ruff]
+line-length = 100
+exclude = [ "alembic/" ]
 
 [tool.ruff.lint]
 ignore-init-module-imports = true

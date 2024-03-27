@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from pyalbert.config import APP_VERSION, LLM_TABLE
+from pyalbert.lexicon.institutions import INSTITUTIONS
 
 from app import models
-from app.config import APP_VERSION, LLM_TABLE
-from app.core.institutions import INSTITUTIONS
 from app.deps import get_current_user
 
 router = APIRouter()

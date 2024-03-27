@@ -7,8 +7,8 @@
      container_name: elasticsearch
      #mem_limit: 2GB
      ports:
-       - 9202:9200
-       - 9302:9300
+       - 9208:9200
+       - 9309:9300
      volumes:
        - ./_data/elasticsearch_data:/var/lib/elasticsearch/data
      environment:

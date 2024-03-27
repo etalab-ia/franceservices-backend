@@ -103,7 +103,7 @@ async def get_prompt_config(
     config_file: str | None = None,
 ) -> Response:
     if not config_file:
-        config_files = ["prompt_config.yml",  "prompt_config.yaml"]
+        config_files = ["prompt_config.yml", "prompt_config.yaml"]
     else:
         config_files = [config_file]
 
