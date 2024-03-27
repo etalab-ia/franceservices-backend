@@ -73,9 +73,7 @@ def set_rag_output(
         db.commit()
 
 
-def set_search_sids(
-    db: Session, db_stream: models.Stream, search_sids: list[str], commit=True
-):
+def set_search_sids(db: Session, db_stream: models.Stream, search_sids: list[str], commit=True):
     db_stream.search_sids = search_sids
     if commit:
         db.commit()

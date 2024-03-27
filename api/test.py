@@ -4,7 +4,7 @@ import re
 
 import requests
 
-from app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
+from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
 url = "http://127.0.0.1:8000"
 
@@ -35,7 +35,7 @@ data = {
     # "postprocessing": ["check_url", "check_mail", "check_number"],
     # "with_history": True,
 }
-#response = requests.post(f"{url}/stream/chat/1", json=data, headers=headers)
+# response = requests.post(f"{url}/stream/chat/1", json=data, headers=headers)
 response = requests.post(f"{url}/stream", json=data, headers=headers)
 if not response.ok:
     error_detail = response.json().get("detail")

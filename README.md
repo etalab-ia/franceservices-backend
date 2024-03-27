@@ -4,65 +4,30 @@ Ce projet contient le code source d'Albert, l'agent conversationnel de l'adminis
 
 Albert est encore en développement et en amélioration continue. Il est conçu pour être utilisé sous la responsabilité d'un agent public.
 
+
 ## Déploiement
 
 Pour déployer le projet Albert, vous référez à la documentation dédies : [docs/deploiment](./docs/deploiement/). 
+
 
 ## Pré-requis : exécution de PyAlbert
 
 Utilisez l'outil en ligne de commande `pyalbert` pour créer les ensembles de données et les modèles nécessaires. La documentation peut être consultée en exécutant `./pyalbert.py --help` :
 
-1. [x] téléchargement du corpus de données en français -- `pyalbert download_corpus`.
-1. [x] téléchargement des modéles de langue -- `pyalbert download_models`.
-2. [x] prétraitement et mise en forme du corpus de données -- `pyalbert make_chunks`.
-3. [x] alimenter les moteurs de recherche d'indexation <index/vector> -- `pyalbert index`
-3. [ ] affiner les LLMs. Script indépendant situé dans le dépôt `pyalbert`, répertoire `finetuning/`.
-4. [x] évaluation des modèles -- `pyalbert evaluate`.
-
-**REMARQUE** : L'étape 3 cache une étape qui consiste à construire les embeddings à partir de morceaux de texte (chunks). Cette étape nécessite une grande puissance de calcul GPU et peut être réalisée avec la commande `pyalbert make_embeddings`. Cette commande créera les données requises pour les index vectoriels construits avec l'option `pyalbert index --index-type e5`. Vous pouvez consulter la [section de déploiement](/api/README.md#deploy) du fichier Lisez-moi de l'API pour voir toutes les étapes impliquées dans le processus de construction.
+1. téléchargement du corpus de données en français -- `pyalbert download_rag_sources --help`.
+2. prétraitement et mise en forme du corpus de données -- `pyalbert make_chunks --help`.
+3. alimenter les moteurs de recherche d'indexation <index/vector> -- `pyalbert index --help`
+4. évaluation des modèles -- `pyalbert evaluate --help`.
 
 
 ## Structure du dépôt
 
-- \_data/ : contient des données volatiles et volumineuses téléchargées par pyalbert.
-- api/ : le code de l'API principale.
-- api_vllm/ : le code de l'API vllm.
-- commons/ : code partagé par différents modules, comme le client API Albert, et l'encodeur d'invite.
-- sourcing/ : code derrière `pyalbert download*` et `pyalbert make_chunks`.
-- ir/ : code derrière `pyalbert index ...`
-- évaluation/ : code derrière `pyalbert evaluate ...`
-- scripts/ : Divers scripts de tests, non (encore) intégrés à pyalbert.
-- tests/ : Divers scripts utilitaires, non (encore) intégrés à pyalbert.
+- pyalbert/ : Bibliothèque Albert et CLI: Boîte à outils Albert : récupérer et analyser des données, construire des blocs, alimenter le moteur de recherche, créer et traiter des invites, clients API..
+- api/ : le code de l'API d'Albert.
+- llm/ : le code de l'API des LLM et modèle d'embeddings.
+- databases/ : Code de déploiement de la base de données et des moteurs de recherche.
 - contrib/ : fichiers de configuration pour déployer Albert.
 - docs/ : ressources documentaires.
-- wiki/ : ressources wiki.
-
-## Antisèche de commandes Docker pour débugguer
-
-Pour lister les containers actifs de manière claire :
-```bash
-docker ps --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}"
-```
-
-Pour afficher les logs d'erreur d'un container spécifique :
-```bash
-docker logs [CONTAINER_NAME]
-```
-
-Acceder à la ligne de commande d'un container qui est deja en cours d'éxecution :
-```bash
-docker exec -e API_URL=[API_URL] -e FRONT_URL=[API_URL] --gpus all --network="host" -it --rm -p 8090:8090 --name miaou-api-v2 registry.gitlab.com/etalab-datalab/llm/albert-backend/api-v2:latest /bin/sh
-```
-
-Arrêter et enlever un container qui tourne :
-```bash
-docker rm -f [CONTAINER_NAME]
-```
-
-Démarrer un conteneur en mode interactif pour le débugger, tout en le supprimant automatiquement après avoir quitté :
-```bash
-docker run -e API_URL=[API_URL] -e FRONT_URL=[API_URL] --rm --gpus all --network="host" -it -p 8090:8090 --name miaou-api-v2 registry.gitlab.com/etalab-datalab/llm/albert-backend/api-v2:latest /bin/sh
-```
 
 
 ## Contribuer

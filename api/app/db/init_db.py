@@ -1,5 +1,5 @@
 from app import crud, models
-from app.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
+from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
 from app.db import base  # noqa: F401
 from app.db.base_class import Base
 from app.db.session import SessionLocal, engine

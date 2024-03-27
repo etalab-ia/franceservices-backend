@@ -4,7 +4,7 @@ sys.path.append("..")
 from fastapi import APIRouter, FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from app.config import (
+from pyalbert.config import (
     APP_DESCRIPTION,
     APP_NAME,
     APP_VERSION,
@@ -22,9 +22,7 @@ if ENV in ("unittest", "dev"):
 init_db()
 
 
-app = FastAPI(
-    title=APP_NAME, description=APP_DESCRIPTION, version=APP_VERSION, contact=CONTACT
-)
+app = FastAPI(title=APP_NAME, description=APP_DESCRIPTION, version=APP_VERSION, contact=CONTACT)
 
 app.add_middleware(
     CORSMiddleware,

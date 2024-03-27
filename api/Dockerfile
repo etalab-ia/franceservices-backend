@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
+FROM ubuntu:22.04
 
 RUN apt-get update && \
     apt-get install -y python3-pip python3-dev && \
@@ -10,7 +10,6 @@ WORKDIR /code
 ADD ./requirements.txt ./alembic.ini ./start.sh .
 ADD ./alembic ./alembic
 ADD ./app ./app
-COPY --from=commons . ./commons
 COPY --from=pyalbert . ./pyalbert
 
 RUN chmod +x /code/start.sh

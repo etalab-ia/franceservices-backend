@@ -1,4 +1,5 @@
-from commons import get_prompter, get_llm_client
+from pyalbert.clients import LlmClient
+from pyalbert.prompt import get_prompter
 
 from app import crud, schemas
 from app.db.session import SessionLocal
@@ -7,7 +8,9 @@ from app.db.session import SessionLocal
 def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | None:
     with SessionLocal() as db:
         model_name = stream.model_name
-        query = " ".join(stream.query.split(" ")[:512])  # 512 words should be sufficient to title the query
+        query = " ".join(
+            stream.query.split(" ")[:512]
+        )  # 512 words should be sufficient to title the query
 
         # Build prompt
         query = f"Synthétise la demande suivante en un court titre de quelque mots (pas plus de 8 mots) permettant d'identifier la thématique. Le titre doit être court, clair et accrocheur:\n\n{query}"
@@ -15,7 +18,7 @@ def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | None
         prompt = prompter.make_prompt(query=query)
 
         # Generate
-        llm_client = get_llm_client(model_name)
+        llm_client = LlmClient(model_name)
         chat_name = llm_client.generate(prompt, temperature=20)
 
         # Update db_chat

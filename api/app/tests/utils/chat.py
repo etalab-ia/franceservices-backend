@@ -17,3 +17,11 @@ def create_chat(client: TestClient, token, chat_type):
 
 def read_chat(client: TestClient, token, chat_id):
     return client.get(f"/chat/{chat_id}", headers={"Authorization": f"Bearer {token}"})
+
+
+def update_chat(client: TestClient, token, chat_id, **data):
+    return client.post(f"/chat/{chat_id}", headers={"Authorization": f"Bearer {token}"}, json=data)
+
+
+def read_archive(client: TestClient, token, chat_id):
+    return client.get(f"/chat/archive/{chat_id}", headers={"Authorization": f"Bearer {token}"})

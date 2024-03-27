@@ -2,7 +2,8 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, EmailStr, Extra, constr
 
-from app.config import PASSWORD_PATTERN
+from pyalbert.config import PASSWORD_PATTERN
+
 if TYPE_CHECKING:
     from .stream import Stream
 

@@ -1,10 +1,12 @@
 stages:
+  - test
   - build
   - setup
   - deploy-database
   - deploy-llm
+  - setup-database
   - deploy-api
-  - test
+  - check
 
 ############################################
 ################# CONFIG ###################
@@ -33,7 +35,40 @@ before_script:
       echo "POSTGRES_HOST=${CI_DEPLOY_HOST}" >> ./.env
       echo "QDRANT_HOST=${CI_DEPLOY_HOST}" >> ./.env
       echo "ELASTIC_HOST=${CI_DEPLOY_HOST}" >> ./.env
+      echo "EMBEDDINGS_HOST=${CI_DEPLOY_HOST}" >> ./.env
     fi
+
+cache:
+  paths:
+    - .cache/pip
+    - venv/
+
+############################################
+################# TEST #####################
+############################################
+
+test:api:
+  stage: test
+  image: python:3.10-slim
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "prod" || $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "api/app/**/*.py"
+      when: always
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "prod" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "staging" ||$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
+      changes:
+        - "api/app/**/*.py"
+      when: always
+  before_script:
+  - |
+    python -m venv venv
+    source venv/bin/activate
+    pip install --cache-dir .cache/pip -r api/requirements.txt
+    pip install --cache-dir .cache/pip -r pyalbert/requirements.txt
+    pip install --cache-dir .cache/pip -r api/requirements_dev.txt
+  script:
+    - cp -r pyalbert api/ && cd api/ && pytest -W ignore app/tests/
+
 
 ############################################
 ################# DATABASE #################
@@ -58,22 +93,59 @@ deploy:database:dinum:
     - | # send deployment files to remote server
       mkdir -p ./${CI_JOB_ID}
       cp ./databases/docker-compose.yml ./${CI_JOB_ID}/docker-compose.yml
-      echo "
-      POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      POSTGRES_PORT=${POSTGRES_PORT}
-      ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      ELASTIC_PORT=${ELASTIC_PORT}
-      QDRANT_REST_PORT=${QDRANT_REST_PORT}
-      QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT}
-      COMPOSE_FILE=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/docker-compose.yml
-      COMPOSE_PROJECT_NAME=${CI_ENVIRONMENT_NAME}
-      " > ./${CI_JOB_ID}/.env
+      cp ./.env ./${CI_JOB_ID}/.env
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # deploy database to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      export COMPOSE_FILE=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/docker-compose.yml
+      export COMPOSE_PROJECT_NAME=database
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
       docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env down
       docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env up --detach
+      "
+
+setup:database:dinum:
+  environment:
+    name: dinum
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: setup-database
+  image: alpine:latest
+  timeout: 3 hours
+  script:
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      mkdir -p ./${CI_JOB_ID}/venv
+      cp -r ./pyalbert ./${CI_JOB_ID}
+      cp ./.env ./${CI_JOB_ID}/.env
+      sed -i~ "s/QDRANT_HOST=${CI_DEPLOY_HOST}/QDRANT_HOST=localhost/g" ./${CI_JOB_ID}/.env
+      sed -i~ "s/ELASTIC_HOST=${CI_DEPLOY_HOST}/ELASTIC_HOST=localhost/g" ./${CI_JOB_ID}/.env
+      sed -i~ "s/EMBEDDINGS_HOST=${CI_DEPLOY_HOST}/EMBEDDINGS_HOST=localhost/g" ./${CI_JOB_ID}/.env
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # setup database on remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      set -e
+      python3.10 -m venv ~/${CI_JOB_ID}/venv
+      source ~/${CI_JOB_ID}/venv/bin/activate
+      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
+      export $(grep -v "^#" ~/${CI_JOB_ID}/.env | xargs)
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert
+      python ./albert.py download_rag_sources
+      python ./albert.py make_chunks --structured
+      python ./albert.py index experiences --index-type bm25
+      python ./albert.py index sheets --index-type bm25
+      python ./albert.py index chunks --index-type bm25
+      python ./albert.py index experiences --index-type e5
+      python ./albert.py index chunks --index-type e5
+      deactivate
+      rm -rf ~/${CI_JOB_ID}
       "
 
 ############# FRANCE SERVICES ##############
@@ -95,23 +167,160 @@ deploy:database:france services:
     - | # send deployment files to remote server
       mkdir -p ./${CI_JOB_ID}
       cp ./databases/docker-compose.yml ./${CI_JOB_ID}/docker-compose.yml
-      echo "
-      POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      POSTGRES_PORT=${POSTGRES_PORT}
-      ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      POSTGRES_PORT=${POSTGRES_PORT}
-      QDRANT_REST_PORT=${QDRANT_REST_PORT}
-      QDRANT_GRPC_PORT=${QDRANT_GRPC_PORT}
-      COMPOSE_FILE=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/docker-compose.yml
-      COMPOSE_PROJECT_NAME=${CI_ENVIRONMENT_NAME}
-      " > ./${CI_JOB_ID}/.env
+      cp ./.env ./${CI_JOB_ID}/.env
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # deploy database to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      export COMPOSE_FILE=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/docker-compose.yml
+      export COMPOSE_PROJECT_NAME=database
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
       docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env down
       docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env up --detach
       "
+
+setup:database:france services:
+  environment:
+    name: franceservices
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: setup-database
+  image: alpine:latest
+  timeout: 3 hours
+  script:
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      mkdir -p ./${CI_JOB_ID}/venv
+      cp -r ./pyalbert ./${CI_JOB_ID}
+      cp ./.env ./${CI_JOB_ID}/.env
+      sed -i~ "s/QDRANT_HOST=${CI_DEPLOY_HOST}/QDRANT_HOST=localhost/g" ./${CI_JOB_ID}/.env
+      sed -i~ "s/ELASTIC_HOST=${CI_DEPLOY_HOST}/ELASTIC_HOST=localhost/g" ./${CI_JOB_ID}/.env
+      sed -i~ "s/EMBEDDINGS_HOST=${CI_DEPLOY_HOST}/EMBEDDINGS_HOST=localhost/g" ./${CI_JOB_ID}/.env
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # setup database on remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      set -e
+      python3.10 -m venv ~/${CI_JOB_ID}/venv
+      source ~/${CI_JOB_ID}/venv/bin/activate
+      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
+      export $(grep -v "^#" ~/${CI_JOB_ID}/.env | xargs)
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert
+      python ./albert.py download_rag_sources
+      python ./albert.py make_chunks --structured
+      python ./albert.py index experiences --index-type bm25
+      python ./albert.py index sheets --index-type bm25
+      python ./albert.py index chunks --index-type bm25
+      python ./albert.py index experiences --index-type e5
+      python ./albert.py index chunks --index-type e5
+      deactivate
+      rm -rf ~/${CI_JOB_ID}
+      "
+
+############################################
+################ EMBEDDINGS ################
+############################################
+
+build:embeddings:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      # changes:
+      #   - embeddings/**/* # only build if embeddings folder is changed
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - | # build and push embeddings image to gitlab registry
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker build --tag ${CI_REGISTRY_IMAGE}/embeddings:${CI_EMBEDDINGS_IMAGE_TAG} --build-context pyalbert=./pyalbert --file ./embeddings/Dockerfile ./embeddings
+      docker push ${CI_REGISTRY_IMAGE}/embeddings:${CI_EMBEDDINGS_IMAGE_TAG}
+
+################## DINUM ###################
+
+deploy:embeddings:dinum:
+  environment:
+    name: dinum
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: deploy-llm
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      cp ./.env ./${CI_JOB_ID}/.env
+      cp ./embeddings/docker-compose.yml ./${CI_JOB_ID}/docker-compose.yml
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # deploy embeddings containers to remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
+      export CI_EMBEDDINGS_IMAGE_TAG=${CI_EMBEDDINGS_IMAGE_TAG}
+      export COMPOSE_FILE=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/docker-compose.yml
+      export COMPOSE_PROJECT_NAME=embeddings
+      export MODELS_DIR=/data/models
+      export FORCE_DOWNLOAD=""
+      export DEBUG=""
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env down
+      docker image rm ${CI_REGISTRY_IMAGE}/embeddings:${CI_EMBEDDINGS_IMAGE_TAG} || true
+      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env up --detach
+      rm -rf ~/${CI_JOB_ID}
+      "
+
+############# FRANCE SERVICES ##############
+
+deploy:embeddings:france services:
+  environment:
+    name: franceservices
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: deploy-llm
+  image: alpine:latest
+  script:
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      cp ./.env ./${CI_JOB_ID}/.env
+      cp ./embeddings/docker-compose.yml ./${CI_JOB_ID}/docker-compose.yml
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # deploy embeddings containers to remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
+      export CI_EMBEDDINGS_IMAGE_TAG=${CI_EMBEDDINGS_IMAGE_TAG}
+      export COMPOSE_FILE=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/docker-compose.yml
+      export COMPOSE_PROJECT_NAME=embeddings
+      export MODELS_DIR=/data/models
+      export FORCE_DOWNLOAD=""
+      export DEBUG=""
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env down
+      docker image rm ${CI_REGISTRY_IMAGE}/embeddings:${CI_EMBEDDINGS_IMAGE_TAG} || true
+      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env up --detach
+      rm -rf ~/${CI_JOB_ID}
+      "
+
 
 ############################################
 #################### LLM ###################
@@ -208,7 +417,6 @@ deploy:llm:dinum:
     - | # deploy vllm containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
       export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
       export CI_VLLM_IMAGE_TAG=${CI_VLLM_IMAGE_TAG}
       export CI_GPT4ALL_IMAGE_TAG=${CI_GPT4ALL_IMAGE_TAG}
@@ -217,14 +425,14 @@ deploy:llm:dinum:
       rm -rf ~/${CI_JOB_ID}
       "
 
-test:llm:dinum:
+check:llm:dinum:
   environment:
     name: dinum
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  stage: test
+  stage: check
   image: alpine:latest
   script:
     - | # ssh connection setup
@@ -306,7 +514,6 @@ deploy:llm:france services:
     - | # deploy vllm containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
       export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
       export CI_VLLM_IMAGE_TAG=${CI_VLLM_IMAGE_TAG}
       export CI_GPT4ALL_IMAGE_TAG=${CI_GPT4ALL_IMAGE_TAG}
@@ -315,14 +522,14 @@ deploy:llm:france services:
       rm -rf ~/${CI_JOB_ID}
       "
 
-test:llm:france services:
+check:llm:france services:
   environment:
     name: franceservices 
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true  # to avoid blocked state
-  stage: test
+  stage: check
   image: alpine:latest
   script:
     - | # ssh connection setup
@@ -369,7 +576,7 @@ build:api:
       apk add openssh-client
     - | # build and push api image to gitlab registry
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker build --rm --build-context commons=./commons --build-context pyalbert=./pyalbert --tag ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG} --file ./api/Dockerfile ./api
+      docker build --rm --build-context pyalbert=./pyalbert --tag ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG} --file ./api/Dockerfile ./api
       docker push ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}
 
 ################## DINUM ###################
@@ -427,7 +634,6 @@ deploy:api:dinum:
     - | # deploy API containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
       export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
       export CI_API_IMAGE_TAG=${CI_API_IMAGE_TAG}
       export CI_DEPLOY_URL=${CI_DEPLOY_URL}
@@ -491,7 +697,6 @@ deploy:api:france services:
     - | # deploy API containers to remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
       export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
       export CI_API_IMAGE_TAG=${CI_API_IMAGE_TAG}
       export CI_DEPLOY_URL=${CI_DEPLOY_URL}

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.auth import encode_token
-from app.config import PASSWORD_RESET_TOKEN_TTL
+from pyalbert.config import PASSWORD_RESET_TOKEN_TTL
 from app.clients.mailjet_client import MailjetClient
 from app.deps import get_db, get_current_user
 

@@ -14,6 +14,7 @@ app = FastAPI()
 engine = None
 model_dir = None
 
+
 @app.post("/generate", status_code=200)
 async def generate(request: Request) -> Response:
     request = await request.json()
@@ -24,6 +25,7 @@ async def generate(request: Request) -> Response:
         "temp": request.pop("temperature", 0),
         "streaming": stream,
     }
+    # @TODO: callback to stop ?
 
     tokens = engine.generate(prompt=prompt, **sampling_params)
 
@@ -81,16 +83,29 @@ if __name__ == "__main__":
     parser.add_argument(
         "--device", type=str, default="cpu", choices=["cpu", "amd", "intel", "nvidia"]
     )
-    parser.add_argument("--model", required=True, type=str)
+    parser.add_argument("--model", required=True, type=str, help="Model directory")
+    parser.add_argument("--model-file", type=str, help="Model file, if not specified, will use the first .bin file found in the model directory.")
     parser.add_argument("--stream", action="store_true")
     args = parser.parse_args()
 
-    model_dir = args.model
-    model_name = args.model.split("/")[-1]
-    model_path = args.model.replace(model_name, "")
+    if args.model_file is None:
+        
+        bin_files = [file for file in os.listdir(args.model) if file.endswith(".bin")]
+        
+        if len(bin_files) == 0:
+            raise FileNotFoundError(
+                f"No model file found in {args.model}. Please specify the model file to use with --model-file option."
+            )
+        elif len(bin_files) > 1:
+            raise FileNotFoundError(
+                f"Multiple model files found in {args.model}. Please specify the model file to use with --model-file option"
+            )
+        else:
+            args.model_file = bin_files[0]
+
     engine = GPT4All(
-        model_name=model_name,
-        model_path=model_path,
+        model_name=args.model_file,
+        model_path=args.model,
         allow_download=False,
         device=args.device,
         verbose=args.debug,

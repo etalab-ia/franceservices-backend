@@ -1,12 +1,12 @@
-from app import crud, models, schemas
-from app.core.embeddings import make_embeddings
-from app.core.indexes import search_indexes, get_document
-from app.deps import get_current_user, get_db
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
+from pyalbert.clients import LlmClient
+from pyalbert.prompt import Prompter
 from sqlalchemy.orm import Session
 
-from commons.prompt import Prompter
+from app import crud, models, schemas
+from app.core.indexes import get_document, search_indexes
+from app.deps import get_current_user, get_db
 
 router = APIRouter()
 
@@ -20,8 +20,14 @@ router = APIRouter()
 def create_embeddings(
     embedding: schemas.Embedding, current_user: models.User = Depends(get_current_user)
 ):
-    embeddings = make_embeddings(embedding.text)
-    return JSONResponse(embeddings.tolist())
+    # This is juste an bridge to llm-embeddings, along with user auth.
+    embeddings = LlmClient.create_embeddings(
+        texts=embedding.input,
+        model=embedding.model,
+        doc_type=embedding.doc_type,
+        openai_format=True,
+    )
+    return JSONResponse(embeddings)
 
 
 # ***********

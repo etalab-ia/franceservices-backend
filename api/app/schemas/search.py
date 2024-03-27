@@ -8,7 +8,13 @@ from pydantic import BaseModel, Field
 
 
 class Embedding(BaseModel):
-    text: str
+    input: str | list[str]
+    # ignored for now, but keep it for openai-api compatibility
+    model: str | None = None
+    # Certain embedding model support asymetric queries.
+    doc_type: str | None = None
+    # ignored for now, but keep it for openai-api compatibility
+    encoding_format: str = "float"  # only float is supported.
 
 
 # ***********
@@ -39,7 +45,10 @@ class Index(BaseModel):
     similarity: IndexSimilarity = Field(
         default=IndexSimilarity.bm25, description="The similarity algorithm to use for the search."
     )
-    expand_acronyms: bool = Field(default=True, description="If true, an acronym detection algorithm will try to detect and expand implicit acronyms used by the French services in the query.")
+    expand_acronyms: bool = Field(
+        default=True,
+        description="If true, an acronym detection algorithm will try to detect and expand implicit acronyms used by the French services in the query.",
+    )
     institution: str | None = None
     sources: list[IndexSource] | None = Field(
         default=None, description="Restrict the list of source to search within."
@@ -51,7 +60,8 @@ class Index(BaseModel):
         default=None, description="Filter out documents that must not match."
     )
     stream_id: str | None = Field(
-        default=None, description="A related stream_id use to search results information that can be used get stream/chat archive."
+        default=None,
+        description="A related stream_id use to search results information that can be used get stream/chat archive.",
     )
 
 

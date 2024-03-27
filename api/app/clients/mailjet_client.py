@@ -1,6 +1,6 @@
 from mailjet_rest import Client
 
-from app.config import FRONT_URL, MJ_API_KEY, MJ_API_SECRET, CONTACT_EMAIL
+from pyalbert.config import FRONT_URL, MJ_API_KEY, MJ_API_SECRET, CONTACT_EMAIL
 
 
 class MailjetClient:

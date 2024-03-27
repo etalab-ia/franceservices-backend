@@ -1,17 +1,18 @@
 from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
-
-from app.config import (
+from pyalbert import collate_ix_name
+from pyalbert.clients import LlmClient
+from pyalbert.config import (
     ELASTICSEARCH_CREDS,
     ELASTICSEARCH_IX_VER,
     ELASTICSEARCH_URL,
-    QDRANT_IX_VER,
     QDRANT_GRPC_PORT,
+    QDRANT_IX_VER,
+    QDRANT_REST_PORT,
     QDRANT_URL,
-    collate_ix_name,
+    QDRANT_USE_GRPC,
 )
-from app.core.embeddings import make_embeddings
+from qdrant_client import QdrantClient
+from qdrant_client import models as QdrantModels
 
 
 def _retrieves(index_name: str, similarity=None):
@@ -116,8 +117,8 @@ def search_indexes(
             limit = limit * 5
             do_unique_sheets = True
 
-        embeddings = make_embeddings(query)
-        client = QdrantClient(url=QDRANT_URL, grpc_port=QDRANT_GRPC_PORT, prefer_grpc=True)
+        embeddings = LlmClient.create_embeddings(query)
+        client = QdrantClient(url=QDRANT_URL, port=QDRANT_REST_PORT, grpc_port=QDRANT_GRPC_PORT, prefer_grpc=QDRANT_USE_GRPC)  # fmt: skip
         # Eventually set filters
         must_filter = []
         should_filter = []
