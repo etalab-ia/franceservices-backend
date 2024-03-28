@@ -1,6 +1,6 @@
 from mailjet_rest import Client
 
-from pyalbert.config import FRONT_URL, MJ_API_KEY, MJ_API_SECRET, CONTACT_EMAIL
+from pyalbert.config import CONTACT_EMAIL, FRONT_URL, MJ_API_KEY, MJ_API_SECRET
 
 
 class MailjetClient:
@@ -51,9 +51,6 @@ class MailjetClient:
 
     def send_reset_password_email(self, to, token, app):
         subject = "Reset Password"
-        if app == "spp":
-            url = f"{FRONT_URL}/new-password?token={token}"
-        else:
-            url = f"{FRONT_URL}/albert/new-password?token={token}"
+        url = f"{FRONT_URL}/new-password?token={token}"
         text = f"Click on this link to set your new password: {url}"
         return self._send(to, subject, text)
