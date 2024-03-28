@@ -22,5 +22,8 @@ line-length = 100
 [tool.ruff.lint]
 ignore-init-module-imports = true
 
+[tool.ruff.isort.sections]
+pyalbert = ["pyalbert"]
+
 [tool.pdm]
 package-type = "application"

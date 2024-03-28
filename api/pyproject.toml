@@ -35,6 +35,10 @@ exclude = [ "alembic/" ]
 [tool.ruff.lint]
 ignore-init-module-imports = true
 
+[tool.ruff.isort.sections]
+api = ["app"]
+pyalbert = ["pyalbert"]
+
 [tool.pdm]
 distribution = false
 

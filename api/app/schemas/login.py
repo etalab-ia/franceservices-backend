@@ -6,6 +6,7 @@ from pyalbert.config import PASSWORD_PATTERN
 
 
 class App(str, Enum):
+    # @DEBUG: is this obsolete ? what are the different albert APP ?
     spp = "spp"
     albert = "albert"
 
