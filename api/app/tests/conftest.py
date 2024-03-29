@@ -9,6 +9,7 @@ import requests
 from fastapi.testclient import TestClient
 
 os.environ["ENV"] = "unittest"
+from app.db.create_admin_user import get_or_create_admin_user
 from app.db.session import SessionLocal
 from app.main import app
 
@@ -47,6 +48,7 @@ def start_mock_server(command, health_route="/healthcheck", timeout=10, interval
         raise e
 
     return process
+
 
 
 #
@@ -97,4 +99,10 @@ def client() -> Generator:
 
 @pytest.fixture(scope="session")
 def db() -> Generator:
-    yield SessionLocal()
+    print("Setup session...")
+    try:
+        session = SessionLocal()
+        yield session
+    finally:
+        session.close()
+    print("Teardown session.")

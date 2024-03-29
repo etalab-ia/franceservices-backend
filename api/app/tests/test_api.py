@@ -3,8 +3,10 @@ import os
 
 from fastapi.testclient import TestClient
 from pytest import fail
+from sqlalchemy.orm import Session
 
 from app.db.base_class import Base
+from app.db.create_admin_user import get_or_create_admin_user
 from app.db.init_db import init_db
 from app.db.session import engine
 from app.main import app
@@ -76,8 +78,9 @@ class TestApi:
     def setup_method(self):
         Base.metadata.drop_all(bind=engine)
         Base.metadata.create_all(bind=engine)
-        init_db()
+        db: Session = init_db()
         install_mockups()
+        get_or_create_admin_user(db)
 
         AlbertClient._fetch = _fetch
         LlmClient.create_embeddings = _create_embeddings

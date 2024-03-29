@@ -1,11 +1,8 @@
-from __future__ import with_statement
-
-import os
-import tempfile
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -17,12 +14,10 @@ fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-# target_metadata = None
+
+from app.db.base import Base, get_db_url  # noqa
 
 from pyalbert.config import ENV
-from app.db.base import Base  # noqa
 
 target_metadata = Base.metadata
 
@@ -30,19 +25,6 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-
-
-def get_url():
-    if ENV in ("unittest", "dev"):
-        db_url = "sqlite:///" + os.path.join(tempfile.gettempdir(), "albert-sqlite3.db")
-    else:
-        db_user = "postgres"
-        db_pass = os.environ["POSTGRES_PASSWORD"]
-        db_host = os.environ.get("POSTGRES_HOST", "localhost")
-        db_port = os.environ.get("POSTGRES_PORT", "5432")
-        db_name = "postgres"
-        db_uri = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-    return db_uri
 
 
 def run_migrations_offline():
@@ -57,7 +39,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = get_url()
+    url: str = get_db_url()
     context.configure(
         url=url, target_metadata=target_metadata, literal_binds=True, compare_type=True
     )
@@ -74,15 +56,15 @@ def run_migrations_online():
 
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = get_url()
+    configuration["sqlalchemy.url"] = get_db_url()
     connectable = engine_from_config(
-        configuration, prefix="sqlalchemy.", poolclass=pool.NullPool,
+        configuration,
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata, compare_type=True
-        )
+        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
 
         with context.begin_transaction():
             context.run_migrations()
