@@ -1,10 +1,10 @@
+import json
 import os
 import shutil
-import json
-import requests
 import traceback
 from urllib.request import urlopen
 
+import requests
 import wget
 
 from pyalbert import Logging

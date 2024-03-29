@@ -1,8 +1,8 @@
-from pyalbert.clients import LlmClient
-from pyalbert.prompt import get_prompter
-
 from app import crud, schemas
 from app.db.session import SessionLocal
+
+from pyalbert.clients import LlmClient
+from pyalbert.prompt import get_prompter
 
 
 def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | None:

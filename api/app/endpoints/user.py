@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.clients.mailjet_client import MailjetClient
-from pyalbert.config import CONTACT_EMAIL
 from app.deps import get_current_user, get_db
 
+from pyalbert.config import CONTACT_EMAIL
 
 router = APIRouter()
 

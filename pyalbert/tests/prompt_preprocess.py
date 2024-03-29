@@ -6,7 +6,6 @@ sys.path.append(".")
 
 from pyalbert.prompt import Prompter
 
-
 if __name__ == "__main__":
     p = Prompter("n/a")  # no model is used here
 

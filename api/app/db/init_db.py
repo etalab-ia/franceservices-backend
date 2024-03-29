@@ -1,8 +1,9 @@
 from app import crud, models
-from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
 from app.db import base  # noqa: F401
 from app.db.base_class import Base
 from app.db.session import SessionLocal, engine
+
+from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
 
 # Make sure all SQL Alchemy models are imported (app.db.base) before initializing DB
 # otherwise, SQL Alchemy might fail to initialize relationships properly.

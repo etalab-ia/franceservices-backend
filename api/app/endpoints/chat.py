@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.deps import get_current_user, get_db
 
-
 router = APIRouter()
 
 # TODO: add update / delete endpoints

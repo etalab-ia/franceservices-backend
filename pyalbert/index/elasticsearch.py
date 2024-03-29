@@ -9,7 +9,7 @@ from pyalbert.config import (
     ELASTICSEARCH_URL,
     SHEET_SOURCES,
 )
-from pyalbert.corpus import load_exeriences, load_sheets, load_sheet_chunks
+from pyalbert.corpus import load_exeriences, load_sheet_chunks, load_sheets
 
 
 def create_bm25_index(index_name, add_doc=True, recreate=False, storage_dir=None):

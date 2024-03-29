@@ -1,19 +1,18 @@
 import os
-import time
 import subprocess
-import requests
+import time
+from typing import Generator
 from urllib.parse import urlparse
 
-from typing import Generator
-
-from fastapi.testclient import TestClient
 import pytest
+import requests
+from fastapi.testclient import TestClient
 
 os.environ["ENV"] = "unittest"
 from app.db.session import SessionLocal
 from app.main import app
-from pyalbert.config import ELASTIC_PORT, QDRANT_REST_PORT, LLM_TABLE
 
+from pyalbert.config import ELASTIC_PORT, LLM_TABLE, QDRANT_REST_PORT
 
 if len(LLM_TABLE) > 0:
     LLM_HOST, LLM_PORT = urlparse(LLM_TABLE[0][1]).netloc.split(":")

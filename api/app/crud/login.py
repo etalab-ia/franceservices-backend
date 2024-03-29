@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from app import models
-from pyalbert.config import ACCESS_TOKEN_TTL
 
+from pyalbert.config import ACCESS_TOKEN_TTL
 
 # ******************
 # * BlacklistToken *

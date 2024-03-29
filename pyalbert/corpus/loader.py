@@ -1,5 +1,5 @@
-import os
 import json
+import os
 import re
 
 from pyalbert.corpus.parser import RagSource

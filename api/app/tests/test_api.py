@@ -2,16 +2,17 @@ import json
 import os
 
 from fastapi.testclient import TestClient
-from pyalbert.clients import AlbertClient, LlmClient
 from pytest import fail
 
-from pyalbert.config import LLM_TABLE
 from app.db.base_class import Base
 from app.db.init_db import init_db
 from app.db.session import engine
 from app.main import app
 from app.mockups import install_mockups
 from app.mockups.mailjet_mockup import remove_mailjet_folder
+
+from pyalbert.clients import AlbertClient, LlmClient
+from pyalbert.config import LLM_TABLE
 
 LLM_NAME = ""
 if len(LLM_TABLE) > 0:

@@ -1,7 +1,8 @@
-import requests as r
-from urllib.parse import urlparse
 import json
 import re
+from urllib.parse import urlparse
+
+import requests as r
 
 """
 This file contains all postprocessing functions.

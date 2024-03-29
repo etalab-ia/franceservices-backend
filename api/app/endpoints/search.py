@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from pyalbert.clients import LlmClient
-from pyalbert.prompt import Prompter
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.core.indexes import get_document, search_indexes
 from app.deps import get_current_user, get_db
+
+from pyalbert.clients import LlmClient
+from pyalbert.prompt import Prompter
 
 router = APIRouter()
 

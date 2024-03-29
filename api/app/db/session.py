@@ -5,7 +5,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-
 from pyalbert.config import ENV
 
 if ENV in ("unittest", "dev"):
