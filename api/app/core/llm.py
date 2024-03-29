@@ -1,3 +1,5 @@
+from typing import Iterable
+
 from app import crud, schemas
 from app.db.session import SessionLocal
 
@@ -5,7 +7,7 @@ from pyalbert.clients import LlmClient
 from pyalbert.prompt import get_prompter
 
 
-def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | None:
+def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | Iterable[str] | None:
     with SessionLocal() as db:
         model_name = stream.model_name
         query = " ".join(
