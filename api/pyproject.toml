@@ -30,7 +30,7 @@ license = {text = "MIT"}
 
 [tool.ruff]
 line-length = 100
-exclude = [ "alembic/" ]
+exclude = [ "alembic/versions/" ]
 
 [tool.ruff.lint]
 ignore-init-module-imports = true
