@@ -3,7 +3,7 @@ name = "albert-api"
 version = "2.0.0"
 description = "Albert API"
 authors = [
-    {name = "Etalab", email = "etalab@mail.numerique.gouv.fr"},
+    {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
 ]
 dependencies = [
     "alembic==1.12.0",

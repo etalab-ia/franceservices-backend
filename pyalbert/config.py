@@ -19,7 +19,7 @@ APP_VERSION = "2.0.0"
 CONTACT = {
     "name": "Etalab - Datalab",
     "url": "https://www.etalab.gouv.fr/",
-    "email": "etalab@mail.numerique.gouv.fr",
+    "email": "etalab@modernisation.gouv.fr",
 }
 
 ENV = os.getenv("ENV", "dev")

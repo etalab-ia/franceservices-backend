@@ -3,7 +3,7 @@ name = "albert-api-vllm"
 version = "0.1.0"
 description = "Albert VLLM API"
 authors = [
-    {name = "Etalab", email = "etalab@mail.numerique.gouv.fr"},
+    {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
 ]
 dependencies = [
     "fastapi==0.103.1",
