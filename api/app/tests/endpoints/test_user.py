@@ -1,9 +1,10 @@
 from fastapi.testclient import TestClient
 
-from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
-from app.tests.test_api import TestApi
 import app.tests.utils.login as login
 import app.tests.utils.user as user
+from app.tests.test_api import TestApi
+
+from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
 
 class TestEndpointsUser(TestApi):

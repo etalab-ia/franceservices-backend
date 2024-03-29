@@ -1,12 +1,11 @@
-import os
 import argparse
 import json
+import os
 from typing import AsyncGenerator
 
 import uvicorn
 import yaml
-from fastapi import BackgroundTasks, FastAPI, Request
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from gpt4all import GPT4All
 
@@ -89,9 +88,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.model_file is None:
-        
+
         bin_files = [file for file in os.listdir(args.model) if file.endswith(".bin")]
-        
+
         if len(bin_files) == 0:
             raise FileNotFoundError(
                 f"No model file found in {args.model}. Please specify the model file to use with --model-file option."

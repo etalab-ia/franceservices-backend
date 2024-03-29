@@ -1,4 +1,7 @@
 from elasticsearch import Elasticsearch
+from qdrant_client import QdrantClient
+from qdrant_client import models as QdrantModels
+
 from pyalbert import collate_ix_name
 from pyalbert.clients import LlmClient
 from pyalbert.config import (
@@ -11,8 +14,6 @@ from pyalbert.config import (
     QDRANT_URL,
     QDRANT_USE_GRPC,
 )
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
 
 
 def _retrieves(index_name: str, similarity=None):

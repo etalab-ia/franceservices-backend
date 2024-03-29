@@ -1,5 +1,6 @@
-from app import models, schemas
 from sqlalchemy.orm import Session
+
+from app import models, schemas
 
 
 def get_stream(db: Session, stream_id: int) -> models.Stream:

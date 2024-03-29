@@ -1,5 +1,5 @@
 from .chat import Chat
-from .login import BlacklistToken, PasswordResetToken
-from .stream import Stream, SourceEnum
 from .feedback import Feedback
+from .login import BlacklistToken, PasswordResetToken
+from .stream import SourceEnum, Stream
 from .user import User

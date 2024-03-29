@@ -1,7 +1,5 @@
 import json
 
-from app import schemas
-from app.db.base_class import Base
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -12,11 +10,15 @@ from sqlalchemy import (
     String,
     Table,
     Text,
-    # CheckConstraint,
 )
+
+# CheckConstraint,
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator
+
+from app import schemas
+from app.db.base_class import Base
 
 # from app.schemas.search import IndexSource
 

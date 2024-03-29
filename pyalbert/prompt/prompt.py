@@ -2,10 +2,11 @@ import re
 from typing import Any
 
 from jinja2 import BaseLoader, Environment, meta
+from requests.exceptions import RequestException
+
 from pyalbert.clients import AlbertClient
 from pyalbert.config import LLM_TABLE
 from pyalbert.lexicon import ACRONYMS
-from requests.exceptions import RequestException
 
 
 class PromptTemplate:

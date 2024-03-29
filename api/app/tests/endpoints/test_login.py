@@ -3,16 +3,17 @@ import time
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+import app.tests.utils.login as login
+import app.tests.utils.user as user
 from app import models
+from app.tests.test_api import TestApi
+
 from pyalbert.config import (
     ACCESS_TOKEN_TTL,
     FIRST_ADMIN_EMAIL,
     FIRST_ADMIN_PASSWORD,
     PASSWORD_RESET_TOKEN_TTL,
 )
-from app.tests.test_api import TestApi
-import app.tests.utils.login as login
-import app.tests.utils.user as user
 
 
 class TestEndpointsLogin(TestApi):

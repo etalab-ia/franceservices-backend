@@ -2,11 +2,11 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from pyalbert.config import LLM_TABLE
-
 from .feedback import Feedback
 from .search import IndexSource
 from .user import User
+
+from pyalbert.config import LLM_TABLE
 
 
 class StreamBase(BaseModel):

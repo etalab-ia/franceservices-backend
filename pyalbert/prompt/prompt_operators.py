@@ -2,7 +2,6 @@ import re
 
 from pyalbert.lexicon import OPERATORS
 
-
 # @DEPRECATED ? I think @pdevineau wrote this ?
 
 

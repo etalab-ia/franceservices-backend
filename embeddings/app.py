@@ -3,13 +3,13 @@ import os
 
 import torch
 import uvicorn
+from core import make_embeddings
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from pyalbert import Logging
-from pyalbert.models import download_models
 from transformers import AutoModel, AutoTokenizer
 
-from core import make_embeddings
+from pyalbert import Logging
+from pyalbert.models import download_models
 
 app = FastAPI()
 

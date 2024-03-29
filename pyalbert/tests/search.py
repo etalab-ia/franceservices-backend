@@ -7,7 +7,6 @@ from pprint import pprint
 
 from pyalbert.clients import AlbertClient
 
-
 client = AlbertClient()
 hits = client.search("chunks", "carte d'indentité", limit=3, similarity="bm25")
 pprint(hits)

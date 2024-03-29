@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-
 # TODO: The following embedding/encoding function seems to give slighly
 #       different results than SentenceTransformer.embed() (probably negligible)
 #       AND then batching of sentenceTransformer seems faster and to consume way less memory.

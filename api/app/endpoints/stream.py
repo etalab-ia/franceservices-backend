@@ -3,14 +3,15 @@ import os
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pyalbert.clients import LlmClient
-from pyalbert.prompt import check_url, correct_mail, correct_number, correct_url, get_prompter
 from spacy.lang.fr import French
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.core.llm import auto_set_chat_name
 from app.deps import get_current_user, get_db
+
+from pyalbert.clients import LlmClient
+from pyalbert.prompt import check_url, correct_mail, correct_number, correct_url, get_prompter
 
 router = APIRouter()
 

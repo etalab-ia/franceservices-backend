@@ -7,8 +7,9 @@ import app.tests.utils.chat as chat
 import app.tests.utils.feedback as feedback
 import app.tests.utils.login as login
 import app.tests.utils.stream as stream
+from app.tests.test_api import TestApi, _assert, _load_case, _pop_time_ref
+
 from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
-from app.tests.test_api import TestApi, _assert, _pop_time_ref, _load_case
 
 
 class TestEndpointsStream(TestApi):
