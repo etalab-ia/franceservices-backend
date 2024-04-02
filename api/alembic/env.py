@@ -17,8 +17,6 @@ fileConfig(config.config_file_name)
 
 from app.db.base import Base, get_db_url  # noqa
 
-from pyalbert.config import ENV
-
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
