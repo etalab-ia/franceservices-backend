@@ -52,8 +52,7 @@ class Feedback(FeedbackBase):
     user_id: int
     stream_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FeedbackWithRelationships(Feedback):

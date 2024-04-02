@@ -97,8 +97,7 @@ class Stream(StreamBase):
     feedback: Feedback | None = None
     postprocessing: list[str] | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StreamWithRelationships(Stream):
