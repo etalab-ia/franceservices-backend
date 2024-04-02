@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, EmailStr, Extra, constr
+from pydantic import BaseModel, ConfigDict, EmailStr, constr
 
 from pyalbert.config import PASSWORD_PATTERN
 
@@ -36,8 +36,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: constr(pattern=PASSWORD_PATTERN)
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class User(UserBase):
@@ -45,8 +44,7 @@ class User(UserBase):
     is_confirmed: bool | None = None
     is_admin: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserWithRelationships(User):
