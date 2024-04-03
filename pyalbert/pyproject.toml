@@ -3,7 +3,7 @@ name = "pyalbert"
 version = "0.1"
 description = "The Albert toolkit -- CLI, libraries and lexicons"
 authors = [
-    {name = "Etalab", email = "etalab@mail.numerique.gouv.fr"},
+    {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
 ]
 dependencies = [
     "huggingface-hub==0.20.3",
