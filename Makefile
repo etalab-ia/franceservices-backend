@@ -64,19 +64,6 @@ acronyms: #acronyms_directory acronyms_sp
 	# @todo:add: CNI
 	# ./script/acronyms_to_json.py
 
-
-sync_etalab_repo_outscale_prod:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i $$REMOTE_SSH_KEY"  "../albert-backend" $$REMOTE_USER@171.33.114.210:~/
-
-sync_etalab_repo_outscale_prod_2:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i $$REMOTE_SSH_KEY"  "../albert-backend" $$REMOTE_USER@142.44.51.104:~/
-
-sync_etalab_repo_outscale_sand:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i $$REMOTE_SSH_KEY"  "../albert-backend" $$REMOTE_USER@217.75.171.132:~/
-
-sync_etalab_repo_outscale_staging_v6:
-	rsync -avz --delete --exclude-from=".gitignore" --exclude="*.swp" --exclude "venv/**" -e "ssh -i $$REMOTE_SSH_KEY"  "../albert-backend" $$REMOTE_USER@109.232.233.152:~/
-
 build_llama.cpp:
 	git clone https://github.com/ggerganov/llama.cpp
 	cd llama.cpp
