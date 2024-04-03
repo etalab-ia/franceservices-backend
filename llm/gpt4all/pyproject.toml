@@ -1,22 +1,17 @@
 [project]
-name = "albert-api-vllm"
+name = "albert-api-gpt4all"
 version = "0.1.0"
-description = "Albert VLLM API"
+description = "Add your description here"
 authors = [
     {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
 ]
 dependencies = [
+    "gpt4all==2.2.1",
     "fastapi==0.103.1",
     "uvicorn==0.23.2",
-    "vllm==0.2.1.post1",
-    "xformers==0.0.22",
     "pyyaml==6.0.1",
 ]
 requires-python = "==3.10.*"
-license = {text = "MIT"}
-
-[tool.setuptools]
-py-modules = []
 
 [tool.ruff]
 line-length = 100

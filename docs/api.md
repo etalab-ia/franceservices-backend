@@ -6,9 +6,8 @@
 
     ```bash
     cd api
-    pip install -r requirements.txt
+    pip install .
     ```
-    ...ou en utilisant `pyproject.toml` via un Python manager moderne comme [pip-tools](https://github.com/jazzband/pip-tools), [PDM](https://pdm.fming.dev/), [Poetry](https://python-poetry.org/docs/cli/#export) ou [hatch](https://hatch.pypa.io/)
 
     Assurez-vous dans un premier temps que votre variable d'environnement `ENV` présent dans [api/app/.env](../api/app/.env) est égale à `dev` telle que: `ENV="dev"`.
 
@@ -101,23 +100,3 @@ Upgrade a database according to alemic revision:
     To be completed
 
 **possibily migrate 
-
-
-## Export pinned dependencies from pyproject.toml to requirements.txt
-
-Using [PDM](https://pdm.fming.dev/)
-```bash
-pdm export --output requirements.txt --production --without-hashes
-```
-
-Using [Poetry](https://python-poetry.org/docs/cli/#export)
-```bash
-poetry export --without-hashes -f requirements.txt -o requirements.txt
-```
-
-Using [pip-tools](https://github.com/jazzband/pip-tools)
-```bash
-pip-compile --output-file requirements.txt requirements.in
-```
-
-

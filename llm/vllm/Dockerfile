@@ -7,7 +7,7 @@ RUN apt-get update && \
 ENV PYTHONPATH="$PYTHONPATH:/code"
 
 WORKDIR /code
-ADD ./app.py ./requirements.txt .
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+ADD ./app.py ./pyproject.toml .
+RUN pip install --no-cache-dir --upgrade /code/.
 
 CMD ["sh", "-c", "python3 app.py --model ${VLLM_MODEL} --tensor-parallel-size ${VLLM_TENSOR_PARALLEL_SIZE} --gpu-memory-utilization ${VLLM_GPU_MEMORY_UTILIZATION} --host ${VLLM_HOST} --port 8000"]

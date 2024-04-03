@@ -7,13 +7,13 @@ RUN apt-get update && \
 ENV PYTHONPATH="$PYTHONPATH:/code"
 
 WORKDIR /code
-ADD ./requirements.txt ./alembic.ini ./start.sh .
+ADD ./pyproject.toml ./alembic.ini ./start.sh .
 ADD ./alembic ./alembic
 ADD ./app ./app
 COPY --from=pyalbert . ./pyalbert
 
 RUN chmod +x /code/start.sh
-RUN pip install --no-cache-dir --default-timeout=100 --upgrade -r ./requirements.txt
-RUN pip install --no-cache-dir --upgrade -r ./pyalbert/requirements.txt
+RUN pip install --no-cache-dir --default-timeout=100 --upgrade .
+RUN pip install --no-cache-dir --upgrade ./pyalbert/.
 
 CMD ["bash", "start.sh"]

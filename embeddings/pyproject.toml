@@ -1,22 +1,20 @@
 [project]
-name = "albert-api-vllm"
+name = "albert-api-embeddings"
 version = "0.1.0"
-description = "Albert VLLM API"
+description = "Add your description here"
 authors = [
     {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
 ]
 dependencies = [
-    "fastapi==0.103.1",
+    "accelerate==0.28.0",
+    "torch==2.0.1",
     "uvicorn==0.23.2",
-    "vllm==0.2.1.post1",
-    "xformers==0.0.22",
-    "pyyaml==6.0.1",
+    "fastapi==0.103.1",
+    "transformers==4.38.1",
+    "huggingface-hub==0.20.3",
+    "numpy==1.26.4",
 ]
 requires-python = "==3.10.*"
-license = {text = "MIT"}
-
-[tool.setuptools]
-py-modules = []
 
 [tool.ruff]
 line-length = 100
