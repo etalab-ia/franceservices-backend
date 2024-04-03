@@ -53,11 +53,19 @@ test:api:
   rules:
     - if: '$CI_COMMIT_BRANCH == "prod" || $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "dev"'
       changes:
+        - ".gitlab-ci.yml"
         - "api/app/**/*.py"
+        - "api/pyproject.toml"
+        - "pyalbert/**/*.py"
+        - "pyalbert/pyproject.toml"
       when: always
     - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "prod" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "staging" ||$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
       changes:
+        - ".gitlab-ci.yml"
         - "api/app/**/*.py"
+        - "api/pyproject.toml"
+        - "pyalbert/**/*.py"
+        - "pyalbert/pyproject.toml"
       when: always
   before_script:
   - |
