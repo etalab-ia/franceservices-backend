@@ -62,7 +62,7 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 * Installez les packages nécessaires
 
 	```bash
-	pip install -r ./pyalbert/requirements.txt
+	pip install ./pyalbert/.
 	```
 
 * Ajoutez pyalbert aux librairies de votre environment virtuel
@@ -79,8 +79,8 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 * Installez les packages nécessaires
 
 	```bash
-	pip install -r ./llm/vllm/requirements.txt
-	pip install -r ./llm/gpt4all/requirements.txt
+	pip install ./llm/vllm/.
+	pip install ./llm/gpt4all/.
 	```
 
 * Lancer un modèle

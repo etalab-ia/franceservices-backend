@@ -71,9 +71,9 @@ test:api:
   - |
     python -m venv venv
     source venv/bin/activate
-    pip install --cache-dir .cache/pip -r api/requirements.txt
-    pip install --cache-dir .cache/pip -r pyalbert/requirements.txt
-    pip install --cache-dir .cache/pip -r api/requirements_dev.txt
+    pip install --cache-dir .cache/pip api/.
+    pip install --cache-dir .cache/pip pyalbert/.
+    pip install --cache-dir .cache/pip api/.
   script:
     - cp -r pyalbert api/ && cd api/ && pytest -W ignore app/tests/
 
@@ -141,7 +141,7 @@ setup:database:dinum:
       set -e
       python3.10 -m venv ~/${CI_JOB_ID}/venv
       source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      pip install ~/${CI_JOB_ID}/pyalbert/.
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
       export $(grep -v "^#" ~/${CI_JOB_ID}/.env | xargs)
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert
@@ -215,7 +215,7 @@ setup:database:france services:
       set -e
       python3.10 -m venv ~/${CI_JOB_ID}/venv
       source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      pip install ~/${CI_JOB_ID}/pyalbert/.
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
       export $(grep -v "^#" ~/${CI_JOB_ID}/.env | xargs)
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert
@@ -395,7 +395,7 @@ setup:llm:dinum:
       set -e
       python3.10 -m venv ~/${CI_JOB_ID}/venv
       source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      pip install ~/${CI_JOB_ID}/pyalbert/.
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./setup.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
@@ -458,7 +458,7 @@ check:llm:dinum:
       set -e
       python3.10 -m venv ~/${CI_JOB_ID}/venv
       source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install -r ~/${CI_JOB_ID}/tests/requirements.txt
+      pip install ~/${CI_JOB_ID}/tests/.
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./test.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       deactivate
@@ -492,7 +492,7 @@ setup:llm:france services:
       set -e
       python3.10 -m venv ~/${CI_JOB_ID}/venv
       source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      pip install ~/${CI_JOB_ID}/pyalbert/.
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./setup.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
@@ -555,7 +555,7 @@ check:llm:france services:
       set -e
       python3.10 -m venv ~/${CI_JOB_ID}/venv
       source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install -r ~/${CI_JOB_ID}/tests/requirements.txt
+      pip install ~/${CI_JOB_ID}/tests/.
       cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
       bash ./test.sh -r ./llm_routing_table.json -e ${CI_ENVIRONMENT_NAME}
       deactivate
@@ -612,7 +612,7 @@ setup:postprocessing:dinum:
       set -e
       python3.10 -m venv ~/${CI_JOB_ID}/venv
       source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      pip install ~/${CI_JOB_ID}/pyalbert/.
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
       python3 ~/${CI_JOB_ID}/pyalbert/albert.py create_whitelist --config-file=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert/config/whitelist_config.json --storage-dir=/data/whitelist
       deactivate
@@ -675,7 +675,7 @@ setup:postprocessing:france services:
       set -e
       python3.10 -m venv ~/${CI_JOB_ID}/venv
       source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install -r ~/${CI_JOB_ID}/pyalbert/requirements.txt
+      pip install ~/${CI_JOB_ID}/pyalbert/.
       ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
       python3 ~/${CI_JOB_ID}/pyalbert/albert.py create_whitelist --config-file=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert/config/whitelist_config.json --storage-dir=/data/whitelist
       deactivate

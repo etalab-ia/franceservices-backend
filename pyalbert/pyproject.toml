@@ -28,6 +28,9 @@ license = {text = "MIT"}
 [project.scripts]
 pyalbert = "pyalbert.albert:main"
 
+[tool.setuptools]
+py-modules = []
+
 [tool.ruff]
 line-length = 100
 exclude = [ "lexicon/" ]

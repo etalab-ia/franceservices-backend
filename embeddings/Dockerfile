@@ -5,6 +5,6 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
     
 WORKDIR /code
-ADD ./app.py ./core.py ./requirements.txt .
+ADD ./app.py ./core.py ./pyproject.toml .
 COPY --from=pyalbert . ./pyalbert
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN pip install --no-cache-dir --upgrade /code/.

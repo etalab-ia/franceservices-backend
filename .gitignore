@@ -81,8 +81,6 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-poetry.lock
 MANIFEST
 .pdm-python
-pdm.lock
 *.lock
