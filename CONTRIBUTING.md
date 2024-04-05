@@ -1,11 +1,11 @@
 
 
-## Formatting and Linting
+## Formatage et linting du code
 
-Pour fomattez et linter le code python
+Pour fomatter, linter et trier les import Python en une commande :
 
 ```sh
 ruff check --fix --select I .
 ```
 
-Cette commande prendra en compte les différents pyproject.toml rencontrés sur le chemin.
+Cette commande prendra en compte les différents `pyproject.toml` rencontrés sur le chemin.
