@@ -6,6 +6,7 @@ import lz4.frame
 import requests
 
 from pyalbert.config import (
+    ACCESS_TOKEN_TTL,
     API_ROUTE_VER,
     API_URL,
     EMBEDDING_MODEL,
@@ -32,10 +33,11 @@ class AlbertClient:
         "password": FIRST_ADMIN_PASSWORD,
     }
 
-    def __init__(self, **user_config):
-        # @IMPROVE: ALBERT_API_TOKEN token could be passed/read here,
-        #           to avoid doing incessnt signin request.
-        #           Related to #132
+    def __init__(self, api_token=None, **user_config):
+        if api_token is not None and (user_config.get("username") or user_config.get("password")):
+            print("Error: You need to either set the api_token or the username/password couple, but not both at the same time.")
+            exit(2)
+
         config = self.CONFIG
         if user_config:
             config.update(user_config)
@@ -48,7 +50,8 @@ class AlbertClient:
         # Token:
         self.token = None
         self.token_dt = None
-        self.token_ttl = 3600 * 23  # seconds
+        self.token_ttl = ACCESS_TOKEN_TTL - 2
+        self.api_token = api_token
 
     def _fetch(self, method, route, headers=None, json_data=None):
         d = {
@@ -74,7 +77,9 @@ class AlbertClient:
         self.token_dt = datetime.utcnow()
 
     def _signed_in_fetch(self, method, route, json_data=None):
-        if self._is_token_expired():
+        if self.api_token:
+            self.token = self.api_token
+        elif self._is_token_expired():
             self._sign_in()
         headers = {"Authorization": f"Bearer {self.token}"}
         return self._fetch(method, route, headers=headers, json_data=json_data)
