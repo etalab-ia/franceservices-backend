@@ -7,7 +7,7 @@ Albert est encore en développement et en amélioration continue. Il est conçu 
 
 ## Déploiement
 
-Pour déployer le projet Albert, vous référez à la documentation dédies : [docs/deploiment](./docs/deploiement/). 
+Pour déployer le projet Albert, référez-vous à la documentation dédiée : [docs/deploiment](./docs/deploiement/). 
 
 
 ## Pré-requis : exécution de PyAlbert
