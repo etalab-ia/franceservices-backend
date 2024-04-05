@@ -36,7 +36,7 @@ def get_embedding(text: str):
     return get_embeddings([text])[0]
 
 
-def chat_completion(dialog: list[dict], temperature: float = 1.0, model: str = "gpt-3.5-turbo"):
+def chat_completion(dialog: list[dict], temperature: float|None = None, model: str = "gpt-3.5-turbo", **kwargs):
     try:
         res = openai.ChatCompletion.create(model=model, messages=dialog, temperature=temperature)
     except Exception:

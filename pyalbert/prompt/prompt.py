@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Any
 
@@ -104,21 +105,43 @@ class Prompter:
 
     def __init__(
         self,
-        url: str,
         config: dict | None = None,
-        template: PromptTemplate | None = None,
+        template: PromptTemplate | str | None = None,
+        api_token=None,
     ):
-        # The prompt template
+        self.api_token = api_token
+        # The prompt config
         self.config = config or {}
-        self.template = template
-        # Eventually stores the sources returned by the last RAG prompt built
-        self.sources = None
-        # vllm url
-        self.url = url
         # The sampling params to pass to LLM generate function for inference.
         self.sampling_params = self.SAMPLING_PARAMS
         if "sampling_params" in self.config:
             self.sampling_params.update(self.config["sampling_params"])
+
+        # Load or set the prompt template
+        self.template = template
+        if isinstance(template, str):
+            if not os.path.exists(template):
+                raise FileNotFoundError("Template not found: %s" % template)
+
+            with open(template) as f:
+                template_string = f.read()
+
+            if template.endswith(".jinja"):
+                env = Environment(loader=BaseLoader())
+                t = env.from_string(template_string)
+                variables = meta.find_undeclared_variables(env.parse(template_string))
+                self.template = {
+                    "template": t,
+                    "variables": variables,
+                    "default": config.get("default", {}),
+                    "system_prompt": None,
+                    "sampling_params": None,
+                }
+            else:
+                raise ValueError("Template format unknown: %s" % template)
+
+        # Eventually stores the sources returned by the last RAG prompt built
+        self.sources = None
 
     @classmethod
     def preprocess_prompt(cls, prompt: str) -> str:
@@ -166,6 +189,8 @@ class Prompter:
         Supported prompt_format
         ===
         - llama-chat : see https://github.com/facebookresearch/llama
+        - chatml see huggingface
+        - openai: a list for {role, content}
         - null : force no chat template (to avoid conflict with the prompt_format template config)
         """
         if expand_acronyms and "query" in kwargs:
@@ -200,23 +225,22 @@ class Prompter:
                 chat_formatter = format_llama2chat_prompt
             elif prompt_format == "chatml":
                 chat_formatter = format_chatml_prompt
+            elif prompt_format == "openai":
+                chat_formatter = format_messages_prompt
             else:
                 raise ValueError("Prompt format unkown: %s" % prompt_format)
 
-            raw_prompt = chat_formatter(prompt, system_prompt=system_prompt, history=history)[
-                "text"
-            ]
+            raw_prompt = chat_formatter(prompt, system_prompt=system_prompt, history=history)
 
             # Cut history to fit the max_tokens model para
             while (
                 history
+                and isinstance(raw_prompt, str)
                 and len(raw_prompt.split()) * 1.25 > self.sampling_params["max_tokens"] * 0.8
             ):
                 # Keep the same history parity to avoid a confusion between a inference and a fine-tuning prompt
                 [history.pop(0) for _ in history[:2] if history]
-                raw_prompt = chat_formatter(prompt, system_prompt=system_prompt, history=history)[
-                    "text"
-                ]
+                raw_prompt = chat_formatter(prompt, system_prompt=system_prompt, history=history)
         else:
             raw_prompt = prompt
 
@@ -251,7 +275,7 @@ class Prompter:
                 data[k] = v
 
         search_query = data.get("search_query", data.get("query"))
-        client = AlbertClient()
+        client = AlbertClient(api_token=self.api_token)
 
         # Extract one similar value in a collection from query
         if "most_similar_experience" in variables:
@@ -309,11 +333,9 @@ class Prompter:
         return data
 
 
-# see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
-# see also to implement this part in the driver management module of the llm API: https://gitlab.com/etalab-datalab/llm/albert-backend/-/issues/119
-def format_llama2chat_prompt(
+def format_messages_prompt(
     query: str, system_prompt: str | None = None, history: list[dict] | None = None
-) -> dict:
+) -> list[dict]:
     messages = history or []
     if history:
         if history[-1]["role"] == "user":
@@ -328,6 +350,16 @@ def format_llama2chat_prompt(
             messages[-2]["content"] = query
     else:
         messages = [{"role": "user", "content": query}]
+
+    return messages
+
+
+# see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
+# see also to implement this part in the driver management module of the llm API: https://gitlab.com/etalab-datalab/llm/albert-backend/-/issues/119
+def format_llama2chat_prompt(
+    query: str, system_prompt: str | None = None, history: list[dict] | None = None
+) -> str:
+    messages = format_messages_prompt(query, system_prompt=system_prompt, history=history)
 
     BOS, EOS = "<s>", "</s>"
     B_INST, E_INST = "[INST]", "[/INST]"
@@ -351,27 +383,13 @@ def format_llama2chat_prompt(
 
     prompt = "".join(messages_list)
 
-    # @huggingface: it still keeps other features :o
-    return {"text": prompt}
+    return prompt
 
 
 def format_chatml_prompt(
     query: str, system_prompt: str | None = None, history: list[dict] | None = None
-) -> dict:
-    messages = history or []
-    if history:
-        if history[-1]["role"] == "user":
-            messages[-1] = messages[-1].copy()
-            messages[-1]["content"] = query
-        elif (
-            len(history) > 1
-            and history[-1]["role"] == "assistant"
-            and history[-2]["role"] == "user"
-        ):
-            messages[-2] = messages[-2].copy()
-            messages[-2]["content"] = query
-    else:
-        messages = [{"role": "user", "content": query}]
+) -> str:
+    messages = format_messages_prompt(query, system_prompt=system_prompt, history=history)
 
     sysprompt = ""
     if system_prompt:
@@ -394,11 +412,12 @@ def format_chatml_prompt(
     messages_list = [sysprompt] + messages_list
     prompt = "".join(messages_list)
 
-    # @huggingface: it still keeps other features :o
-    return {"text": prompt}
+    return prompt
 
 
-def get_prompter(model_name: str, mode: str | None = None) -> Prompter:
+def get_prompter(
+    model_name: str, mode: str | None = None, prompt_format: str | None = None
+) -> Prompter:
     model = next((m for m in LLM_TABLE if m[0] == model_name), None)
     if not model:
         raise ValueError("LLM model not found in the LLM table: %s" % model_name)
@@ -434,4 +453,8 @@ def get_prompter(model_name: str, mode: str | None = None) -> Prompter:
             % (mode, list(prompt_config.get("templates", {})))
         )
 
-    return Prompter(model_url, config=config, template=template)
+    if prompt_format:
+        # Overwrite prompt_format
+        config["prompt_format"] = prompt_format
+
+    return Prompter(config=config, template=template)
