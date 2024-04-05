@@ -74,7 +74,10 @@ def read_stream(
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
 
-    if current_user.id not in (db_stream.user_id, getattr(db_stream.chat, "user_id", None)):
+    if not (
+        current_user.is_admin
+        or current_user.id in (db_stream.user_id, getattr(db_stream.chat, "user_id", None))
+    ):
         raise HTTPException(403, detail="Forbidden")
 
     return db_stream.to_dict()
@@ -234,7 +237,7 @@ def start_stream(
             _db_stream = crud.stream.get_stream(db, stream_id)
             db.refresh(_db_stream)
             crud.stream.set_is_streaming(db, _db_stream, False, commit=False)
-            crud.stream.set_rag_output(db, _db_stream, raw_response.strip(), rag_sources)
+            crud.stream.set_rag_data(db, _db_stream, prompt, raw_response.strip(), rag_sources)
 
     # TODO : directly manage the "if" below in generate_and_postprocess?
     if not postprocessing:

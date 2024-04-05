@@ -40,7 +40,7 @@ def read_chat(
     if db_chat is None:
         raise HTTPException(404, detail="Chat not found")
 
-    if db_chat.user_id != current_user.id:
+    if not (db_chat.user_id == current_user.id or current_user.is_admin):
         raise HTTPException(403, detail="Forbidden")
 
     return db_chat
@@ -74,7 +74,7 @@ def read_chat_archive(
     if db_chat is None:
         raise HTTPException(404, detail="Chat not found")
 
-    if db_chat.user_id != current_user.id:
+    if not (db_chat.user_id == current_user.id or current_user.is_admin):
         raise HTTPException(403, detail="Forbidden")
 
     return db_chat.to_dict()

@@ -41,13 +41,6 @@ class StreamBase(BaseModel):
         default=None, description="Filter out documents that must not match, in RAG mode."
     )
 
-    # For archive reading / reload
-    response: str | None = None
-    rag_sources: list[str] | None = Field(
-        default=None,
-        description="List of chunks used with a rag generation. The list of id can be used to retrieved a chunk on the route /get_chunk/{uid}",
-    )
-
     postprocessing: list[str] | None = Field(
         default=None,
         description="List of postprocessing steps to apply",
@@ -93,11 +86,19 @@ class Stream(StreamBase):
     is_streaming: bool
     user_id: int | None
     chat_id: int | None
-    search_sids: list[str] | None
+    prompt: bytes | None = Field(
+        default=None,
+        description='Raw prompt formatted, with history, if used. This data is compressed and represented has hex. To decompress use `lz4.frame.decompress(bytes.fromhex(f)).decode("utf-8")`.',
+    )
+    response: str | None = None
+    search_sids: list[str] | None = None
+    rag_sources: list[str] | None = Field(
+        default=None,
+        description="List of chunks used with a rag generation. The list of id can be used to retrieved a chunk on the route /get_chunk/{uid}",
+    )
     feedback: Feedback | None = None
-    postprocessing: list[str] | None = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, json_encoders={bytes: lambda bs: bs.hex()})
 
 
 class StreamWithRelationships(Stream):

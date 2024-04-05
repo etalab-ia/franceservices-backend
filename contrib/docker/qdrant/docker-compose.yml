@@ -16,7 +16,7 @@ services:
   #    - ./data/startups.sqlite3:/code/data/startups.sqlite3
   qdrant:
     image: qdrant/qdrant:v1.5.0
-    restart: always
+    restart: no
     #mem_limit: 2GB
     ports:
     - 6338:6333
