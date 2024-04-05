@@ -1,5 +1,6 @@
 import json
 
+import lz4.frame
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -7,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Table,
     Text,
@@ -38,6 +40,16 @@ class JsonEncoder(TypeDecorator):
         return value
 
 
+# Define a custom SQLAlchemy type for one-way compression
+class CompressedBytes(TypeDecorator):
+    impl = LargeBinary
+
+    def process_bind_param(self, value, dialect):
+        if isinstance(value, str):
+            value = lz4.frame.compress(value.encode("utf-8"))
+        return value
+
+
 stream_source_association = Table(
     "stream_source",
     Base.metadata,
@@ -64,6 +76,7 @@ class Stream(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
+    prompt = Column(CompressedBytes, nullable=True)
     response = Column(Text, nullable=True)
     rag_sources = Column(JSON, nullable=True)
     should_sids = Column(JSON, nullable=True)

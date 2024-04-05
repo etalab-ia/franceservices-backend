@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timedelta
 from typing import Iterable
 
+import lz4.frame
 import requests
 
 from pyalbert.config import (
@@ -14,20 +15,35 @@ from pyalbert.config import (
 )
 
 
-class AlbertClient:
-    def __init__(self):
-        # Default client
-        url = API_URL.rstrip("/") + "/" + API_ROUTE_VER.strip("/")
-        username = FIRST_ADMIN_USERNAME
-        password = FIRST_ADMIN_PASSWORD
+def log_and_raise_for_status(response):
+    if not response.ok:
+        try:
+            print(f'Error Detail: {response.json().get("detail")}')
+        except Exception:
+            pass
+    response.raise_for_status()
 
+
+class AlbertClient:
+    CONFIG = {
+        "api_url": API_URL,
+        "api_version": API_ROUTE_VER,
+        "username": FIRST_ADMIN_USERNAME,
+        "password": FIRST_ADMIN_PASSWORD,
+    }
+
+    def __init__(self, **user_config):
         # @IMPROVE: ALBERT_API_TOKEN token could be passed/read here,
         #           to avoid doing incessnt signin request.
         #           Related to #132
+        config = self.CONFIG
+        if user_config:
+            config.update(user_config)
 
+        url = config["api_url"].rstrip("/") + "/" + config["api_version"].strip("/")
         self.url = url.rstrip("/")
-        self.username = username
-        self.password = password
+        self.username = config["username"]
+        self.password = config["password"]
 
         # Token:
         self.token = None
@@ -42,7 +58,7 @@ class AlbertClient:
             "DELETE": requests.delete,
         }
         response = d[method](f"{self.url}{route}", headers=headers, json=json_data)
-        response.raise_for_status()
+        log_and_raise_for_status(response)
         return response
 
     def _is_token_expired(self):
@@ -75,7 +91,7 @@ class AlbertClient:
         if model:
             json_data["model"] = model
         response = self._signed_in_fetch("POST", "/embeddings", json_data=json_data)
-        response.raise_for_status()
+        log_and_raise_for_status(response)
         return response.json()
 
     def search(
@@ -88,7 +104,7 @@ class AlbertClient:
         sources=None,
         should_sids=None,
         must_not_sids=None,
-    ):
+    ) -> list:
         json_data = {
             "name": index_name,
             "query": query,
@@ -102,15 +118,28 @@ class AlbertClient:
         response = self._signed_in_fetch("POST", "/indexes", json_data=json_data)
         return response.json()
 
-    def get_prompt_config(self, url):
+    def get_prompt_config(self, url: str) -> dict:
         # @IMPROVE: this function suppose that the client that use this class has access to the url
         # given in the LLM_TABLE which expose llm-api that is not intended to be publicly open.
         # Thus, to make this function usable by client outside the private network of Albert,
         # the albert-api should implement a bridge route to /get_prompt_config.
         headers = {}
         response = requests.get(f"{url}/get_prompt_config", headers=headers)
-        response.raise_for_status()
+        log_and_raise_for_status(response)
         return response.json()
+
+    def get_stream(self, stream_id: int) -> dict:
+        # Get stream data
+        response = self._signed_in_fetch("GET", f"/stream/{stream_id}")
+        stream = response.json()
+        return stream
+
+    def review_prompt(self, stream_id: int) -> str | None:
+        """Get the raw prompt used for the given stream id"""
+        stream = self.get_stream(stream_id)
+        if not stream["prompt"]:
+            return None
+        return lz4.frame.decompress(bytes.fromhex(stream["prompt"])).decode("utf-8")
 
 
 class LlmClient:
@@ -183,7 +212,7 @@ class LlmClient:
         if model:
             json_data["model"] = model
         response = requests.post(url.rstrip("/") + "/v1/embeddings", json=json_data)
-        response.raise_for_status()
+        log_and_raise_for_status(response)
         results = response.json()
         if openai_format:
             return results

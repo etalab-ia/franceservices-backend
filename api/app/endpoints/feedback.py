@@ -52,7 +52,7 @@ def read_feedback(
     if db_feedback is None:
         raise HTTPException(404, detail="Feedback not found")
 
-    if db_feedback.user_id != current_user.id:
+    if not (db_feedback.user_id == current_user.id or current_user.is_admin):
         raise HTTPException(403, detail="Forbidden")
 
     return db_feedback
