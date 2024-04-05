@@ -1,45 +1,41 @@
-# Albert backend
+<table align="center"><tr><td align="center" width="9999">
+<img src="/docs/assets/etalab.jpg" align="center" alt="Project icon">
 
-Ce projet contient le code source d'Albert, l'agent conversationnel de l'administration française, développé par les équipes du Datalab de la Direction Interministérielle du Numérique (DINUM). Albert a été créé pour citer ses sources et est spécialisé pour répondre à des questions administratives en français.
+# Albert
 
-Albert est encore en développement et en amélioration continue. Il est conçu pour être utilisé sous la responsabilité d'un agent public.
+| <a href="https://www.etalab.gouv.fr/"><b>Etalab</b></a> | <a href="https://gitlab.com/etalab-datalab/llm/albert-backend/-/tree/dev/docs"><b>Documentation</b></a> | <a href="https://www.etalab.gouv.fr/"><b> HuggingFace</b></a> | 
 
+</td></tr></table>
 
-## Déploiement
+## A propos
 
-Pour déployer le projet Albert, référez-vous à la documentation dédiée : [docs/deploiment](./docs/deploiement/). 
+Albert est un projet d'agents conversationnels (*large language models*, LLM) pour l'administration française, développé par les équipes du Datalab d'[Etalab](https://www.etalab.gouv.fr/) de la [Direction Interministérielle du Numérique (DINUM)](https://www.numerique.gouv.fr/dinum/). Pour toutes questions relatives à Albert, vous pouvez contacter l'équipe à l'adresse [etalab@modernisation.gouv.fr](etalab@modernisation.gouv.fr).
 
+Ce dépôt permet de déployer deux services :
+- les modèles *Albert* et leur API
 
-## Pré-requis : exécution de PyAlbert
+   > 💡 **Les différents modèles sont disponibles dans le dépôt HuggingFace [AgentPublic](https://huggingface.co/AgentPublic).**
 
-Utilisez l'outil en ligne de commande `pyalbert` pour créer les ensembles de données et les modèles nécessaires. La documentation peut être consultée en exécutant `./pyalbert.py --help` :
+- une API permettant d'intérroger l'API du modèle à l'aide d'une base de connaissance (*Retrivial Augmented Generated*, RAG)
 
-1. téléchargement du corpus de données en français -- `pyalbert download_rag_sources --help`.
-2. prétraitement et mise en forme du corpus de données -- `pyalbert make_chunks --help`.
-3. alimenter les moteurs de recherche d'indexation <index/vector> -- `pyalbert index --help`
-4. évaluation des modèles -- `pyalbert evaluate --help`.
+## Démarrer
 
+* [Quickstart](/docs/quickstard.md)
+* [Installation](/docs/installation.md)
+* [Modèles supportés](/docs/modeles.md)
 
-## Structure du dépôt
+## Documentation 
 
-- pyalbert/ : Bibliothèque Albert et CLI: Boîte à outils Albert : récupérer et analyser des données, construire des blocs, alimenter le moteur de recherche, créer et traiter des invites, clients API..
-- api/ : le code de l'API d'Albert.
-- llm/ : le code de l'API des LLM et modèle d'embeddings.
-- databases/ : Code de déploiement de la base de données et des moteurs de recherche.
-- contrib/ : fichiers de configuration pour déployer Albert.
-- docs/ : ressources documentaires.
+Pour plus d'informations sur le projet, vous trouverez l'ensemble de la documentation dans le dossier *[/docs](./docs/)*.
 
+## Code source
 
-## Contribuer
+Pour récupérer la dernière version du code :
 
-TODO
+```bash
+git clone https://gitlab.com/etalab-datalab/llm/albert-backend.git
+```
 
+## Contributions
 
-## License
-
-TODO
-
-
-## Remerciements
-
-TODO
+Pour contribuer au projet Albert, merci de consulter notre [guide de contributions](./CONTRIBUTING.md).
