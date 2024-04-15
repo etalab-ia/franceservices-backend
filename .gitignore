@@ -1,0 +1,88 @@
+#
+# Projet
+#
+_data/
+api/tiny_albert.bin
+
+# api
+api/app/*.bin
+api/app/*.db
+api/app/tests/test_data/mailjet
+
+#
+# Default
+#
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+eggs/
+.eggs/
+lib/
+lib64/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+.virtual_documents/ 
+
+# Environments
+.DS_Store
+.idea/
+.vscode/
+_env
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.envrc
+
+# mypy
+.mypy_cache/
+
+# Excel
+.~lock*#
+
+# Pytest / Coverage
+.coverage
+.pytest_cache/
+htmlcov/
+
+# pyenv & rye
+.python-version
+
+# Ruff
+.ruff_cache
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+poetry.lock
+MANIFEST
+.pdm-python
+pdm.lock
+*.lock

@@ -1,0 +1,19 @@
+ version: '3'
+
+ services:
+   elasticsearch:
+     image: docker.elastic.co/elasticsearch/elasticsearch:8.9.1
+     restart: always
+     container_name: elasticsearch
+     #mem_limit: 2GB
+     ports:
+       - 9208:9200
+       - 9309:9300
+     volumes:
+       - ./_data/elasticsearch_data:/var/lib/elasticsearch/data
+     environment:
+       - discovery.type=single-node
+       - xpack.security.enabled=false
+       - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+       #- ELASTIC_USERNAME=heuss
+       #- ELASTIC_PASSWORD=heuss

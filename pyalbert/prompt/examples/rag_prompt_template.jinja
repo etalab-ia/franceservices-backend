@@ -1,0 +1,8 @@
+Utilisez les éléments de contexte à votre disposition ci-dessous pour répondre à la question finale. Si vous ne connaissez pas la réponse, dites simplement que vous ne savez pas, n'essayez pas d'inventer une réponse.
+
+{% for chunk in sheet_chunks %}
+{{chunk.url}} : {{chunk.title}} {% if chunk.context %}({{chunk.context}}){% endif %}
+{{chunk.text}} {% if not loop.last %}{{"\n"}}{% endif %}
+{% endfor %}
+
+Question: {{query}}
