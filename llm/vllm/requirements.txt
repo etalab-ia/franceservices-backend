@@ -1,4 +1,4 @@
-fastapi==0.103.1
+fastapi==0.109.1
 uvicorn==0.23.2
 vllm==0.2.1.post1
 xformers==0.0.22
