@@ -1,0 +1,15 @@
+.build_template:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - | # build and push image to gitlab registry
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      echo "docker build --tag ${IMAGE_NAME}:${IMAGE_TAG} $BUILD_ARGS $BUILD_CONTEXT"
+      docker build --tag ${IMAGE_NAME}:${IMAGE_TAG} $BUILD_ARGS $BUILD_CONTEXT
+      docker push ${IMAGE_NAME}:${IMAGE_TAG}
+    - | # clean image cache
+      images=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^${IMAGE_NAME}:" | grep -v ":${IMAGE_TAG}$")
+      echo "info: remove old images: $old_images"
+      docker image rm $old_images || true

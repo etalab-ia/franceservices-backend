@@ -216,7 +216,7 @@ class LlmClient:
             json_data["doc_type"] = doc_type
         if model:
             json_data["model"] = model
-        response = requests.post(url.rstrip("/") + "/v1/embeddings", json=json_data)
+        response = requests.post(url.rstrip("/") + "/embeddings", json=json_data)
         log_and_raise_for_status(response)
         results = response.json()
         if openai_format:

@@ -3,6 +3,9 @@ name = "albert-api"
 version = "2.0.0"
 description = "Albert API"
 authors = [{ name = "Etalab", email = "etalab@modernisation.gouv.fr" }]
+requires-python = "==3.10.*"
+readme = "README.md"
+license = { text = "MIT" }
 dependencies = [
     "alembic==1.12.0",
     "elasticsearch==8.9.0",
@@ -23,13 +26,13 @@ dependencies = [
     "python-dotenv==1.0.0",
     "lz4==4.3.3",
 ]
-requires-python = "==3.10.*"
-readme = "README.md"
-license = { text = "MIT" }
+
+[project.optional-dependencies]
+test = ["pytest>=7.4.4"]
 
 [tool.ruff]
 line-length = 100
-exclude = [ "alembic/versions/" ]
+exclude = ["alembic/versions/"]
 
 [tool.ruff.lint]
 ignore-init-module-imports = true
