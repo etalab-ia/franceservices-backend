@@ -50,6 +50,7 @@ def create_chat_stream(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ) -> schemas.Stream:
+    print("test")
     db_chat = crud.chat.get_chat(db, chat_id)
     if db_chat is None:
         raise HTTPException(404, detail="Chat not found")

@@ -1,7 +1,6 @@
 import argparse
-import logging
-
 import requests
+import logging
 
 parser = argparse.ArgumentParser(description="Test the response of a LLM model.")
 parser.add_argument("--port", type=int, default=8082, help="Model port")
@@ -10,7 +9,7 @@ parser.add_argument("--debug", action="store_true", help="Print debug logs")
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    prompt="Hello, world!"
+    input="Hello, world!"
 
     level = "DEBUG" if args.debug else "INFO"
     logging.basicConfig(
@@ -19,30 +18,10 @@ if __name__ == "__main__":
     )
     logger = logging.getLogger(__name__)
 
-    endpoint = f"http://{args.host}:{args.port}/generate"
-
-    # with stream
+    endpoint = f"http://{args.host}:{args.port}/embeddings"
     data = {
-        "prompt": prompt,
-        "max_tokens": 20,
-        "temperature": 0,
-        "stream": True,
-    }
-
-    response = requests.post(endpoint, json=data, verify=False)
-    logger.debug(f"Response: {response.text}")
-    logger.info(f"Response status code: {response.status_code}")
-    logger.debug(f"Response headers: {response.headers}")
-    logger.debug(f"Response content: {response.content}")
-
-    assert response.status_code == 200, "invalid response status code"
-
-    # without stream
-    data = {
-        "prompt": prompt,
-        "max_tokens": 20,
-        "temperature": 0,
-        "stream": False,
+        "input": input,
+        "doc_type": "query"
     }
 
     response = requests.post(endpoint, json=data, verify=False)

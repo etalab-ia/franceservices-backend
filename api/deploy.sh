@@ -30,12 +30,10 @@ fi
 
 for model in $(jq -r 'keys[]' $routing_table); do
 
-    if ! [[ -z $ci_environment_name ]]; then
-        routing_table_ci_environment_name=$(jq -r '.["'$model'"] | .ci_environment_name' $routing_table)
-        if [[ $routing_table_ci_environment_name != "${ci_environment_name}" ]]; then
-            echo "info: skipping $model because of ci_environment_name mismatch ($routing_table_ci_environment_name != $ci_environment_name)"
-            continue
-        fi
+    host=$(jq -r '.["'$model'"] | .llm_host' $routing_table)
+    if [[ $host != "${CI_DEPLOY_HOST}" ]] && [[ $host != "all" ]]; then
+        echo "info: skip model $model (host: $host)"
+        continue
     fi
 
     api_port=$(jq -r '.["'$model'"] | .api_port' $routing_table)
@@ -55,27 +53,25 @@ for model in $(jq -r 'keys[]' $routing_table); do
 
     for model in $(jq -r 'keys[]' $routing_table); do
 
-        if ! [[ -z $ci_environment_name ]]; then
-            routing_table_ci_environment_name=$(jq -r '.["'$model'"] | .ci_environment_name' $routing_table)
-            if [[ $routing_table_ci_environment_name != "${ci_environment_name}" ]]; then
-                continue
-            fi
+        llm_host=$(jq -r '.["'$model'"] | .llm_host' $routing_table)
+        if [[ $llm_host != "${CI_DEPLOY_HOST}" ]] && [[ $llm_host != "all" ]]; then
+            echo "info: skip model $model (host: $llm_host)"
+            continue
         fi
 
-        model_port=$(jq -r '.["'$model'"] | .model_port' $routing_table)
-        model_host=$(jq -r '.["'$model'"] | .model_host' $routing_table)
-        hf_repo_id=$(jq -r '.["'$model'"] | .hf_repo_id' $routing_table)
+        llm_port=$(jq -r '.["'$model'"] | .llm_port' $routing_table)
+        llm_hf_repo_id=$(jq -r '.["'$model'"] | .llm_hf_repo_id' $routing_table)
         current_api_port=$(jq -r '.["'$model'"] | .api_port' $routing_table)
 
-        if [[ $model_port = "null" ]] || [[ $model_host = "null" ]] || [[ $hf_repo_id = "null" ]]; then
-            echo "error: model_port, model_host, hf_repo_id are required for $model. Skipping api-v2 container" && exit 1
+        if [[ $llm_port = "null" ]] || [[ $llm_host = "null" ]] || [[ $llm_hf_repo_id = "null" ]]; then
+            echo "error: llm_port, llm_host, llm_hf_repo_id are required for $model. Skipping api-v2 container" && exit 1
         fi
 
         if [[ $api_port == $current_api_port ]]; then
             if [[ -z $model_list ]]; then
-                model_list="(\"$hf_repo_id\", \"http://${model_host}:${model_port}\")"
+                model_list="(\"$llm_hf_repo_id\", \"http://${llm_host}:${llm_port}\")"
             else
-                model_list="$model_list, (\"$hf_repo_id\", \"http://${model_host}:${model_port}\")"
+                model_list="$model_list, (\"$llm_hf_repo_id\", \"http://${llm_host}:${llm_port}\")"
             fi
         else
             continue

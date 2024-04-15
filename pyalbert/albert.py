@@ -3,15 +3,12 @@
 """The Albert CLI.
 
 Usage:
-    pyalbert download_models (--hf-repo-id=<arg>) [--storage-dir=<path>] [--force-download] [--debug]
     pyalbert create_whitelist [--config-file=<path>] [--storage-dir=<path>] [--debug]
     pyalbert download_rag_sources [--config-file=<path>] [--storage-dir=<path>]
     pyalbert make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] [--storage-dir=<path>]
     pyalbert index (experiences | sheets | chunks) [--index-type=<index_type>] [--recreate] [--storage-dir=<path>]
 
 Commands:
-    download_models            Download models from huggingface thanks to config file. By default, files are stored under /data/models directory.
-
     create_whitelist           Create a whitelist file for postprocessing. By default, files are stored under /data/whitelist directory.
 
     download_rag_sources       Download public services source of data. Downloaded data should consitute the inputs for the further processing steps that feed the RAG.
@@ -25,7 +22,6 @@ Commands:
 
 Options:
     --storage-dir=<path>       Storage path for downloaded ressources.
-    --hf-repo-id=<arg>         Huggingface repository id to use for the download models.
     --force-download           Force download the model repository if they already exist. By default, False.
     --config-file=<path>       Path to the config file containing the routing table. By default, use corresponding file in config directory.
     --structured               Parse strategy that exploit the xml sheet structure.
@@ -36,7 +32,6 @@ Options:
     --debug                    optional, print debug logs. By default, False.
 
 Examples:
-    pyalbert download_models --hf-repo-id AgentPublic/albert-light --storage-dir <path>
     pyalbert create_whitelist --storage-dir <path>
     pyalbert download_rag_sources --storage-dir <path>
     pyalbert make_chunks --chunk-size 500 --chunk-overlap 20
@@ -64,20 +59,7 @@ if __name__ == "__main__":
     debug = True if args["--debug"] else False
     force_download = True if args["--force-download"] else False
 
-    if args["download_models"]:
-        from pyalbert.models import download_models
-
-        # if --storage-dir is not provided, use default path /data/models
-        storage_dir = "/data/models" if args["--storage-dir"] is None else args["--storage-dir"]
-
-        download_models(
-            storage_dir=storage_dir,
-            hf_repo_id=args["--hf-repo-id"],
-            force_download=force_download,
-            debug=debug,
-        )
-
-    elif args["create_whitelist"]:
+    if args["create_whitelist"]:
         from pyalbert.whitelist import create_whitelist, download_directory
 
         # if --storage-dir is not provided, use default path /data/whitelist

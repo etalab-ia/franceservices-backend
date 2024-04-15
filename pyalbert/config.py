@@ -82,7 +82,7 @@ else:  # default
 # The embedding model to target
 # @FUTURE: Use same format than the LLM_TABLE to support deploying multi model ?
 EMBEDDINGS_HOST = os.getenv("EMBEDDINGS_HOST", "localhost")
-EMBEDDING_PORT = os.getenv("EMBEDDING_PORT", "8005")
+EMBEDDING_PORT = os.getenv("EMBEDDINGS_PORT", "8005")
 EMBEDDING_URL = f"http://{EMBEDDINGS_HOST}:{EMBEDDING_PORT}"
 EMBEDDING_HF_REPO_ID = os.getenv("EMBEDDING_HF_REPO_ID", "intfloat/multilingual-e5-large")
 EMBEDDING_MODEL = (EMBEDDING_HF_REPO_ID, EMBEDDING_URL)

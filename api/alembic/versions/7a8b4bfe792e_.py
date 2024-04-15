@@ -1,7 +1,7 @@
 """empty message
 
 Revision ID: 7a8b4bfe792e
-Revises: 1513c97a0139
+Revises: 7e8bb3003468
 Create Date: 2024-03-29 15:34:04.085308
 
 """
@@ -14,7 +14,7 @@ from app import models
 
 # revision identifiers, used by Alembic.
 revision: str = '7a8b4bfe792e'
-down_revision: Union[str, None] = '1513c97a0139'
+down_revision: Union[str, None] = '7e8bb3003468'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
