@@ -3,7 +3,7 @@
 
 # Albert
 
-| <a href="https://www.etalab.gouv.fr/"><b>Etalab</b></a> | <a href="https://gitlab.com/etalab-datalab/llm/albert-backend/-/tree/dev/docs"><b>Documentation</b></a> | <a href="https://www.etalab.gouv.fr/"><b> HuggingFace</b></a> | 
+| <a href="https://www.etalab.gouv.fr/"><b>Etalab</b></a> | <a href="https://gitlab.com/etalab-datalab/llm/albert-backend/-/tree/dev/docs"><b>Documentation</b></a> | <a href="https://huggingface.co/AgentPublic"><b> HuggingFace</b></a> | 
 
 </td></tr></table>
 
@@ -20,7 +20,7 @@ Ce dépôt permet de déployer deux services :
 
 ## Démarrer
 
-* [Quickstart](/docs/quickstard.md)
+* [Quickstart](/docs/quickstart.md)
 * [Installation](/docs/installation.md)
 * [Modèles supportés](/docs/modeles.md)
 
