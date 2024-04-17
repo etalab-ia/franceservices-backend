@@ -1,0 +1,33 @@
+version: '3.7'
+
+services:
+  #web:
+  #  build: .
+  #  container_name: qdrant_demo_web
+  #  ports:
+  #    - 8000:8000
+  #  environment:
+  #    - QDRANT_HOST=qdrant
+  #  depends_on:
+  #    - qdrant
+  #  networks:
+  #    - qdrant-net
+  #  volumes:
+  #    - ./data/startups.sqlite3:/code/data/startups.sqlite3
+  qdrant:
+    image: qdrant/qdrant:v1.5.0
+    restart: no
+    #mem_limit: 2GB
+    ports:
+    - 6338:6333
+    - 6339:6334
+    volumes:
+      - ./_data/qdrant_data:/qdrant/storage
+
+    #networks:
+    #  - qdrant-net
+
+#networks:
+#  qdrant-net:
+#    external:
+#      name: qdrant-net
