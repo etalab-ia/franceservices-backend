@@ -1,0 +1,11 @@
+prompt_format: llama-chat 
+max_tokens: 2048
+
+prompts:
+  - mode: simple
+    template: simple_prompt_template.jinja
+
+  - mode: rag
+    template: rag_prompt_template.jinja
+    default:
+      limit: 4

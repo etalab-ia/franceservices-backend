@@ -1,0 +1,18 @@
+{# Optional use of system prompt even though it is highly recommended to use the default one #}
+{% if system_prompt %}
+<|im_start|>system
+{{system_prompt}}<|im_end|>
+{% endif %}
+<|im_start|>user
+Ecrit un texte référencé en réponse à cette question : {{query}}
+
+Les références doivent être citées de cette manière : texte rédigé<ref text=\"[passage pertinent dans la référence]\">[\"identifiant de la référence\"]</ref>Si les références ne permettent pas de répondre, qu'il n'y a pas de réponse.
+
+Les cinq références disponibles :
+
+{% for chunk in chunks %}
+{{chunk.h}}: {% if chunk.context %}({{chunk.context}}){% endif %} {{chunk.text}} {% if not loop.last %}{{"\n"}}{% endif %}
+{% endfor %}
+
+<|im_end|>
+<|im_start|>assistant

@@ -1,0 +1,18 @@
+{
+    "experiences": {
+        "url": "https://opendata.plus.transformation.gouv.fr/api/explore/v2.1/catalog/datasets/export-expa-c-riences/exports/json",
+        "output": "export-expa-c-riences.json",
+        "force_download": false
+    },
+    "vdd": {
+        "url": "https://lecomarquage.service-public.fr/vdd/3.3/part/zip/vosdroits-latest.zip",
+        "output": "data.gouv/",
+        "format": "zip",
+        "force_download": true
+    },
+    "travail": {
+        "url": "https://github.com/SocialGouv/fiches-travail-data/raw/master/data/fiches-travail.json",
+        "output": "fiches-travail.json",
+        "force_download": false
+    }
+}

@@ -1,0 +1,18 @@
+{   "directories": {
+        "local_directory": {
+            "output": "local_whitelist_ressources.json",
+            "url": "https://www.data.gouv.fr/fr/datasets/r/73302880-e4df-4d4c-8676-1a61bb997f3d",
+            "force_download": false
+        },
+        "national_directory": {
+            "output": "national_whitelist_ressources.json",
+            "url": "https://www.data.gouv.fr/fr/datasets/r/d0158eb2-6772-49c2-afb1-732e573ba1e5",
+            "force_download": false
+        }
+    },
+    "missing_urls": [
+        "https://www.service-public.fr",
+        "https://assure.ameli.fr",
+        "https://forum-assures.ameli.fr"
+    ]    
+}

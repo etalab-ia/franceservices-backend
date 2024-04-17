@@ -1,0 +1,50 @@
+.ssh_connection_setup: &ssh_connection_setup
+    - | # ssh connection setup
+      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
+      apk update
+      apk add openssh-client
+
+.deploy_llm_script:
+  script:
+    - *ssh_connection_setup
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}
+      cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      cp ./deployment/bash/deploy_llm.sh ./${CI_JOB_ID}/deploy_llm.sh
+      cp ./llm/docker-compose.yml ./${CI_JOB_ID}/docker-compose.yml
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # deploy vllm containers to remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      
+      export CI_DEPLOY_HOST=${CI_DEPLOY_HOST}
+      export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
+      export CI_LLM_IMAGE_TAG=${CI_LLM_IMAGE_TAG}
+      export MODELS_CACHE_DIR=/data/models
+      export COMPOSE_FILE=./docker-compose.yml
+
+      bash ./deploy_llm.sh
+      rm -r ~/${CI_JOB_ID}
+      "
+
+.health_check_script:
+  script:
+    - *ssh_connection_setup
+    - | # send deployment files to remote server
+      mkdir -p ./${CI_JOB_ID}/venv
+      cp ./llm_routing_table.json ./${CI_JOB_ID}/llm_routing_table.json
+      cp ./deployment/bash/health_check.sh ./${CI_JOB_ID}/health_check.sh
+      cp ./llm/tests/* ./${CI_JOB_ID}
+      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+    - | # run healthcheck script on remote server
+      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
+      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}
+      python3.10 -m venv ./venv
+      source ./venv/bin/activate
+      pip install -r ./requirements.txt
+
+      export CI_DEPLOY_HOST=${CI_DEPLOY_HOST}
+      bash ./health_check.sh
+      rm -rf ~/${CI_JOB_ID}
+      "

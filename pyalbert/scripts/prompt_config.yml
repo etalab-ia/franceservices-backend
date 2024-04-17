@@ -1,0 +1,14 @@
+prompt_format: llama-chat 
+system_prompt: "a general system prompt..."
+max_tokens: 2048
+
+prompts:
+  - mode: simple
+    system_prompt: "a particular system prompt..."
+    template: simple_prompt_template.jinja
+
+  - mode: rag
+    template: rag_prompt_template.jinja
+    default:
+      limit: 4
+

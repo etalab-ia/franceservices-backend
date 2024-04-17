@@ -1,0 +1,30 @@
+[project]
+name = "albert-llm"
+version = "0.1.0"
+description = "Albert LLM API"
+authors = [
+    {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
+]
+dependencies = [
+    "gpt4all==2.2.1",
+    "fastapi==0.103.1",
+    "uvicorn==0.23.2",
+    "pyyaml==6.0.1",
+    "huggingface-hub==0.20.3",
+    "transformers==4.39.3",
+    "torch==2.2.2",
+]
+requires-python = "==3.10.*"
+license = {text = "MIT"}
+
+[tool.setuptools]
+py-modules = []
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+ignore-init-module-imports = true
+
+[tool.ruff.lint.isort.sections]
+pyalbert = ["pyalbert"]
