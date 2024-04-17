@@ -3,7 +3,7 @@
 
 # Albert
 
-| <a href="https://www.etalab.gouv.fr/"><b>Etalab</b></a> | <a href="https://gitlab.com/etalab-datalab/llm/albert-backend/-/tree/dev/docs"><b>Documentation</b></a> | <a href="https://www.etalab.gouv.fr/"><b> HuggingFace</b></a> | 
+| <a href="https://www.etalab.gouv.fr/"><b>Etalab</b></a> | <a href="https://github.com/etalab-ia/albert/tree/main/docs"><b>Documentation</b></a> | <a href="https://huggingface.co/AgentPublic"><b>HuggingFace</b></a> | 
 
 </td></tr></table>
 
@@ -33,7 +33,7 @@ Pour plus d'informations sur le projet, vous trouverez l'ensemble de la document
 Pour récupérer la dernière version du code :
 
 ```bash
-git clone https://gitlab.com/etalab-datalab/llm/albert-backend.git
+git clone https://github.com/etalab-ia/albert.git
 ```
 
 ## Contributions

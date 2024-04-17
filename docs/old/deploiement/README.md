@@ -46,7 +46,7 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 * Clonez le repository
 
 	```bash
-	git clone git@gitlab.com:etalab-datalab/llm/albert-backend.git ~/albert-backend && cd ~/albert-backend
+	git clone git@github.com:etalab-ia/albert.git ~/albert-backend && cd ~/albert-backend
 	```
 
 * Créez un environnement virtuel python et l'activer
