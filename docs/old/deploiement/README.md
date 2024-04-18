@@ -101,10 +101,10 @@ Ce script permet d'installer les packages nécessaires ainsi que de créer un ut
 	bash ./utils/launch_local_llm.sh -s ~/models -r AgentPublic/tiny-albert -d gpt4all -p 8000 -m ggml-model-expert-q4_K.bin
 	```
 
-	Ou encore pour lancer [albert-light](https://huggingface.co/AgentPublic/albert-light) :
+	Ou encore pour lancer [albert-light](https://huggingface.co/AgentPublic/albertlight-7b) :
 
 	```bash
-	bash ./utils/launch_local_llm.sh -s ~/models -r AgentPublic/albert-light -d vllm -p 8000
+	bash ./utils/launch_local_llm.sh -s ~/models -r AgentPublic/albertlight-7b -d vllm -p 8000
 	```
 
 ### Reverse proxy (Nginx)

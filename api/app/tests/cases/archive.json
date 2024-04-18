@@ -7,7 +7,7 @@
     "chat_name": "<s>[INST] <<SYS>>\na general system prompt...\n<</SYS>>\n\nSynth\u00e9tise la demande suivante en un court titre de quelque mots (pas plus de 8 mots) permettant d'identifier la th\u00e9matique. Le titre doit \u00eatre court, clair et accrocheur:\n\nBonjour, comment allez-vous ?\ntest@test.test 0000000000 [/INST]",
     "streams": [
         {
-            "model_name": "AgentPublic/albert-light",
+            "model_name": "AgentPublic/albertlight-7b",
             "mode": null,
             "query": "Bonjour, comment allez-vous ?\ntest@test.test 0000000000",
             "limit": null,
@@ -40,7 +40,7 @@
             }
         },
         {
-            "model_name": "AgentPublic/albert-light",
+            "model_name": "AgentPublic/albertlight-7b",
             "mode": "rag",
             "query": "Bonjour, comment allez-vous ?\ntest@test.test 0000000000",
             "limit": null,

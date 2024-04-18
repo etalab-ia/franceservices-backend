@@ -7,7 +7,7 @@ sys.path.append(".")
 from pyalbert.clients import LlmClient
 from pyalbert.prompt import get_prompter
 
-model = "AgentPublic/albert-light"
+model = "AgentPublic/albertlight-7b"
 
 ################################################################################
 ### The Albert REPL chat

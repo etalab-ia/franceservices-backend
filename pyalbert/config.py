@@ -76,7 +76,7 @@ if LLM_TABLE:
 else:  # default
     LLM_TABLE = [
         # model_name/api URL
-        ("AgentPublic/albert-light", "http://127.0.0.1:8082")
+        ("AgentPublic/albertlight-7b", "http://127.0.0.1:8082")
     ]
 
 # The embedding model to target
@@ -95,7 +95,7 @@ ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 
 if ENV == "unittest":
     API_ROUTE_VER = "/"
-    LLM_TABLE = [("AgentPublic/albert-light", "http://127.0.0.1:8892")]
+    LLM_TABLE = [("AgentPublic/albertlight-7b", "http://127.0.0.1:8892")]
     ELASTIC_PORT = "9211"
     QDRANT_REST_PORT = "6344"
     QDRANT_USE_GRPC = False
