@@ -4,9 +4,9 @@ In order to use a model LLM model with Albert, one must add the following files 
 - `prompt_config.yml`
 
 This file expose the prompt template that are supported by the model, using jinja format, and how they should be formatted.
-You can find an example in the repository `albert-light` : https://huggingface.co/AgentPublic/albert-light/blob/main/prompt_config.yml
+You can find an example in the repository `albert-light` : https://huggingface.co/AgentPublic/albertlight-7b/blob/main/prompt_config.yml
 
-Here is an commented example of this file for the `AgentPublic/albert-light` model :
+Here is an commented example of this file for the `AgentPublic/albertlight-7b` model :
 
 ```prompt_config.yml
 # This indicate how the general prompt format, especially in a chat/conversation setting.
