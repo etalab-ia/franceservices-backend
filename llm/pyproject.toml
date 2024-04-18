@@ -2,9 +2,7 @@
 name = "albert-llm"
 version = "0.1.0"
 description = "Albert LLM API"
-authors = [
-    {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
-]
+authors = [{ name = "Etalab", email = "etalab@modernisation.gouv.fr" }]
 dependencies = [
     "vllm==v0.4.0",
     "pyyaml==6.0.1",
@@ -13,13 +11,16 @@ dependencies = [
     "huggingface-hub==0.20.3",
 ]
 requires-python = "==3.10.*"
-license = {text = "MIT"}
+license = { text = "MIT" }
 
 [tool.setuptools]
 py-modules = []
 
 [tool.ruff]
 line-length = 100
+select = [
+    "I", # sort imports
+]
 
 [tool.ruff.lint]
 ignore-init-module-imports = true

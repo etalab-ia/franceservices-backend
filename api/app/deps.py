@@ -1,10 +1,9 @@
-from fastapi import Depends, HTTPException
-from sqlalchemy.orm import Session
-from starlette.requests import Request
-
 from app import crud, models
 from app.auth import decode_token
 from app.db.session import SessionLocal
+from fastapi import Depends, HTTPException
+from sqlalchemy.orm import Session
+from starlette.requests import Request
 
 
 def get_db():
