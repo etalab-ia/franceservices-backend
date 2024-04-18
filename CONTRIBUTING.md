@@ -1,8 +1,6 @@
-
-
 ## Formatage et linting du code
 
-Pour fomatter, linter et trier les import Python en une commande :
+Pour formatter, linter et trier les import Python en une commande unique :
 
 ```sh
 ruff check --fix --select I .
