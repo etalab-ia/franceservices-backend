@@ -20,7 +20,7 @@ Ce dépôt permet de déployer deux services :
 
 ## Démarrer
 
-* [Quickstart](/docs/quickstard.md)
+* [Quickstart](/docs/quickstart.md)
 * [Installation](/docs/installation.md)
 * [Modèles supportés](/docs/modeles.md)
 
