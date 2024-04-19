@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.1
+    restart: always
+    environment:
+        discovery.type: single-node
+        xpack.security.enabled: false
+        ES_JAVA_OPTS: "-Xms2g -Xmx2g"
+        ELASTIC_USERNAME: elastic
+        ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-elastic}
+    ports:
+      - ${ELASTIC_PORT:-9200}:9200
+    volumes:
+      - ${ELASTIC_STORAGE_DIR:-/data/elastic}:/usr/share/elasticsearch/data
+  qdrant:
+    image: qdrant/qdrant:v1.5.0
+    restart: always
+    ports:
+      - ${QDRANT_REST_PORT:-6333}:6333
+      - ${QDRANT_GRPC_PORT:-6334}:6334
+    volumes:
+      - ${QDRANT_STORAGE_DIR:-/data/qdrant}:/qdrant/storage
