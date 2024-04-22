@@ -12,7 +12,7 @@ dependencies = [
     "fastapi==0.103.1",
     "huggingface-hub==0.20.3",
 ]
-requires-python = "==3.10.*"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 
 [tool.setuptools]
