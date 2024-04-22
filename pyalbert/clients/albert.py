@@ -182,7 +182,7 @@ class LlmClient:
 
     # TODO: turn into async
     def generate(
-        self, prompt, max_tokens=512, temperature=20, top_p=1, stream=False
+        self, prompt, max_tokens=512, temperature=20, top_p=1, stream=False, presence_penalty=0.0, stop=None
     ) -> str | Iterable[str]:
         url = f"{self.url}/generate"
         data = {
@@ -191,6 +191,8 @@ class LlmClient:
             "temperature": temperature / 100,  # I think its better to keep value in [0,2] to stay compatible with opanai api.
             "top_p": top_p,  # not intended to final user but for dev and research.
             "stream": stream,
+            "presence_penalty": presence_penalty,
+            "stop": stop,
         }  # fmt: skip
         response = requests.post(url, json=data, stream=stream)
 
