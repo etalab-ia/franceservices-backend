@@ -34,8 +34,8 @@ Le fichier de variable d'environnement (*STAGING__ENV_FILE* ou *PROD__ENV_FILE*)
 | CI_DEPLOY_HOST | *** | * | Server DNS or IP where Docker containers are deployed |
 | ENV | prod | * |  |
 | SECRET_KEY | *** | * |  |
-| FIRST_ADMIN_USERNAME | language_model | * |  |
-| FIRST_ADMIN_EMAIL | language_model@data.gouv.fr | * |  |
+| FIRST_ADMIN_USERNAME | albert | * |  |
+| FIRST_ADMIN_EMAIL | albert-contact@data.gouv.fr | * |  |
 | FIRST_ADMIN_PASSWORD | *** | * | |
 | MJ_API_KEY | *** | * |  |
 | MJ_API_SECRET | *** | * |  |
