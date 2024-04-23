@@ -1,8 +1,4 @@
-FROM ubuntu:22.04
-
-RUN apt-get update && \
-    apt-get install -y python3-pip python3-dev && \
-    rm -rf /var/lib/apt/lists/*
+FROM python:3.10-slim
 
 WORKDIR /code
 

@@ -7,7 +7,7 @@ sys.path.append(".")
 from pyalbert.clients import LlmClient
 from pyalbert.prompt import get_prompter
 
-model = "AgentPublic/albert-light"
+model = "AgentPublic/albertlight-7b"
 query = """
 Une usagère ne comprend par le montant d’allocations sociales qu’elle touche ce mois-ci. En effet, le montant a été divisé par deux par rapport aux mois précédents et elle n’a plus que 150€. Elle cherche à comprendre pourquoi le montant a ainsi diminué.
 
