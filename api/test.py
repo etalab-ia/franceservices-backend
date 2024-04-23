@@ -27,7 +27,7 @@ data = {
     "query": "Quelles sont les conditions pour obtenir les APL? Sur quels site web de puis je faire ma demande ?",
     # "query": "Quel est la limite d'age pour voter en france, et quelle sont les échances électorales ?",
     # "query": "Qu'est ce que la DITP et la DINUM ?",
-    "model_name": "AgentPublic/albert-light",
+    "model_name": "AgentPublic/albertlight-7b",
     "mode": "rag",
     # "sources": ["travail-emploi"],
     # "should_sids": ["F35789"],
