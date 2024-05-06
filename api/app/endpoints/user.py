@@ -86,3 +86,38 @@ def contact_user(
         current_user, form_data.subject, form_data.text, form_data.institution
     )
     return {"msg": "Contact form email sent"}
+
+
+@router.get("/user/token", tags=["user"], response_model=list[schemas.ApiToken])
+def read_user_tokens(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> list[models.ApiToken]:
+    return crud.user.get_user_tokens(db, user_id=current_user.id)
+
+
+@router.post("/user/token/new", tags=["user"])
+def create_user_token(
+    form_data: schemas.ApiTokenCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> str:
+    return crud.user.create_user_token(db, user_id=current_user.id, form_data=form_data)
+
+
+@router.delete("/user/token/{token}", tags=["user"], response_model=schemas.ApiToken)
+def delete_user_token(
+    token: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> models.ApiToken:
+    db_token = crud.user.get_user_token(db, token)
+    if db_token is None:
+        raise HTTPException(404, detail="token not found")
+
+    if db_token.user_id != current_user.id:
+        raise HTTPException(403, detail="Forbidden")
+
+    crud.user.delete_token(db, db_token.id)
+
+    return db_token
