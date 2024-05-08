@@ -19,7 +19,6 @@ if __name__ == "__main__":
 
     endpoint = f"http://{args.host}:{args.port}/models"
 
-
     response = requests.get(endpoint, verify=False)
     logger.debug(f"Response: {response.text}")
     logger.info(f"Response status code: {response.status_code}")

@@ -4,6 +4,8 @@
 
 Les modèles Alberts sont déployables avec VLLM. Nous mettons à disposition une API permettant d'embarquer un LLM Albert ainsi qu'une modèle d'embeddings pour le RAG. Pour plus d'informations sur les modèles, référez-vous à la documentation [modeles.md](./modeles.md).
 
+### Avec Docker
+
 * Build
 
     ```bash
@@ -18,14 +20,30 @@ Les modèles Alberts sont déployables avec VLLM. Nous mettons à disposition un
 
     >  ⚠️ Si vous ne spécifiez pas de modèle d'embeddings le endpoint `/embeddings` retournera une réponse 404 et il sera masqué dans le swagger.
 
-Vous pouvez accéder au swagger de l'API du modèle sur [http://localhost:8000/docs](http://localhost:8000/docs).
 
+Vous pouvez accéder au swagger de l'API du modèle sur [http://localhost:8000/docs](http://localhost:8000/docs).
 
 * Sans GPU : GPT4all
 
     Si vous ne disposez pas de GPU, vous trouverez dans un [fichier Dockerfile](../contrib/gpt4all/Dockerfile) pour build l'image de l'API avec GPT4All (à la place de VLLM). Cette API est sur le format de l'API VLLM précédement décrite mais ne nécessite pas utilisation de GPU. Toutefois, celle-ci est maintenu en *best efforts* par les équipes. Voici les modèles actuels disponibles sans GPU :
 
     - [AgentPublic/albert-tiny](https://huggingface.co/AgentPublic/albert-tiny)
+
+
+### En local
+
+* Install
+    ```bash
+    pip install llm/.
+    ln -s $(pwd)/pyalbert llm/pyalbert
+    ```
+
+* Run (exemple pour mettre en service un modéle d'Albert sur des paramètrages donnés)
+
+    ```bash
+    python3 llm/app.py --llm-hf-repo-id AgentPublic/albertlight-8b --tensor-parallel-size 1 --gpu-memory-utilization 0.4 --models-dir ~/_models --host 0.0.0.0 --port 8088
+    ```
+
 
 ## Databases 
 
