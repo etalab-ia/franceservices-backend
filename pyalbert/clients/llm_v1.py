@@ -14,6 +14,7 @@ def retry(tries=3, delay=2):
     - tries: Number of total attempts.
     - delay: Delay between retries in seconds.
     """
+
     def decorator_retry(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -27,7 +28,9 @@ def retry(tries=3, delay=2):
                     attempts -= 1
             # Final attempt without catching exceptions
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator_retry
 
 
@@ -47,7 +50,7 @@ class LlmClientV1:
             self.api_token = api_token
 
     @retry(tries=3, delay=2)
-    def chat_completion(self, dialog: list[dict], **sampling_params):
+    def chat_completion(self, messages: list[dict], **sampling_params):
         # Headers including the Content-Type, Accept, and Authorization with the Bearer token
         headers = {
             "Content-Type": "application/json",
@@ -56,7 +59,7 @@ class LlmClientV1:
         }
 
         # Making the POST request to the API
-        data = {"model": self.model, "messages": dialog}
+        data = {"model": self.model, "messages": messages}
         data.update(sampling_params)
         response = requests.post(self.endpoint, json=data, headers=headers)
 
@@ -67,6 +70,5 @@ class LlmClientV1:
             response.raise_for_status()
 
     # TODO:
-    def create_embeddings(texts: str | list[str], doc_type:str|None=None):
+    def create_embeddings(texts: str | list[str], doc_type: str | None = None):
         raise NotImplementedError
-
