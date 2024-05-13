@@ -11,7 +11,7 @@ def get_prompt_operators(query: str) -> str:
 
         Voici une liste d'administrations :
         - '{"'; -'".join(OPERATORS)}'
-    Réponds avec un seul mot en utilisant uniquement la liste ci-dessus. Si l'administration n'est pas dans la liste, répond juste le mot "Aucun".
+    Réponds avec un seul mot en utilisant uniquement la liste ci-dessus. Si l'administration n'est pas dans la liste, réponds juste le mot "Aucun".
     """
     print(final_prompt)
 

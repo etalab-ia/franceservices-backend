@@ -10,7 +10,7 @@ parser.add_argument("--debug", action="store_true", help="Print debug logs")
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    prompt="Hello, world!"
+    prompt = "Hello, world!"
 
     level = "DEBUG" if args.debug else "INFO"
     logging.basicConfig(

@@ -35,7 +35,9 @@ class AlbertClient:
 
     def __init__(self, api_token=None, **user_config):
         if api_token is not None and (user_config.get("username") or user_config.get("password")):
-            print("Error: You need to either set the api_token or the username/password couple, but not both at the same time.")
+            print(
+                "Error: You need to either set the api_token or the username/password couple, but not both at the same time."
+            )
             exit(2)
 
         config = self.CONFIG
@@ -153,11 +155,7 @@ class LlmClient:
         if not model:
             raise ValueError("LLM model not found: %s" % model)
 
-        if model[1]:
-            url = model[1]
-
-        self.model = model
-        self.url = url
+        self.url = model[1]
 
     @staticmethod
     def _get_response(response: requests.Response) -> str:
@@ -182,16 +180,16 @@ class LlmClient:
 
     # TODO: turn into async
     def generate(
-        self, prompt, max_tokens=512, temperature=20, top_p=1, stream=False
+        self,
+        prompt: str,
+        stream=False,
+        **sampling_params,
     ) -> str | Iterable[str]:
         url = f"{self.url}/generate"
-        data = {
-            "prompt": prompt,
-            "max_tokens": max_tokens,
-            "temperature": temperature / 100,  # I think its better to keep value in [0,2] to stay compatible with opanai api.
-            "top_p": top_p,  # not intended to final user but for dev and research.
-            "stream": stream,
-        }  # fmt: skip
+        data = sampling_params.copy()
+        data["prompt"] = prompt
+        data["temperature"] = data["temperature"] / 100
+        data["stream"] = stream
         response = requests.post(url, json=data, stream=stream)
 
         if stream:

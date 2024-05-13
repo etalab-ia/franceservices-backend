@@ -1,7 +1,7 @@
 from typing import List, Optional, Union
 
-from pydantic import BaseModel
 from fastapi import Request
+from pydantic import BaseModel
 
 
 class Embeddings(BaseModel):
@@ -13,7 +13,8 @@ class Embeddings(BaseModel):
     # ignored for now, but keep it for openai-api compatibility
     encoding_format: str = "float"  # only float is supported.
 
-class Generate(Request): 
+
+class Generate(Request):
     # Request is needed because is_disconneted attribute is call in generate endpoint
     prompt: str
     stream: bool = True
