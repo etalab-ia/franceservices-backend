@@ -1,22 +1,22 @@
 import argparse
-import os
 import json
+import os
 import shutil
 import traceback
-from typing import AsyncGenerator, Optional
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Optional
 
-import yaml
 import uvicorn
-from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
-from fastapi.responses import Response, StreamingResponse, JSONResponse
-from transformers import AutoModel, AutoTokenizer
+import yaml
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from gpt4all import GPT4All
+from huggingface_hub import hf_hub_download, snapshot_download
 from huggingface_hub.utils._errors import EntryNotFoundError
-from huggingface_hub import hf_hub_download
-from huggingface_hub import snapshot_download
+from transformers import AutoModel, AutoTokenizer
 
 from core import make_embeddings
+
 from pyalbert import Logging
 from pyalbert.schemas.llm import Embeddings
 

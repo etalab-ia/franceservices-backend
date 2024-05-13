@@ -9,7 +9,7 @@ parser.add_argument("--debug", action="store_true", help="Print debug logs")
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    input="Hello, world!"
+    input = "Hello, world!"
 
     level = "DEBUG" if args.debug else "INFO"
     logging.basicConfig(
@@ -19,10 +19,7 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
 
     endpoint = f"http://{args.host}:{args.port}/embeddings"
-    data = {
-        "input": input,
-        "doc_type": "query"
-    }
+    data = {"input": input, "doc_type": "query"}
 
     response = requests.post(endpoint, json=data, verify=False)
     logger.debug(f"Response: {response.text}")

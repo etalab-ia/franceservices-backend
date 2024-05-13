@@ -1,6 +1,7 @@
+import re
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, EmailStr, constr
+from pydantic import BaseModel, ConfigDict, EmailStr, constr, model_validator
 
 from pyalbert.config import PASSWORD_PATTERN
 
@@ -49,3 +50,23 @@ class User(UserBase):
 
 class UserWithRelationships(User):
     streams: list["Stream"] | None
+
+
+class ApiTokenBase(BaseModel):
+    name: str
+
+    @model_validator(mode="after")
+    def validate_model(self):
+        pattern = re.compile(r"^[a-zA-Z0-9:_\-\.]{1,100}$")
+        if not bool(pattern.match(self.name)):
+            raise ValueError("Only alphanumeric and [:_-.] characters are supported.")
+
+        return self
+
+
+class ApiTokenCreate(ApiTokenBase):
+    pass
+
+
+class ApiToken(ApiTokenBase):
+    pass
