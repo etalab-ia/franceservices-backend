@@ -4,6 +4,8 @@ import sys
 
 sys.path.append(".")
 
+from prompt_toolkit import PromptSession
+
 from pyalbert import set_llm_table
 from pyalbert.clients import LlmClient
 from pyalbert.prompt import get_prompter
@@ -27,7 +29,7 @@ set_llm_table(
         ("AgentPublic/albertlight-8b", "http://localhost:8088"),
     ]
 )
-default_model = "AgentPublic/albertlight-7b"
+default_model = "AgentPublic/albertlight-8b"
 
 WELCOME = """Welcome to Albert chat
 type ".help" for more information.
@@ -55,12 +57,33 @@ system_prompt = None
 
 print(WELCOME)
 
-while 1:
+
+def custom_input(prompt, multiline_pattern=":::"):
+    session = PromptSession()
+    # Check if the input should be multiline
+    initial_input = session.prompt(prompt)
+    if initial_input.startswith(multiline_pattern):
+        # Enter multiline mode
+        lines = [
+            initial_input[len(multiline_pattern) :]
+        ]  # Start with the first line's content after the pattern
+        while True:
+            line = session.prompt("")
+            if line.strip() == multiline_pattern:
+                break
+            lines.append(line)
+        return "\n".join(lines)
+    else:
+        # Single line mode
+        return initial_input
+
+
+while True:
     # REPL
     if debug_prompt:
-        query = input("(debug)>>> ")
+        query = custom_input("(debug)>>> ")
     else:
-        query = input(">>> ")
+        query = custom_input(">>> ")
     query = query.strip()
 
     if query == ".clear":

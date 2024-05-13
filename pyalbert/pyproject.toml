@@ -25,7 +25,10 @@ dependencies = [
 ]
 
 [tool.pdm.dev-dependencies]
-dev = ["huggingface-hub==0.23.0"]
+dev = [
+    "huggingface-hub==0.23.0", 
+    "prompt_toolkit==3.0.39", 
+]
 
 [project.scripts]
 pyalbert = "pyalbert.albert:main"
