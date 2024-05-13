@@ -1,8 +1,10 @@
+import uuid
+
 import bcrypt
+from app import models, schemas
+from app.auth import encode_api_token
 from pydantic import EmailStr
 from sqlalchemy.orm import Session
-
-from app import models, schemas
 
 
 def get_hashed_password(password: str) -> str:
@@ -57,3 +59,47 @@ def confirm_user(db: Session, db_user: models.User, is_confirmed: bool, commit=T
     db_user.is_confirmed = is_confirmed
     if commit:
         db.commit()
+
+
+#
+# Tokens
+#
+
+
+def resolve_user_token(db: Session, token: str) -> models.User:
+    hash = encode_api_token(token)
+    user = (
+        db.query(models.User)
+        .join(models.User.api_tokens)
+        .filter(models.ApiToken.hash == hash)
+        .first()
+    )
+    return user
+
+
+def get_user_token(db: Session, token: str) -> models.ApiToken:
+    hash = encode_api_token(token)
+    return db.query(models.ApiToken).filter(models.ApiToken.hash == hash).first()
+
+
+def get_user_tokens(db: Session, user_id: int) -> list[models.ApiToken]:
+    return db.query(models.ApiToken).join(models.User).filter(models.User.id == user_id).all()
+
+
+def create_user_token(
+    db: Session, user_id: int, form_data: schemas.ApiTokenCreate, commit=True
+) -> str:
+    token = str(uuid.uuid4())
+    db_token = models.ApiToken(name=form_data.name, hash=encode_api_token(token), user_id=user_id)
+    db.add(db_token)
+    if commit:
+        db.commit()
+        db.refresh(db_token)
+    return token
+
+
+def delete_token(db: Session, token_id: int, commit=True) -> models.ApiToken:
+    result = db.query(models.ApiToken).filter(models.ApiToken.id == token_id).delete()
+    if commit:
+        db.commit()
+    return result

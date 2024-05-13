@@ -9,8 +9,7 @@ import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString, Tag
-
-from .text_spliter import HybridSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # *********
 # * Utils *
@@ -376,7 +375,10 @@ def _parse_xml_text(xml_file, structured=False) -> dict:
         if texts and sections:
             # Add all sections title at the end of the introduction
             sections = "\n".join(f"- {section}" for section in sections)
-            sections = "\n\nVoici une liste de différents cas possibles:\n" + sections
+            sections = (
+                "\n\nVoici une liste de différentes questions ou thématiques relatives à ce sujet :\n"
+                + sections
+            )
             texts[0]["text"] += sections
 
     else:
@@ -496,8 +498,8 @@ def _parse_travailEmploi(target_dir: str, structured: bool = False) -> list[dict
 def make_chunks(
     storage_dir: str,
     structured=False,
-    chunk_size=1100,
-    chunk_overlap=200,
+    chunk_size=8000,
+    chunk_overlap=800,
     sources=None,
 ) -> None:
     """Chunkify sheets and save to a JSON file"""
@@ -511,7 +513,12 @@ def make_chunks(
     sheets = RagSource.get_sheets(storage_dir, sources, structured=structured)
 
     chunks = []
-    text_splitter = HybridSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=len,
+        is_separator_regex=False,
+    )
     hashes = []
     info = defaultdict(lambda: defaultdict(list))
     for data in sheets:

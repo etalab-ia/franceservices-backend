@@ -1,6 +1,7 @@
 import argparse
-import requests
 import logging
+
+import requests
 
 parser = argparse.ArgumentParser(description="Test the response of a LLM model.")
 parser.add_argument("--port", type=int, default=8082, help="Model port")
@@ -18,7 +19,6 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
 
     endpoint = f"http://{args.host}:{args.port}/models"
-
 
     response = requests.get(endpoint, verify=False)
     logger.debug(f"Response: {response.text}")

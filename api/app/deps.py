@@ -1,5 +1,5 @@
 from app import crud, models
-from app.auth import decode_token
+from app.auth import decode_api_token, decode_token
 from app.db.session import SessionLocal
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -15,17 +15,27 @@ def get_db():
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> models.User:
+    """Get authenticated user from the Bearer authorization header"""
     auth_header = request.headers.get("Authorization")
     if not auth_header:
         raise HTTPException(400, detail="Authorization header must be provided")
 
     try:
         token = auth_header.split(" ")[1]
-        user_id = decode_token(db, token)
     except Exception as e:
         raise HTTPException(401, detail="Unauthorized") from e
 
-    user = crud.user.get_user(db, user_id)
+    try:
+        user = decode_api_token(db, token)
+        if not user:
+            raise NotImplementedError
+    except Exception as e:
+        try:
+            user_id = decode_token(db, token)
+            user = crud.user.get_user(db, user_id)
+        except Exception as e2:
+            raise HTTPException(401, detail="Unauthorized") from e2
+
     if not user:
         raise HTTPException(404, detail="User not found")
     if not user.is_confirmed:

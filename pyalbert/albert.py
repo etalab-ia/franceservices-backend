@@ -4,7 +4,7 @@
 
 Usage:
     pyalbert create_whitelist [--config-file=<path>] [--storage-dir=<path>] [--debug]
-    pyalbert download_rag_sources [--config-file=<path>] [--storage-dir=<path>]
+    pyalbert download_rag_sources [--config-file=<path>] [--storage-dir=<path>] [--debug]
     pyalbert make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] [--storage-dir=<path>]
     pyalbert index (experiences | sheets | chunks) [--index-type=<index_type>] [--recreate] [--storage-dir=<path>]
 
@@ -22,7 +22,6 @@ Commands:
 
 Options:
     --storage-dir=<path>       Storage path for downloaded ressources.
-    --force-download           Force download the model repository if they already exist. By default, False.
     --config-file=<path>       Path to the config file containing the routing table. By default, use corresponding file in config directory.
     --structured               Parse strategy that exploit the xml sheet structure.
     --chunk-size N             The maximum size of the chunks (token count...) [default: 1100]
@@ -57,7 +56,6 @@ if __name__ == "__main__":
     # Parse CLI arguments
     args = docopt(__doc__, version="0")
     debug = True if args["--debug"] else False
-    force_download = True if args["--force-download"] else False
 
     if args["create_whitelist"]:
         from pyalbert.whitelist import create_whitelist, download_directory

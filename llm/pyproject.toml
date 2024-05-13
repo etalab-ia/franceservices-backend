@@ -2,16 +2,16 @@
 name = "albert-llm"
 version = "0.1.0"
 description = "Albert LLM API"
-authors = [{ name = "Etalab", email = "etalab@modernisation.gouv.fr" }]
+authors = [{name = "Etalab", email = "etalab@modernisation.gouv.fr"}]
+requires-python = ">=3.10"
+license = {text = "MIT"}
 dependencies = [
-    "vllm==v0.4.0",
+    "vllm==v0.4.2",
     "pyyaml==6.0.1",
-    "accelerate==0.28.0",
-    "fastapi==0.103.1",
+    "accelerate==0.30.0",
+    "fastapi==0.111.0",
     "huggingface-hub==0.20.3",
 ]
-requires-python = "==3.10.*"
-license = { text = "MIT" }
 
 [tool.setuptools]
 py-modules = []
@@ -27,3 +27,4 @@ ignore-init-module-imports = true
 
 [tool.ruff.lint.isort.sections]
 pyalbert = ["pyalbert"]
+core = ["core"]

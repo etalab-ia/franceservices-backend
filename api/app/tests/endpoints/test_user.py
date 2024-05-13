@@ -1,9 +1,9 @@
-from fastapi.testclient import TestClient
+import json
 
 import app.tests.utils.login as login
 import app.tests.utils.user as user
 from app.tests.test_api import TestApi
-
+from fastapi.testclient import TestClient
 from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
 
@@ -78,3 +78,59 @@ class TestEndpointsUser(TestApi):
         # Admin - Read pending users:
         response = user.read_pending_users(client, admin_token)
         assert response.status_code == 200
+
+    def test_user_tokens(self, client: TestClient):
+        # Create User Me:
+        response = user.create_user_me(client, "jean.dupont", "jean.dupont@test.fr", "abcde12345")
+        assert response.status_code == 200
+
+        # Sign In:
+        response = login.sign_in(client, "jean.dupont@test.fr", "abcde12345")
+        assert response.status_code == 400
+
+        # Admin - Sign In:
+        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
+        assert response.status_code == 200
+        admin_token = response.json()["token"]
+
+        # Admin - Confirm User:
+        response = user.confirm_user(client, admin_token, "jean.dupont@test.fr", True)
+        assert response.status_code == 200
+
+        # Sign In:
+        response = login.sign_in(client, "jean.dupont@test.fr", "abcde12345")
+        assert response.status_code == 200
+        token = response.json()["token"]
+
+        # Create token
+        response = user.create_token(client, token, "my_token")
+        assert response.status_code == 200
+        hash = json.loads(response.text)
+
+        # Create token error
+        response = user.create_token(client, token, "my token")
+        assert response.status_code == 422
+
+        # Read tokens
+        response = user.read_tokens(client, token)
+        assert response.status_code == 200
+        tokens = response.json()
+        assert len(tokens) == 1
+
+        # Try token
+        response = user.read_user_me(client, hash)
+        assert response.status_code == 200
+
+        # delete token
+        response = user.delete_token(client, token, hash)
+        assert response.status_code == 200
+
+        # Read tokens
+        response = user.read_tokens(client, token)
+        assert response.status_code == 200
+        tokens = response.json()
+        assert len(tokens) == 0
+
+        # Try token
+        response = user.read_user_me(client, hash)
+        assert response.status_code == 401

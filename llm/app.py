@@ -1,30 +1,28 @@
 import argparse
-import os
 import json
+import os
 import shutil
 import traceback
-from typing import AsyncGenerator, Optional
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Optional
 
-import yaml
 import torch
 import uvicorn
-from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
-from fastapi.responses import Response, StreamingResponse, JSONResponse
+import yaml
+from core import make_embeddings
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, Response, StreamingResponse
+from huggingface_hub import hf_hub_download, snapshot_download
+from huggingface_hub.utils._errors import EntryNotFoundError
+from pyalbert import Logging
+from pyalbert.schemas import Embeddings, Generate
 from transformers import AutoModel, AutoTokenizer
+
+from vllm import __version__ as vllm_version
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
-from vllm import __version__ as vllm_version
-from huggingface_hub.utils._errors import EntryNotFoundError
-from huggingface_hub import hf_hub_download
-from huggingface_hub import snapshot_download
-
-from core import make_embeddings
-from pyalbert import Logging
-from pyalbert.schemas.llm import Embeddings, Generate
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--host", type=str, default="localhost", help="Host name.")
@@ -125,8 +123,8 @@ async def download_and_run_models(app: FastAPI):
 
 app = FastAPI(
     title="Albert model API with VLLM engine",
-    description="""API for Albert models. Albert models are enabled on Agent Public HuggingFace repository: https://huggingface.co/AgentPublic. 
-It provides embeddings and generation capabilities thanks to VLLM engine. 
+    description="""API for Albert models. Albert models are enabled on Agent Public HuggingFace repository: https://huggingface.co/AgentPublic.
+It provides embeddings and generation capabilities thanks to VLLM engine.
 For more information about VLLM, please visit: https://github.com/vllm-project/vllm/tree/main.
 """,
     version=vllm_version,
@@ -213,7 +211,6 @@ async def generate(request: Generate) -> Response:
     stream = request_dict.pop("stream", False)
     sampling_params = SamplingParams(**request_dict)
     request_id = random_uuid()
-
 
     results_generator = MODELS["llm_model"].generate(prompt, sampling_params, request_id)
 
