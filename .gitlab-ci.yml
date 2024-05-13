@@ -2,6 +2,7 @@ include:
   - local: "deployment/default.yml"
   - local: "deployment/templates.yml"
   - local: "deployment/scripts.yml"
+  - local: "deployment/databases/databases.yml"
 
 stages:
   - test
@@ -29,7 +30,7 @@ test:api:
   stage: test
   image: python:3.10-slim
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "dev"'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "staging" ||$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
       changes:
         - ".gitlab-ci.yml"
         - "api/app/**/*.py"
@@ -37,14 +38,6 @@ test:api:
         - "pyalbert/**/*.py"
         - "pyalbert/pyproject.toml"
       when: always
-    # - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "staging" ||$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
-    #   changes:
-    #     - ".gitlab-ci.yml"
-    #     - "api/app/**/*.py"
-    #     - "api/pyproject.toml"
-    #     - "pyalbert/**/*.py"
-    #     - "pyalbert/pyproject.toml"
-    #   when: always
   before_script:
   - |
     python -m venv venv
@@ -58,7 +51,8 @@ test:api:
 ################# DATABASE #################
 ############################################
 
-################## DINUM ###################
+
+################# DEPLOY ###################
 
 deploy:database:dinum:
   environment:
@@ -68,71 +62,7 @@ deploy:database:dinum:
       when: manual
       allow_failure: true  # to avoid blocked state
   stage: deploy-database
-  image: alpine:latest
-  script:
-    - | # ssh connection setup
-      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
-      apk update
-      apk add openssh-client
-    - | # send deployment files to remote server
-      mkdir -p ./${CI_JOB_ID}
-      cp ./databases/docker-compose.yml ./${CI_JOB_ID}/docker-compose.yml
-      cp ./.env ./${CI_JOB_ID}/.env
-      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-    - | # deploy database to remote server
-      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
-      export COMPOSE_FILE=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/docker-compose.yml
-      export COMPOSE_PROJECT_NAME=database
-      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env down
-      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env up --detach
-      "
-
-setup:database:dinum:
-  environment:
-    name: dinum
-  rules:
-    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
-      when: manual
-      allow_failure: true  # to avoid blocked state
-  stage: setup
-  image: alpine:latest
-  timeout: 3 hours
-  script:
-    - | # ssh connection setup
-      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
-      apk update
-      apk add openssh-client
-    - | # send deployment files to remote server
-      mkdir -p ./${CI_JOB_ID}
-      mkdir -p ./${CI_JOB_ID}/venv
-      cp -r ./pyalbert ./${CI_JOB_ID}
-      cp ./.env ./${CI_JOB_ID}/.env
-      sed -i~ "s/QDRANT_HOST=${CI_DEPLOY_HOST}/QDRANT_HOST=localhost/g" ./${CI_JOB_ID}/.env
-      sed -i~ "s/ELASTIC_HOST=${CI_DEPLOY_HOST}/ELASTIC_HOST=localhost/g" ./${CI_JOB_ID}/.env
-      sed -i~ "s/EMBEDDINGS_HOST=${CI_DEPLOY_HOST}/EMBEDDINGS_HOST=localhost/g" ./${CI_JOB_ID}/.env
-      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-    - | # setup database on remote server
-      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
-      set -e
-      python3.10 -m venv ~/${CI_JOB_ID}/venv
-      source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install ~/${CI_JOB_ID}/pyalbert/.
-      ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
-      export $(grep -v "^#" ~/${CI_JOB_ID}/.env | xargs)
-      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert
-      python ./albert.py download_rag_sources
-      python ./albert.py make_chunks --structured
-      python ./albert.py index experiences --index-type bm25
-      python ./albert.py index sheets --index-type bm25
-      python ./albert.py index chunks --index-type bm25
-      python ./albert.py index experiences --index-type e5
-      python ./albert.py index chunks --index-type e5
-      deactivate
-      rm -rf ~/${CI_JOB_ID}
-      "
-
-############# FRANCE SERVICES ##############
+  extends: .deploy_databases
 
 deploy:database:france services:
   environment:
@@ -142,25 +72,19 @@ deploy:database:france services:
       when: manual
       allow_failure: true  # to avoid blocked state
   stage: deploy-database
-  image: alpine:latest
-  script:
-    - | # ssh connection setup
-      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
-      apk update
-      apk add openssh-client
-    - | # send deployment files to remote server
-      mkdir -p ./${CI_JOB_ID}
-      cp ./databases/docker-compose.yml ./${CI_JOB_ID}/docker-compose.yml
-      cp ./.env ./${CI_JOB_ID}/.env
-      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-    - | # deploy database to remote server
-      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
-      export COMPOSE_FILE=/home/${CI_DEPLOY_USER}/${CI_JOB_ID}/docker-compose.yml
-      export COMPOSE_PROJECT_NAME=database
-      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env down
-      docker compose --env-file /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/.env up --detach
-      "
+  extends: .deploy_databases
+
+################# SETUP ####################
+
+setup:database:dinum:
+  environment:
+    name: dinum
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true  # to avoid blocked state
+  stage: setup
+  extends: .setup_vector_store
 
 setup:database:france services:
   environment:
@@ -170,41 +94,7 @@ setup:database:france services:
       when: manual
       allow_failure: true  # to avoid blocked state
   stage: setup
-  image: alpine:latest
-  timeout: 3 hours
-  script:
-    - | # ssh connection setup
-      chmod og= $CI_DEPLOY_USER_SSH_PRIVATE_KEY
-      apk update
-      apk add openssh-client
-    - | # send deployment files to remote server
-      mkdir -p ./${CI_JOB_ID}
-      mkdir -p ./${CI_JOB_ID}/venv
-      cp -r ./pyalbert ./${CI_JOB_ID}
-      cp ./.env ./${CI_JOB_ID}/.env
-      sed -i~ "s/QDRANT_HOST=${CI_DEPLOY_HOST}/QDRANT_HOST=localhost/g" ./${CI_JOB_ID}/.env
-      sed -i~ "s/ELASTIC_HOST=${CI_DEPLOY_HOST}/ELASTIC_HOST=localhost/g" ./${CI_JOB_ID}/.env
-      sed -i~ "s/EMBEDDINGS_HOST=${CI_DEPLOY_HOST}/EMBEDDINGS_HOST=localhost/g" ./${CI_JOB_ID}/.env
-      scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
-    - | # setup database on remote server
-      ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
-      set -e
-      python3.10 -m venv ~/${CI_JOB_ID}/venv
-      source ~/${CI_JOB_ID}/venv/bin/activate
-      pip install ~/${CI_JOB_ID}/pyalbert/.
-      ln -s ~/${CI_JOB_ID}/pyalbert ~/${CI_JOB_ID}/venv/lib/python3.10/site-packages
-      export $(grep -v "^#" ~/${CI_JOB_ID}/.env | xargs)
-      cd /home/${CI_DEPLOY_USER}/${CI_JOB_ID}/pyalbert
-      python ./albert.py download_rag_sources
-      python ./albert.py make_chunks --structured
-      python ./albert.py index experiences --index-type bm25
-      python ./albert.py index sheets --index-type bm25
-      python ./albert.py index chunks --index-type bm25
-      python ./albert.py index experiences --index-type e5
-      python ./albert.py index chunks --index-type e5
-      deactivate
-      rm -rf ~/${CI_JOB_ID}
-      "
+  extends: .setup_vector_store
 
 ############################################
 #################### LLM ###################

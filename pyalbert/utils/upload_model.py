@@ -4,6 +4,7 @@ import os
 
 from huggingface_hub import HfApi
 
+hf_token = None
 if "HUGGINGFACE_TOKEN" in os.environ:
     hf_token = os.environ["HUGGINGFACE_TOKEN"]
 
@@ -11,26 +12,27 @@ if "HUGGINGFACE_TOKEN" in os.environ:
 def repo_exists(repo_id):
     api = HfApi()
     try:
-        repo_info = api.repo_info(repo_id)
+        _ = api.repo_info(repo_id)
         return True
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Warning repo exists: {e}")
         return False
 
 
-org_name = "etalab-ia"
+org_name = "AgentPublic"
 model_name = "albert-light"
 version = "v1"
 revision = "main"
 repo_id = f"{org_name}/{model_name}"
 folder_path = f"_data/models/{model_name}-{version}/{model_name}-{version}"
+is_private = False
 
 
 if __name__ == "__main__":
     api = HfApi()
     # Create remote space
     if not repo_exists(repo_id):
-        api.create_repo(repo_id, repo_type="model", token=hf_token)
+        api.create_repo(repo_id, repo_type="model", token=hf_token, private=is_private)
 
     # Upload all the content to remote space
     # Authenticate with: !huggingface-cli login --token $HUGGINGFACE_TOKEN
@@ -42,4 +44,5 @@ if __name__ == "__main__":
         token=hf_token,
     )
 
-    api.create_tag(repo_id, tag=version, revision=revision)
+    if version:
+        api.create_tag(repo_id, tag=version, revision=revision)

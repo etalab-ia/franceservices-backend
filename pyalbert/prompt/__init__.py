@@ -6,4 +6,10 @@ from .postprocessing import (
     correct_number,
     correct_url,
 )
-from .prompt import Prompter, get_prompter
+from .prompt import (
+    Prompter,
+    format_chatml_prompt,
+    format_llama2chat_prompt,
+    format_llama3chat_prompt,
+    get_prompter,
+)
