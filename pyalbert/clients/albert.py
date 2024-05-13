@@ -189,8 +189,8 @@ class LlmClient:
         data = sampling_params.copy()
         data["prompt"] = prompt
         data["temperature"] = data["temperature"] / 100
-        response = requests.post(url, json=data, stream=stream)
         data["stream"] = stream
+        response = requests.post(url, json=data, stream=stream)
 
         if stream:
             return self._get_streaming_response(response)
