@@ -1,4 +1,4 @@
-## Guide pour obtenir un jeton d'accès à l'API Albert
+# Guide pour obtenir un jeton d'accès à l'API Albert
 
 Ce document vous guide à travers les étapes pour obtenir et gérer vos jetons d'accès pour l'API Albert.
 
@@ -42,4 +42,4 @@ Pour supprimer un jeton spécifique, remplacez `$ALBERT_API_TOKEN` par le jeton 
 curl -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer $ALBERT_API_KEY" https://albert.etalab.gouv.fr/api/v2/user/token/$ALBERT_API_TOKEN
 ```
 
-Ce guide devrait vous aider à gérer efficacement vos jetons d'accès pour l'API Albert. Assurez-vous de sécuriser vos jetons et de ne les partager avec personne.
+*Assurez-vous de sécuriser vos jetons et de ne les partager avec personne.*

@@ -2,7 +2,7 @@
 
 ## Execution locale (Draft)
 
-- Installez les requirements:
+- Installez les requirements :
 
     ```bash
     cd api
@@ -13,7 +13,7 @@
 
 ### Modèle quantisé
 
-- 1: Lancez l'API du modèle:
+- 1: Lancez l'API du modèle :
 
     - Via GPT4All: Lancer l'API du modèle quantisé sur CPU
 
@@ -25,7 +25,7 @@
 
 Pour déployer l'API du modèle via le module de votre choix, allez voir la section 'LLM' du README du [deploiement](../docs/deploiement/README.md)
 
-- 2: Lancez ensuite l'API en local:
+- 2: Lancez ensuite l'API en local :
 
     ```bash
     cd api
@@ -33,33 +33,34 @@ Pour déployer l'API du modèle via le module de votre choix, allez voir la sect
     ```
 
 
-- 3: Testez le modèle:
+- 3: Testez le modèle :
 
 ```
 ```
 
-### Download a model
+### Télécharegment d'un modèle
 
-#### Old version of deployment
+#### Téléchargement d'un modèle selon la version dépréciée
 
-- Fabrique model
+- Par exemple, pour le modèle Fabrique Reference 2 :
 ```bash
-python -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-reference-2', download_dir='add_your_path')"
+python3 -c "from vllm import LLM; LLM(model='etalab-ia/fabrique-reference-2', download_dir='add_your_path')"
 ```
-- Albert model
+- Par exemple, pour le modèle Albert Light :
 ```bash
-python -c "from vllm import LLM; LLM(model='etalab-ia/albert-light', download_dir='add_your_path')"
-```
-
-#### Newer version
-
-Open python console
-```bash
-python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/fabrique-reference-2'); tokenizer.save_pretrained('add_your_path/fabrique-reference-2'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/fabrique-reference-2'); model.save_pretrained('add_your_path/fabrique-reference-2') "
+python3 -c "from vllm import LLM; LLM(model='etalab-ia/albert-light', download_dir='add_your_path')"
 ```
 
+#### Téléchargement d'un modèle selon la version actuelle
+
+- Par exemple, pour le modèle Fabrique Reference 2 :
 ```bash
-python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/albert-light'); tokenizer.save_pretrained('add_your_path/albert-light'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/albert-light'); model.save_pretrained('add_your_path/albert-light') "
+python3 -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/fabrique-reference-2'); tokenizer.save_pretrained('add_your_path/fabrique-reference-2'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/fabrique-reference-2'); model.save_pretrained('add_your_path/fabrique-reference-2') "
+```
+
+- Par exemple, pour le modèle Albert Light :
+```bash
+python3 -c "from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer=AutoTokenizer.from_pretrained('etalab-ia/albert-light'); tokenizer.save_pretrained('add_your_path/albert-light'); model=AutoModelForCausalLM.from_pretrained('etalab-ia/albert-light'); model.save_pretrained('add_your_path/albert-light') "
 ```
 
 ## Tests unitaires de l'API
@@ -81,7 +82,7 @@ python test.py
 
 ## Alembic
 
-Create a new alembic (empty) template version:
+Create a new Alembic (empty) template version:
 
     PYTHONPATH=. alembic revision -m  "vXXX"
 
