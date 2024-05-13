@@ -376,7 +376,7 @@ def _parse_xml_text(xml_file, structured=False) -> dict:
             # Add all sections title at the end of the introduction
             sections = "\n".join(f"- {section}" for section in sections)
             sections = (
-                "\n\nVoici une liste de différentes questions ou thématiques relative à ce sujet:\n"
+                "\n\nVoici une liste de différentes questions ou thématiques relatives à ce sujet :\n"
                 + sections
             )
             texts[0]["text"] += sections
