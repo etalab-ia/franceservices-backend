@@ -44,6 +44,7 @@ WITH_GPU = True if torch.cuda.is_available() else False
 WITH_EMBEDDINGS = True if args.embeddings_hf_repo_id else False
 BATCH_SIZE_MAX = 10
 MODELS = {}
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
 
 
 @asynccontextmanager
@@ -63,6 +64,7 @@ async def download_and_run_models(app: FastAPI):
             "local_dir": model_storage_dir,
             "force_download": args.force_download,
             "cache_dir": model_storage_dir,
+            "token": HF_API_TOKEN,
         }
 
         try:
@@ -82,6 +84,7 @@ async def download_and_run_models(app: FastAPI):
         "local_dir": model_storage_dir,
         "force_download": args.force_download,
         "cache_dir": model_storage_dir,
+        "token": HF_API_TOKEN,
     }
 
     try:
@@ -98,6 +101,7 @@ async def download_and_run_models(app: FastAPI):
             "pretrained_model_name_or_path": args.embeddings_hf_repo_id,
             "force_download": args.force_download,
             "cache_dir": os.path.join(args.models_dir, args.embeddings_hf_repo_id),
+            "token": HF_API_TOKEN,
         }
 
         tokenizer = AutoTokenizer.from_pretrained(**params)
