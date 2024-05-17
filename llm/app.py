@@ -9,10 +9,13 @@ from typing import AsyncGenerator, Optional
 import torch
 import uvicorn
 import yaml
+from core import make_embeddings
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from huggingface_hub import hf_hub_download, snapshot_download
 from huggingface_hub.utils._errors import EntryNotFoundError
+from pyalbert import Logging
+from pyalbert.schemas import Embeddings, Generate
 from transformers import AutoModel, AutoTokenizer
 
 from vllm import __version__ as vllm_version
@@ -20,11 +23,6 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
-
-from pyalbert import Logging
-from pyalbert.schemas import Embeddings, Generate
-
-from core import make_embeddings
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--host", type=str, default="localhost", help="Host name.")
@@ -272,6 +270,7 @@ async def get_prompt_config(
                     filename=file,
                     local_dir=args.model,
                     cache_dir=args.model,
+                    token=HF_API_TOKEN,
                 )
             except EntryNotFoundError:
                 logger.debug(f"{file} not found in remote model repository.")
