@@ -276,6 +276,7 @@ async def get_prompt_config(
                     filename=file,
                     local_dir=args.model,
                     cache_dir=args.model,
+                    token=HF_API_TOKEN,
                 )
             except EntryNotFoundError:
                 logger.debug(f"{file} not found in remote model repository.")
