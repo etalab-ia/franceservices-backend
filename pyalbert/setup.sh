@@ -8,7 +8,7 @@
 pyalbert create_whitelist
 pyalbert download_rag_sources
 pyalbert make_chunks --structured
-# Feed the search eninges
+# Feed the search engines
 pyalbert index experiences --index-type bm25
 pyalbert index sheets      --index-type bm25
 pyalbert index chunks      --index-type bm25
