@@ -2,7 +2,7 @@
 
 ## Modèles
 
-Les modèles Alberts sont déployables avec VLLM. Nous mettons à disposition une API permettant d'embarquer un LLM Albert ainsi qu'une modèle d'embeddings pour le RAG. Pour plus d'informations sur les modèles, référez-vous à la documentation [modeles.md](./modeles.md).
+Les modèles Albert sont déployables avec [VLLM](https://docs.vllm.ai/en/latest/). Nous mettons à disposition une API permettant d'embarquer un LLM Albert ainsi qu'une modèle d'embeddings pour le [Retrieval Augmented Generation, RAG](https://en.wikipedia.org/wiki/Prompt_engineering#Retrieval-augmented_generation). Pour plus d'informations sur les modèles, référez-vous à la documentation [modeles.md](./modeles.md).
 
 ### Avec Docker
 
@@ -18,10 +18,9 @@ Les modèles Alberts sont déployables avec VLLM. Nous mettons à disposition un
     docker compose --env-file ./llm/.env.example --file ./llm/docker-compose.yml up --detach
     ```
 
-    >  ⚠️ Si vous ne spécifiez pas de modèle d'embeddings le endpoint `/embeddings` retournera une réponse 404 et il sera masqué dans le swagger.
+    >  ⚠️ Si vous ne spécifiez pas de modèle d'embeddings le endpoint de l'API `/embeddings` retournera une réponse 404 et il sera masqué dans la documentation automatique Swagger.
 
-
-Vous pouvez accéder au swagger de l'API du modèle sur [http://localhost:8000/docs](http://localhost:8000/docs).
+Vous pouvez accéder au à la documentation automatique (Swagger) de l'API du modèle sur [http://localhost:8000/docs](http://localhost:8000/docs).
 
 * Sans GPU : GPT4all
 
@@ -64,7 +63,7 @@ Nous vous recommandons de configurer la variable d'environnement *POSTGRES_STORA
     docker compose --file ./databases/postgres/docker-compose.yml up --detach
     ```
 
-### Vector store (Elastic et Qdrant)
+### Vector stores (Elastic et Qdrant)
 
 Nous vous recommandons de configurer la variable d'environnement *QDRANT_STORAGE_DIR* et *ELASTIC_STORAGE_DIR* vers un repertoire local pour assurer une meilleure persistance des données.
 
