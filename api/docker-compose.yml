@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:  
+  api:
+    image: albert/api:latest
+    restart: always
+    environment:
+      - APP_VERSION=1.0.0
+      - LLM_TABLE="[('AgentPublic/albertlight-7b', 'http://localhost:8080')]"
+      - SECRET_KEY=changeme
+      - ELASTIC_HOST=elasticsearch
+      - ELASTIC_PORT=9200
+      - ELASTIC_PASSWORD=changeme
+      - QDRANT_HOST=qdrant
+      - QDRANT_GRPC_PORT=6334
+      - QDRANT_REST_PORT=6333
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_PORT=5432
+      - FIRST_ADMIN_USERNAME=admin
+      - FIRST_ADMIN_EMAIL=admin@changeme.com
+      - FIRST_ADMIN_PASSWORD=changeme
+      - MJ_API_KEY=changeme
+      - MJ_API_SECRET=changeme
+      - CONTACT_EMAIL=contact@changeme.com
+      - BACKEND_CORS_ORIGINS="*"
+      - API_WHITELIST_FILE=pyalbert/config/whitelist_config.json
+      - FRONT_URL=http://localhost:3000
+      - API_URL=http://localhost:8000
+    ports:
+      - 8000:8090
+
+  postgres:
+    image: postgres:16.0-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=changeme
+    ports:
+      - 5432:5432
+    volumes: 
+      - ./data/postgres:/var/lib/postgresql/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.1
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS="-Xms2g -Xmx2g"
+      - ELASTIC_USERNAME=elastic
+      - ELASTIC_PASSWORD=changeme
+    ports:
+      - 9200:9200
+    volumes:
+      - ./data/elastic:/usr/share/elasticsearch/data
+
+  qdrant:
+    image: qdrant/qdrant:v1.9.4-unprivileged # ref: https://qdrant.tech/documentation/guides/security/
+    restart: always
+    ports:
+      - 6333:6333
+      - 6334:6334
+    volumes:
+      - ./data/qdrant:/qdrant/storage
