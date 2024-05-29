@@ -2,7 +2,7 @@ import os
 import re
 from typing import Any
 
-from jinja2 import BaseLoader, Environment, meta
+from jinja2 import BaseLoader, Environment, Template, meta
 from requests.exceptions import RequestException
 
 from pyalbert.clients import AlbertClient
@@ -12,7 +12,7 @@ from pyalbert.lexicon import ACRONYMS
 
 class PromptTemplate:
     mode: str
-    template: str
+    template: Template
     variables: set[str]
     default: dict
     # Overwrite the default config
@@ -91,6 +91,7 @@ def prompts_from_llm_table(table: list[tuple]) -> dict[str, PromptConfig]:
             }
 
         templates[model_name] = {"config": config, "templates": prompt_templates}
+
     return templates
 
 
