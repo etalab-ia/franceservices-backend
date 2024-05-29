@@ -23,19 +23,19 @@ from pyalbert.prompt import get_prompter
 ################################################################################
 
 # Custom LLM_TABLE
-set_llm_table(
-    [
-        ("AgentPublic/albertlight-7b", "http://localhost:8082"),
-        ("AgentPublic/albertlight-8b", "http://localhost:8088"),
-    ]
-)
-default_model = "AgentPublic/albertlight-8b"
+# set_llm_table(
+#     [
+#         ("AgentPublic/llama3-instruct-8b", "http://localhost:8083"),
+#     ]
+# )
+default_model = "AgentPublic/llama3-instruct-8b"
 
 WELCOME = """Welcome to Albert chat
 type ".help" for more information.
 """
 
 HELP = {
+    ".conversation": 'Toggle the conversation mode.',
     ".mode": 'Change the mode (e.g ".mode rag", ".mode analysis"). Enter ".mode" to unset it.',
     ".format": 'Change the format of the prompt (e.g ".format chatml", ".format llama-chat"). Enter ".format" to unset it.',
     ".system": 'Change the system prompt. Enter ".system" to unset it.',
@@ -48,7 +48,7 @@ HELP = {
 model = default_model
 with_history = True
 mode = "rag"
-limit = 7
+limit = None
 history = []
 llm_client = LlmClient(model)
 debug_prompt = False
@@ -80,10 +80,11 @@ def custom_input(prompt, multiline_pattern=":::"):
 
 while True:
     # REPL
+    conv_sym = "c" if with_history else ">"
     if debug_prompt:
-        query = custom_input("(debug)>>> ")
+        query = custom_input(f"(debug){conv_sym}>> ")
     else:
-        query = custom_input(">>> ")
+        query = custom_input(f"{conv_sym}>> ")
     query = query.strip()
 
     if query == ".clear":
@@ -113,6 +114,9 @@ while True:
         for command, description in HELP.items():
             print(f"{command:<{max_length*3}} {description}")
         print()
+        continue
+    elif query.strip() == ".conversation":
+        with_history = not with_history
         continue
 
     # Make prompt replace the last user query by the prompt provided

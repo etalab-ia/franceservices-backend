@@ -26,3 +26,5 @@ llm_client = LlmClient(model)
 stream = llm_client.generate(prompt, temperature=20, stream=True)
 for c in stream:
     print(c, end="", flush=True)
+
+print()

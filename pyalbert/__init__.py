@@ -13,5 +13,6 @@ def collate_ix_name(name: str, version: str):
 
 
 def set_llm_table(llm_table: list[tuple]):
+    # Used by external script to declare custom LLM_TABLE
     LLM_TABLE.clear()
     LLM_TABLE.extend(llm_table)
