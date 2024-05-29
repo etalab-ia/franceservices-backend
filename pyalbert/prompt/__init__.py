@@ -12,4 +12,5 @@ from .prompt import (
     format_llama2chat_prompt,
     format_llama3chat_prompt,
     get_prompter,
+    prompts_from_llm_table,
 )
