@@ -82,10 +82,10 @@ else:  # default
 # The embedding model to target
 # @FUTURE: Use same format than the LLM_TABLE to support deploying multi model ?
 EMBEDDINGS_HOST = os.getenv("EMBEDDINGS_HOST", "localhost")
-EMBEDDING_PORT = os.getenv("EMBEDDINGS_PORT", "8005")
-EMBEDDING_URL = f"http://{EMBEDDINGS_HOST}:{EMBEDDING_PORT}"
-EMBEDDING_HF_REPO_ID = os.getenv("EMBEDDING_HF_REPO_ID", "intfloat/multilingual-e5-large")
-EMBEDDING_MODEL = (EMBEDDING_HF_REPO_ID, EMBEDDING_URL)
+EMBEDDINGS_PORT = os.getenv("EMBEDDINGS_PORT", "8005")
+EMBEDDINGS_URL = f"http://{EMBEDDINGS_HOST}:{EMBEDDINGS_PORT}"
+EMBEDDINGS_HF_REPO_ID = os.getenv("EMBEDDINGS_HF_REPO_ID", "intfloat/multilingual-e5-large")
+EMBEDDINGS_MODEL = (EMBEDDINGS_HF_REPO_ID, EMBEDDINGS_URL)
 
 # JWT token
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
@@ -104,4 +104,4 @@ if ENV == "unittest":
     PASSWORD_RESET_TOKEN_TTL = 3  # seconds
     ACCESS_TOKEN_TTL = 9  # seconds
 elif ENV == "dev":
-    API_ROUTE_VER = os.getenv("API_ROUTE_VER", API_ROUTE_VER)
+    API_ROUTE_VER = os.getenv("API_ROUTE_VER", "/")

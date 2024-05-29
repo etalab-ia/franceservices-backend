@@ -9,7 +9,7 @@ from pyalbert.config import (
     ACCESS_TOKEN_TTL,
     API_ROUTE_VER,
     API_URL,
-    EMBEDDING_MODEL,
+    EMBEDDINGS_MODEL,
     FIRST_ADMIN_PASSWORD,
     FIRST_ADMIN_USERNAME,
     LLM_TABLE,
@@ -206,9 +206,9 @@ class LlmClient:
         model: str | None = None,
         openai_format: bool = False,
     ) -> list[float] | list[list[float]] | dict:
-        # client = cls(*EMBEDDING_MODEL)  # let's see that later !
+        # client = cls(*EMBEDDINGS_MODEL)  # let's see that later !
         # url = client.url
-        model, url = EMBEDDING_MODEL
+        model, url = EMBEDDINGS_MODEL
         json_data = {"input": texts}
         if doc_type:
             json_data["doc_type"] = doc_type

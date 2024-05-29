@@ -52,17 +52,18 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from pyalbert.config import SHEET_SOURCES
 
-if __name__ == "__main__":
+
+def main():
     # Parse CLI arguments
     args = docopt(__doc__, version="0")
     debug = True if args["--debug"] else False
-    
+
     if args["create_whitelist"]:
         from pyalbert.whitelist import create_whitelist, download_directory
 
         # if --storage-dir is not provided, use default path /data/whitelist
         storage_dir = "/data/whitelist" if args["--storage-dir"] is None else args["--storage-dir"]
-      
+
         # @DEBUG: this modularity has side effect since the whiltelist path is hardcoded
         #         in the prompt.postprocessing module that uses this file...
         config_file = (
@@ -117,3 +118,6 @@ if __name__ == "__main__":
                 )
     else:
         raise NotImplementedError
+
+if __name__ == "__main__":
+    main()

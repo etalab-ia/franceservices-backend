@@ -100,8 +100,15 @@ clean_all_indexex: # not embeddings
 list_indexes:
 	# elasticsearch
 	curl -X GET "http://localhost:9202/_cat/indices?v"
+	# Show a doc payload
+	# curl -X GET "http://localhost:9202/index_name/_doc/{doc_id}
+	# 
 	# qdrant
 	curl -X GET "http://localhost:6333/collections" | jq 
+	# count point in a collection
+	# curl -X GET "http://localhost:6333/collections/{collection_name}"  | jq "{count:.result.points_count}"
+	# Show a point payload
+	# curl -X GET "http://localhost:6333/collections/{collection_name}/points/{point_id}" | jq ".result.payload"
 
 OSC_PROFILE="default" # Usage: make list_vms OSC_PROFILE="cloudgouv"
 VMID="i-3fcd96ff" # Usage: make get_vm VMID=i-bb5568c0
