@@ -25,7 +25,7 @@ You can access the automatic documentation (Swagger) of the model API at [http:/
 
 * Without GPU: GPT4all
 
-    If you don't have GPU, you will find in a [Dockerfile](../contrib/gpt4all/Dockerfile) to build the API image with GPT4All (instead of VLLM). This API is in the format of the previously described VLLM API but does not require the use of a GPU. However, this is maintained on a *best efforts* basis by the teams. Here are the current models available without GPU:
+    If you don't have GPU, you will find in a [Dockerfile](../../contrib/gpt4all/Dockerfile) to build the API image with GPT4All (instead of VLLM). This API is in the format of the previously described VLLM API but does not require the use of a GPU. However, this is maintained on a *best efforts* basis by the teams. Here are the current models available without GPU:
 
     - [AgentPublic/albert-tiny](https://huggingface.co/AgentPublic/albert-tiny)
 
