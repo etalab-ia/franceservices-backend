@@ -26,18 +26,22 @@ def download_rag_sources(storage_dir: str, config_file: str):
         print(f"Dowloading '{corpus_id}'...\n")
         last_name = corpus["url"].split("/")[-1]
         target = f"{storage_dir}/{corpus['output']}"
+        filename_tmp = f"{storage_dir}/temp_{last_name}"
+        if os.path.exists(filename_tmp):
+            os.remove(filename_tmp)
+
         try:
-            wget.download(corpus["url"], f"{storage_dir}/temp_{last_name}")
+            wget.download(corpus["url"], out=filename_tmp)
         except HTTPError as err:
             print(f"Error: {err}")
             print(f'Failed to fetch source {corpus_id} from {corpus["url"]}')
             continue
+
         if corpus.get("format"):
-            shutil.unpack_archive(
-                f"{storage_dir}/temp_{last_name}", extract_dir=target, format=corpus["format"]
-            )
+            shutil.move(target, target + ".backup")
+            shutil.unpack_archive(filename_tmp, extract_dir=target, format=corpus["format"])
         else:
-            shutil.move(f"{storage_dir}/temp_{last_name}", target)
+            shutil.move(filename_tmp, target)
         print()
 
     print("\nCorpus files successfuly downloaded")

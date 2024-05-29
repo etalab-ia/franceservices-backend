@@ -67,11 +67,11 @@
 
       python ./albert.py download_rag_sources
       python ./albert.py make_chunks --structured
-      python ./albert.py index experiences --index-type bm25
-      python ./albert.py index sheets --index-type bm25
-      python ./albert.py index chunks --index-type bm25
-      python ./albert.py index experiences --index-type e5
-      python ./albert.py index chunks --index-type e5
+      python ./albert.py index experiences --index-type bm25 --recreate
+      python ./albert.py index sheets --index-type bm25 --recreate
+      python ./albert.py index chunks --index-type bm25 --recreate
+      python ./albert.py index experiences --index-type e5 --recreate
+      python ./albert.py index chunks --index-type e5 --recreate
 
       deactivate
       rm -rf ~/${CI_JOB_ID}
