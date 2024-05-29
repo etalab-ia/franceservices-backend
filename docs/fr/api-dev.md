@@ -4,7 +4,7 @@
 
 ```bash
 cd api/
-ln -s $(pwd)/../pyalbert/pyalbert
+ln -s $(pwd)/../pyalbert
 pip install . pyalbert
 ```
 
