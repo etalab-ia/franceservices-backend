@@ -38,7 +38,8 @@ def download_rag_sources(storage_dir: str, config_file: str):
             continue
 
         if corpus.get("format"):
-            shutil.rmtree(target, target.rstrip("/") + ".backup")
+            if os.path.exists(target):
+                shutil.rmtree(target)
             shutil.unpack_archive(filename_tmp, extract_dir=target, format=corpus["format"])
         else:
             shutil.move(filename_tmp, target)
