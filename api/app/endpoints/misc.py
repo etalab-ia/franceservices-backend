@@ -6,6 +6,7 @@ from app.deps import get_current_user
 
 from pyalbert.config import APP_VERSION, LLM_TABLE
 from pyalbert.lexicon.institutions import INSTITUTIONS
+from pyalbert.prompt import prompts_from_llm_table
 
 router = APIRouter()
 
@@ -20,10 +21,11 @@ def get_healthcheck() -> dict[str, str]:
 # **********
 @router.get("/models", tags=["misc"])
 def get_models(
-    current_user: models.User = Depends(get_current_user),  # noqa
-) -> list[str]:
-    models = [model[0] for model in LLM_TABLE]
-    return JSONResponse(models)
+    current_user: models.User = Depends(get_current_user), response_model=dict[str, list[str]]
+) -> JSONResponse:
+    model_prompts = prompts_from_llm_table(LLM_TABLE)
+    model_prompts = {k: v for k, v in model_prompts.items() if [v.pop("templates")]}
+    return JSONResponse(model_prompts)
 
 
 # ****************
@@ -33,6 +35,6 @@ def get_models(
 
 @router.get("/institutions", tags=["misc"])
 def get_institutions(
-    current_user: models.User = Depends(get_current_user),  # noqa
-) -> list[str]:
+    current_user: models.User = Depends(get_current_user), response_model=list[str]
+) -> JSONResponse:
     return JSONResponse(INSTITUTIONS)
