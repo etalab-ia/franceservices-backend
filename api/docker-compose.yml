@@ -27,6 +27,9 @@ services:
       - API_WHITELIST_FILE=pyalbert/config/whitelist_config.json
       - FRONT_URL=http://localhost:3000
       - API_URL=http://localhost:8000
+      - EMBEDDINGS_HOST=http://localhost:8080
+      - EMBEDDINGS_PORT=8000
+      - EMBEDDINGS_HF_REPO_ID=intfloat/multilingual-e5-large
     ports:
       - 8000:8090
     depends_on:
