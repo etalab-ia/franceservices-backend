@@ -8,8 +8,14 @@ Les modèles Albert sont déployables avec [VLLM](https://docs.vllm.ai/en/latest
 
 * Build
 
+    Avec [VLLM](https://docs.vllm.ai/en/latest/) :
     ```bash
     docker build --tag albert/llm:latest --build-context pyalbert=./pyalbert --file ./llm/Dockerfile ./llm
+    ```
+
+    Avec GPT4All (dans le cas sans GPU) :
+    ```bash
+    docker build --tag albert/llm:latest --build-context pyalbert=./pyalbert --file ./contrib/gpt4all/Dockerfile ./contrib/gpt4all
     ```
 
 * Run
@@ -18,7 +24,7 @@ Les modèles Albert sont déployables avec [VLLM](https://docs.vllm.ai/en/latest
     docker compose --env-file ./llm/.env.example --file ./llm/docker-compose.yml up --detach
     ```
 
-    >  ⚠️ Si vous ne spécifiez pas de modèle d'embeddings le endpoint de l'API `/embeddings` retournera une réponse 404 et il sera masqué dans la documentation automatique Swagger.
+    > ⚠️ Si vous ne spécifiez pas de modèle d'embeddings le endpoint de l'API `/embeddings` retournera une réponse 404 et il sera masqué dans la documentation automatique Swagger.
 
 Vous pouvez accéder au à la documentation automatique (Swagger) de l'API du modèle sur [http://localhost:8000/docs](http://localhost:8000/docs).
 
@@ -37,7 +43,7 @@ Vous pouvez accéder au à la documentation automatique (Swagger) de l'API du mo
     ln -s $(pwd)/pyalbert llm/pyalbert
     ```
 
-* Run (exemple pour mettre en service un modéle d'Albert sur des paramètrages donnés)
+* Run (exemple pour mettre en service un modèle d'Albert sur des paramètrages donnés)
 
     ```bash
     python3 llm/app.py --llm-hf-repo-id AgentPublic/albertlight-8b --tensor-parallel-size 1 --gpu-memory-utilization 0.4 --models-dir ~/_models --host 0.0.0.0 --port 8088
