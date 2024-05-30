@@ -9,9 +9,15 @@ Albert models are deployable with [VLLM](https://docs.vllm.ai/en/latest/). We pr
 
 * Build
 
-```bash
-docker build --tag albert/llm:latest --build-context pyalbert=./pyalbert --file ./llm/Dockerfile ./llm
-```
+    With [VLLM](https://docs.vllm.ai/en/latest/):
+    ```bash
+    docker build --tag albert/llm:latest --build-context pyalbert=./pyalbert --file ./llm/Dockerfile ./llm
+    ```
+
+    With GPT4All (in the case without GPU):
+    ```bash
+    docker build --tag albert/llm:latest --build-context pyalbert=./pyalbert --file ./contrib/gpt4all/Dockerfile ./contrib/gpt4all
+    ```
 
 * Run
 
