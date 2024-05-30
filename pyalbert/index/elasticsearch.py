@@ -46,7 +46,7 @@ def create_bm25_index(index_name, add_doc=True, recreate=False, storage_dir=None
         }
         # Create the index
         if recreate:
-            client.indices.delete(index=ix_name)
+            client.indices.delete(index=ix_name, ignore_unavailable=True)
         client.indices.create(index=ix_name, mappings=mappings, settings=settings, ignore=400)
 
         if add_doc:
@@ -108,7 +108,7 @@ def create_bm25_index(index_name, add_doc=True, recreate=False, storage_dir=None
         }
         # Create the index
         if recreate:
-            client.indices.delete(index=ix_name)
+            client.indices.delete(index=ix_name, ignore_unavailable=True)
         client.indices.create(index=ix_name, mappings=mappings, settings=settings, ignore=400)
 
         if add_doc:
@@ -174,7 +174,7 @@ def create_bm25_index(index_name, add_doc=True, recreate=False, storage_dir=None
         }
         # Create the index
         if recreate:
-            client.indices.delete(index=ix_name)
+            client.indices.delete(index=ix_name, ignore_unavailable=True)
         client.indices.create(index=ix_name, mappings=mappings, settings=settings, ignore=400)
 
         if add_doc:
