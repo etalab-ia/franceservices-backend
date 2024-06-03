@@ -14,7 +14,7 @@
 Albert est un projet d'agents conversationnels (*large language models*, LLM) pour l'administration française, développé par les équipes du Datalab d'[Etalab](https://www.etalab.gouv.fr/) de la [Direction Interministérielle du Numérique (DINUM)](https://www.numerique.gouv.fr/dinum/). Pour toutes questions relatives à Albert, vous pouvez contacter l'équipe à l'adresse [etalab@modernisation.gouv.fr](etalab@modernisation.gouv.fr).
 
 Ce dépôt permet de déployer deux services :
-- les modèles *Albert* et leur API
+- les modèles *Albert* et leur API "LLM"
 
    > 💡 **Les différents modèles sont disponibles dans le dépôt HuggingFace [AgentPublic](https://huggingface.co/AgentPublic).**
 
@@ -30,12 +30,12 @@ Vous trouverez également d'autres dépôts liés à Albert :
 
 Vous trouverez l'ensemble de la documentation en français dans le dossier *[/docs/fr](./docs/fr/)* :
 * [Installation](/docs/fr/installation.md)
-* [Pour lancer l'API Albert en local (dev mode)](/docs/fr/api-dev.md)
 * [Pour obtenir un jeton d'accès à l'API Albert](/docs/fr/api-token.md)
 * [Bases de données](/docs/fr/databases.md)
-* [Modèles supportés](/docs/fr/modeles.md)
+* [Modèles supportés](/docs/fr/models.md)
 * [Pour configurer les templates de prompt](/docs/en/prompt.md)
 * [PyAlbert](/docs/fr/pyalbert.md)
+* [Pour contribuer au projet](/docs/fr/contributing.md)
 
 ## Wiki
 
@@ -51,17 +51,7 @@ git clone https://github.com/etalab-ia/albert.git
 
 ## Contribuer au projet
 
-Le projet est en open source, sous [licence MIT](LICENCE). Toutes les contributions sont bienvenues, sous forme de pull requests ou d'ouvertures d'issues sur le repo officiel [GitHub](https://github.com/etalab-ia/albert).
-
-Avant de contribuer au dépôt, il est nécessaire d'initialiser les _hooks_ de _pre-commit_ :
-```bash
-pre-commit install
-```
-
-Si vous ne pouvez pas utiliser de pre-commit, il est nécessaire de formatter, linter et trier les imports avec [Ruff](https://docs.astral.sh/ruff/) avant chaque commit :
-```bash
-ruff check --fix --select I .
-```
+Consulter [la documentation dédiée](/docs/fr/contributing.md).
 
 ---
 
@@ -92,12 +82,12 @@ You will also find other repositories related to Albert:
 
 You will find all the documentation in Engligh in the folder *[/docs/en](./docs/en/)*:
 * [Installation](/docs/en/installation.md)
-* [To run the Albert API locally (dev mode)](/docs/en/api-dev.md)
 * [To get an access token for the Albert API](/docs/en/api-token.md)
 * [Databases](/docs/en/databases.md)
-* [Supported models](/docs/en/modeles.md)
+* [Supported models](/docs/en/models.md)
 * [To configure prompts templates](/docs/en/prompt.md)
 * [PyAlbert](/docs/en/pyalbert.md)
+* [To contribute to the project](/docs/en/contributing.md)
 
 ## Wiki
 
@@ -113,16 +103,6 @@ git clone https://github.com/etalab-ia/albert.git
 
 ## Contributing
 
-The project is open source, under the [MIT license](LICENCE). All contributions are welcome, in the form of pull requests or issue openings on [GitHub](https://github.com/etalab-ia/albert).
-
-Before contributing to the repository, it is necessary to initialize the pre-commit hooks:
-```bash
-pre-commit install
-```
-
-If you cannot use pre-commit, it is necessary to format, lint, and sort imports with [Ruff](https://docs.astral.sh/ruff/) before committing:
-```bash
-ruff check --fix --select I .
-```
+Follow [the dedicated documentation](/docs/en/contributing.md).
 
 </details>
