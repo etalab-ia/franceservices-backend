@@ -22,26 +22,26 @@ When the API is run from Docker, this command is automatically executed when the
 
 ### Backing up a PostgreSQL Database
 
-After deploying the Postgres container, you can back up the database with the following command:
+You can back up the database with the following command:
 ```bash
-PGPASSWORD=<password> pg_dump --username postgres --data-only postgres" > my_dump.dump
+PGPASSWORD=<password> pg_dump postgres -Fc --username postgres" > my_dump.dump
 ```
 ...or, if you are using Docker:
 ```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump --username postgres --data-only postgres" > my_dump.dump
-```
-
-If you want to export the database schemas (in case you also want to rebuild the database), you can omit the `--data-only` option from the `pg_dump` command:
-```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump --username postgres postgres" > my_dump.dump
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump postgres -Fc --username postgres" > my_dump.dump
 ```
 
 ### Restoring a Postgres Database
 
-After deploying the Postgres container, you can restore the database from a dump with the following command:
-
+You can restore the database from a dump with the following command:
 ```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> psql --username postgres postgres" < my_dump.dump
+PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --clean --if-exists my_dump.dump
+```
+But be careful, this command will delete all existing data in the database and replace it with the dump data.
+
+...or, if you are using Docker:
+```bash
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --clean --if-exists my_dump.dump
 ```
 
 ## Vector stores: Elasticsearch et Qdrant

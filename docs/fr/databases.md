@@ -21,25 +21,26 @@ Lorsque l'API est lancée depuis Docker, cette commande est automatiquement exé
 
 ### Sauvegarder une base de données PostgreSQL
 
-Après avoir déployé le container Postgres, vous pouvez sauvegarder les données de la base de données avec la commande suivante :
+Vous pouvez sauvegarder les données de la base de données avec la commande suivante :
 ```bash
-PGPASSWORD=<password> pg_dump --username postgres --data-only postgres" > my_dump.dump
+PGPASSWORD=<password> pg_dump postgres -Fc --username postgres" > my_dump.dump
 ```
 ...ou, si vous utilisez Docker :
 ```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump --username postgres --data-only postgres" > my_dump.dump
-```
-
-Si vous souhaitez exporter les schémas de la base de données (dans le cas où vous souhaitez également reconstruire la base de données), vous pouvez omettre l'option `--data-only` de la commande `pg_dump` :
-```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump --username postgres postgres" > my_dump.dump
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump postgres -Fc --username postgres" > my_dump.dump
 ```
 
 ### Restaurer une base PostgreSQL à partir d'un dump de sauvegarde
 
-Après avoir déployé le container Postgres, vous pouvez restaurer la base à partir d'un dump avec la commande suivante :
+Vous pouvez restaurer la base à partir d'un dump avec la commande suivante :
 ```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> psql --username postgres postgres" < my_dump.dump
+PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --clean --if-exists my_dump.dump
+```
+Attention, cette commande supprimera toutes les données existantes dans la base de données et les remplacera par celles du dump.
+
+...ou, si vous utilisez Docker :
+```bash
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --clean --if-exists my_dump.dump
 ```
 
 ## Vector stores : Elasticsearch et Qdrant
