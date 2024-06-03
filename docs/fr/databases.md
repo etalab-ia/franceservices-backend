@@ -17,25 +17,35 @@ Après avoir déployé le container Postgres, pour créer ou mettre à jour les 
 ```bash
 PYTHONPATH=. alembic upgrade head
 ```
+Lorsque l'API est lancée depuis Docker, cette commande est automatiquement exécutée lors du démarrage de l'API depuis le fichier `api/start.sh` appelé par le fichier `api/Dockerfile`.
 
 ### Sauvegarder une base de données PostgreSQL
 
-Après avoir déployé le container Postgres, vous pouvez sauvegarder la base de données avec la commande suivante :
+Après avoir déployé le container Postgres, vous pouvez sauvegarder les données de la base de données avec la commande suivante :
 ```bash
-docker exec -i postgres-postgres-1 /bin/bash -c "PGPASSWORD=<password> pg_dump --username postgres postgres" > my_dump.dump
+PGPASSWORD=<password> pg_dump --username postgres --data-only postgres" > my_dump.dump
+```
+...ou, si vous utilisez Docker :
+```bash
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump --username postgres --data-only postgres" > my_dump.dump
+```
+
+Si vous souhaitez exporter les schémas de la base de données (dans le cas où vous souhaitez également reconstruire la base de données), vous pouvez omettre l'option `--data-only` de la commande `pg_dump` :
+```bash
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump --username postgres postgres" > my_dump.dump
 ```
 
 ### Restaurer une base PostgreSQL à partir d'un dump de sauvegarde
 
 Après avoir déployé le container Postgres, vous pouvez restaurer la base à partir d'un dump avec la commande suivante :
 ```bash
-docker exec -i postgres-postgres-1 /bin/bash -c "PGPASSWORD=<password> psql --username postgres postgres" < my_dump.dump
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> psql --username postgres postgres" < my_dump.dump
 ```
 
-## Vector stores: Elastic et Qdrant
+## Vector stores : Elasticsearch et Qdrant
 
 Pour alimenter les modèles à des bases de connaissances ([Retrieval Augmented Generation, RAG](https://en.wikipedia.org/wiki/Prompt_engineering#Retrieval-augmented_generation)), deux bases de données sont à déployer :
-- une base Elasticsearch, qui stocke les corpus de documents et les chunks de ces documents
-- une base de données Qdrant, la base vectorielle qui stocke les vecteurs d'embeddings
+- une base [Elasticsearch](https://www.elastic.co/), qui stocke les corpus de documents et les chunks de ces documents
+- une base de données [Qdrant](https://qdrant.tech/) , la base vectorielle qui stocke les vecteurs d'embeddings
 
-Pour savoir comme les installer, référez-vous à la documentation [installation.md](installation.md).
+Pour savoir comment les installer, référez-vous à la [documentation sur l'installation](installation.md#vector-stores-elasticsearch-et-qdrant).

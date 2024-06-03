@@ -2,7 +2,7 @@
 
 Ce document vous guide à travers les étapes pour obtenir et gérer vos jetons d'accès pour l'API Albert.
 
-> *Pré-requis* : vous devez avoir unc ompte utilisateur sur l'API Albert concernée pour obtenir un jeton d'accès.
+> *Pré-requis* : vous devez avoir un compte utilisateur sur l'API Albert concernée pour obtenir un jeton d'accès.
 
 ### Étape 1 : Obtenir une clé d'API temporaire
 

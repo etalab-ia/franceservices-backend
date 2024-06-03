@@ -18,12 +18,22 @@ When the API is run in development mode, an SQLite database is used instead of t
 ```bash
 PYTHONPATH=. alembic upgrade head
 ```
+When the API is run from Docker, this command is automatically executed when the API starts from the `api/start.sh` file called by the `api/Dockerfile`.
 
 ### Backing up a PostgreSQL Database
 
 After deploying the Postgres container, you can back up the database with the following command:
 ```bash
-docker exec -i postgres-postgres-1 /bin/bash -c "PGPASSWORD=<password> pg_dump --username postgres postgres" > my_dump.dump
+PGPASSWORD=<password> pg_dump --username postgres --data-only postgres" > my_dump.dump
+```
+...or, if you are using Docker:
+```bash
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump --username postgres --data-only postgres" > my_dump.dump
+```
+
+If you want to export the database schemas (in case you also want to rebuild the database), you can omit the `--data-only` option from the `pg_dump` command:
+```bash
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump --username postgres postgres" > my_dump.dump
 ```
 
 ### Restoring a Postgres Database
@@ -31,13 +41,13 @@ docker exec -i postgres-postgres-1 /bin/bash -c "PGPASSWORD=<password> pg_dump -
 After deploying the Postgres container, you can restore the database from a dump with the following command:
 
 ```bash
-docker exec -i postgres-postgres-1 /bin/bash -c "PGPASSWORD=<password> psql --username postgres postgres" < my_dump.dump
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> psql --username postgres postgres" < my_dump.dump
 ```
 
-## Vector stores: Elastic et Qdrant
+## Vector stores: Elasticsearch et Qdrant
 
 To feed models with knowledge bases ([Retrieval Augmented Generation, RAG](https://en.wikipedia.org/wiki/Prompt_engineering#Retrieval-augmented_generation)), two databases need to be deployed:
-- an Elasticsearch database, which stores document corpuses and chunks of these documents
-- a Qdrant database, the vector store that holds embedding vectors
+- an [Elasticsearch](https://www.elastic.co/) database, which stores document corpuses and chunks of these documents
+- a [Qdrant](https://qdrant.tech/) database, the vector store that holds embedding vectors
 
-To know how to install them, refer to the documentation [installation.md](installation.md).
+To install them, follow the [installation documentation](installation.md#vector-stores-elasticsearch-and-qdrant).

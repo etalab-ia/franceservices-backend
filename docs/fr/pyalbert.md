@@ -18,7 +18,7 @@ pyalbert create_whitelist
 pyalbert make_chunks --structured
 ```
 
-### Créer les index de la base de données ElasticSearch qui contient les sources de données pour le RAG :
+### Créer les index de la base de données Elasticsearch qui contient les sources de données pour le RAG :
 ```bash
 pyalbert index experiences --index-type bm25
 pyalbert index sheets      --index-type bm25
