@@ -35,7 +35,7 @@ type ".help" for more information.
 """
 
 HELP = {
-    ".conversation": 'Toggle the conversation mode.',
+    ".conversation": "Toggle the conversation mode.",
     ".mode": 'Change the mode (e.g ".mode rag", ".mode analysis"). Enter ".mode" to unset it.',
     ".format": 'Change the format of the prompt (e.g ".format chatml", ".format llama-chat"). Enter ".format" to unset it.',
     ".system": 'Change the system prompt. Enter ".system" to unset it.',

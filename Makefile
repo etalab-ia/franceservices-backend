@@ -42,6 +42,11 @@ download_travailemploie_sheets:
 institutions:
 	cat _data/export-expa-c-riences.json  | jq  'map(.intitule_typologie_1) | unique | map(select(. != null))' > _data/institutions.json
 
+mfs_organizations:
+	wget https://www.data.gouv.fr/fr/datasets/r/afc3f97f-0ef5-429b-bf16-7b7876d27cd4 -O _data/liste-mfs.csv
+	cat _data/liste-mfs.csv | grep '^"[0-9]*"' | awk -v FPAT='([^,]+)|(\"[^\"]+\")' '{print "{\"id\":"$$1", \"name\":"$$3"}"}' | jq -s > _data/liste-mfs.json
+	rm -f _data/liste-mfs.csv
+
 acronyms_directory:
 	@# ->  acronyms_directory.text
 	@rg '"nom"'  _data/directory/national_data_directory.json | grep ')",$$' | cut -d: -f 2 | grep -oP '(?<=\").*(?=\")' | grep -E '\([A-Z0-9][0-9a-zA-Z]{2,}\)' | sort | uniq
@@ -50,7 +55,7 @@ acronyms_sp:
 	@# ->  acronyms_sp.text
 	@find -iname "*.xml" | xargs xmllint --xpath "//*[name()='OuSAdresser']/Titre/text() | //Fiche//Titre/text()" 2>/dev/null | grep -oE '.*\([A-Z0-9][0-9a-zA-Z]{2,}\)' | sort | uniq
 
-acronyms: #acronyms_directory acronyms_sp
+acronyms: acronyms_directory acronyms_sp
 	# filter lines with more than one acronym
 	cat acronyms_sp.txt acronyms_directory.txt > acronyms.txt
 	cat acronyms.txt | sort | uniq > acronyms.1.txt
@@ -63,6 +68,11 @@ acronyms: #acronyms_directory acronyms_sp
 	# @todo:delete: CES, BUDGET, Sacem, CIO, Inee, CDC
 	# @todo:add: CNI
 	# ./script/acronyms_to_json.py
+
+update_lexicon: acronyms institutions mfs_organizations
+	python pyalbert/utils/acronyms_to_json.py
+	pyalbert/utils/create_python_file.sh "# DO NOT EDIT" "INSTITUTIONS" _data/liste-mfs.json pyalbert/lexicon/institutions.py
+	pyalbert/utils/create_python_file.sh "# DO NOT EDIT" "MFS_ORGANIZATIONS" _data/liste-mfs.json pyalbert/lexicon/mfs_organizations.py
 
 build_llama.cpp:
 	git clone https://github.com/ggerganov/llama.cpp

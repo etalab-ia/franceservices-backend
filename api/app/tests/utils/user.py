@@ -5,15 +5,16 @@ def read_pending_users(client: TestClient, token):
     return client.get("/users/pending", headers={"Authorization": f"Bearer {token}"})
 
 
-def create_user_me(client: TestClient, username, email, password):
-    return client.post(
-        "/user/me",
-        json={
-            "username": username,
-            "email": email,
-            "password": password,
-        },
-    )
+def create_user_me(client: TestClient, username, email, password, **kwargs):
+    data = {
+        "username": username,
+        "email": email,
+        "password": password,
+    }
+    if kwargs:
+        data.update(kwargs)
+
+    return client.post("/user/me", json=data)
 
 
 def read_user_me(client: TestClient, token):

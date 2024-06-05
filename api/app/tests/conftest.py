@@ -50,7 +50,6 @@ def start_mock_server(command, health_route="/healthcheck", timeout=10, interval
     return process
 
 
-
 #
 # API mockups
 #
