@@ -6,6 +6,7 @@ from app.deps import get_current_user
 
 from pyalbert.config import APP_VERSION, LLM_TABLE
 from pyalbert.lexicon.institutions import INSTITUTIONS
+from pyalbert.lexicon.mfs_organizations import MFS_ORGANIZATIONS
 from pyalbert.prompt import prompts_from_llm_table
 
 router = APIRouter()
@@ -38,3 +39,15 @@ def get_institutions(
     current_user: models.User = Depends(get_current_user), response_model=list[str]
 ) -> JSONResponse:
     return JSONResponse(INSTITUTIONS)
+
+
+# *****************
+# * Organizations *
+# *****************
+
+
+@router.get("/organizations/mfs", tags=["misc"])
+def get_mfs_organizations(
+    current_user: models.User = Depends(get_current_user), response_model=list[dict]
+) -> JSONResponse:
+    return JSONResponse(MFS_ORGANIZATIONS)

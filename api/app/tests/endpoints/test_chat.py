@@ -1,10 +1,8 @@
-import pytest
-from fastapi.testclient import TestClient
-
 import app.tests.utils.chat as chat
 import app.tests.utils.login as login
+import pytest
 from app.tests.test_api import TestApi
-
+from fastapi.testclient import TestClient
 from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
 

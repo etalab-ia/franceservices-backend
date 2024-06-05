@@ -1,11 +1,9 @@
 import json
 
-from fastapi.testclient import TestClient
-
 import app.tests.utils.login as login
 import app.tests.utils.user as user
 from app.tests.test_api import TestApi
-
+from fastapi.testclient import TestClient
 from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
 
@@ -52,6 +50,37 @@ class TestEndpointsUser(TestApi):
 
         response = user.create_user_me(
             client, "jean.dupont", "jean.dupont@test.fr", "Abcdef123456#+=._-@"
+        )
+        assert response.status_code == 200
+
+    def test_form_errors(self, client: TestClient):
+        response = user.create_user_me(
+            client,
+            "jean.dupont",
+            "jean.dupont@test.fr",
+            "Abcdef123456#+=._-@",
+            organization_id="",
+            organization_name="",
+        )
+        assert response.status_code == 422
+
+        response = user.create_user_me(
+            client,
+            "jean.dupont",
+            "jean.dupont@test.fr",
+            "Abcdef123456#+=._-@",
+            organization_id="2",
+            organization_name="2",
+        )
+        assert response.status_code == 422
+
+        response = user.create_user_me(
+            client,
+            "jean.dupont",
+            "jean.dupont@test.fr",
+            "Abcdef123456#+=._-@",
+            organization_id="2",
+            organization_name="France services La Poste de Saint-Trivier-de-Courtes",
         )
         assert response.status_code == 200
 
