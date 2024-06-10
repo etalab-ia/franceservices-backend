@@ -23,24 +23,34 @@ Lorsque l'API est lancée depuis Docker, cette commande est automatiquement exé
 
 Vous pouvez sauvegarder les données de la base de données avec la commande suivante :
 ```bash
-PGPASSWORD=<password> pg_dump postgres -Fc --username postgres" > my_dump.dump
+PGPASSWORD=<password> pg_dump postgres -Fc --data-only --on-conflict-do-nothing --inserts --username postgres" > my_dump.dump
 ```
 ...ou, si vous utilisez Docker :
 ```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump postgres -Fc --username postgres" > my_dump.dump
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump postgres -Fc --data-only --on-conflict-do-nothing --inserts --username postgres" > my_dump.dump
 ```
 
 ### Restaurer une base PostgreSQL à partir d'un dump de sauvegarde
 
 Vous pouvez restaurer la base à partir d'un dump avec la commande suivante :
 ```bash
-PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --clean --if-exists my_dump.dump
+PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --data-only my_dump.dump
 ```
-Attention, cette commande supprimera toutes les données existantes dans la base de données et les remplacera par celles du dump.
-
 ...ou, si vous utilisez Docker :
 ```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --clean --if-exists my_dump.dump
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --data-only my_dump.dump
+```
+
+En cas d'erreur du type `sqlalchemy.exc.IntegrityError: (psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint "streams_pkey")` après un processus de restauration de base, vous pouvez réinitialiser les séquences pour chaque table qui possède une clef primaire à incrémentation automatique avec la commande suivante :
+```bash
+PGPASSWORD=<password> psql --username postgres --dbname postgres -c "
+SELECT setval('api_tokens_id_seq', COALESCE((SELECT MAX(id)+1 FROM api_tokens), 1), false);
+SELECT setval('chats_id_seq', COALESCE((SELECT MAX(id)+1 FROM chats), 1), false);
+SELECT setval('feedbacks_id_seq', COALESCE((SELECT MAX(id)+1 FROM feedbacks), 1), false);
+SELECT setval('password_reset_tokens_id_seq', COALESCE((SELECT MAX(id)+1 FROM password_reset_tokens), 1), false);
+SELECT setval('sources_id_seq', COALESCE((SELECT MAX(id)+1 FROM sources), 1), false);
+SELECT setval('streams_id_seq', COALESCE((SELECT MAX(id)+1 FROM streams), 1), false);
+SELECT setval('users_id_seq', COALESCE((SELECT MAX(id)+1 FROM users), 1), false);"
 ```
 
 ## Vector stores : Elasticsearch et Qdrant

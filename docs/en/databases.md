@@ -24,24 +24,34 @@ When the API is run from Docker, this command is automatically executed when the
 
 You can back up the database with the following command:
 ```bash
-PGPASSWORD=<password> pg_dump postgres -Fc --username postgres" > my_dump.dump
+PGPASSWORD=<password> pg_dump postgres -Fc --data-only --on-conflict-do-nothing --inserts --username postgres" > my_dump.dump
 ```
 ...or, if you are using Docker:
 ```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump postgres -Fc --username postgres" > my_dump.dump
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump postgres -Fc --data-only --on-conflict-do-nothing --inserts --username postgres" > my_dump.dump
 ```
 
 ### Restoring a Postgres Database
 
 You can restore the database from a dump with the following command:
 ```bash
-PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --clean --if-exists my_dump.dump
+PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --data-only my_dump.dump
 ```
-But be careful, this command will delete all existing data in the database and replace it with the dump data.
-
 ...or, if you are using Docker:
 ```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --clean --if-exists my_dump.dump
+docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --data-only my_dump.dump
+```
+
+In case of an error like `sqlalchemy.exc.IntegrityError: (psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint "streams_pkey")` after a database restoration process, you can reset the sequences for each table that has an auto-incrementing primary key with the following command:
+```bash
+PGPASSWORD=<password> psql --username postgres --dbname postgres -c "
+SELECT setval('api_tokens_id_seq', COALESCE((SELECT MAX(id)+1 FROM api_tokens), 1), false);
+SELECT setval('chats_id_seq', COALESCE((SELECT MAX(id)+1 FROM chats), 1), false);
+SELECT setval('feedbacks_id_seq', COALESCE((SELECT MAX(id)+1 FROM feedbacks), 1), false);
+SELECT setval('password_reset_tokens_id_seq', COALESCE((SELECT MAX(id)+1 FROM password_reset_tokens), 1), false);
+SELECT setval('sources_id_seq', COALESCE((SELECT MAX(id)+1 FROM sources), 1), false);
+SELECT setval('streams_id_seq', COALESCE((SELECT MAX(id)+1 FROM streams), 1), false);
+SELECT setval('users_id_seq', COALESCE((SELECT MAX(id)+1 FROM users), 1), false);"
 ```
 
 ## Vector stores: Elasticsearch et Qdrant
