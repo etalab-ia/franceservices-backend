@@ -27,7 +27,7 @@ PGPASSWORD=<password> pg_dump postgres -Fc --data-only --on-conflict-do-nothing 
 ```
 ...ou, si vous utilisez Docker :
 ```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_dump postgres -Fc --data-only --on-conflict-do-nothing --inserts --username postgres" > my_dump.dump
+docker exec -i <postgres-container-name> pg_dump postgres -Fc --data-only --on-conflict-do-nothing --inserts --username postgres > my_dump.dump
 ```
 
 ### Restaurer une base PostgreSQL à partir d'un dump de sauvegarde
@@ -38,7 +38,7 @@ PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-
 ```
 ...ou, si vous utilisez Docker :
 ```bash
-docker exec -i <postgres-container-name> /bin/bash -c "PGPASSWORD=<password> pg_restore --username postgres --dbname postgres --single-transaction --data-only my_dump.dump
+docker exec -i <postgres-container-name> pg_restore -v --single-transaction --data-only --username postgres --dbname postgres < my_dump.dump
 ```
 
 En cas d'erreur du type `sqlalchemy.exc.IntegrityError: (psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint "streams_pkey")` après un processus de restauration de base, vous pouvez réinitialiser les séquences pour chaque table qui possède une clef primaire à incrémentation automatique avec la commande suivante :
