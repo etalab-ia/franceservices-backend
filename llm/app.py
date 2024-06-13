@@ -34,12 +34,15 @@ parser.add_argument("--embeddings-hf-repo-id", type=str, default=None, nargs='?'
 parser.add_argument("--llm-hf-repo-id", type=str, required=True, help="Hugging Face repository ID for llm model.")  # fmt: off
 parser.add_argument("--root-path", type=str, default=None, help="FastAPI root_path when app is behind a path based routing proxy.")  # fmt: off
 parser.add_argument("--force-download", action="store_true", default=False, help="Force download of model files when API startups.")  # fmt: off
+parser.add_argument("--local-files-only", action="store_true", default=False, help="Use only local files for model files.")  # fmt: off
+parser.add_argument("--max-workers", type=int, default=8, help="Number of workers for the API.")
 parser.add_argument("--debug", action="store_true", default=False, help="Print debug logs.")
 
 parser = AsyncEngineArgs.add_cli_args(parser)
 args = parser.parse_args()
 
 TIMEOUT_KEEP_ALIVE = 10  # seconds.
+TIMEOUT_DOWNLOAD = 60  # seconds.
 WITH_GPU = True if torch.cuda.is_available() else False
 WITH_EMBEDDINGS = True if args.embeddings_hf_repo_id else False
 BATCH_SIZE_MAX = 10
@@ -64,16 +67,14 @@ async def download_and_run_models(app: FastAPI):
             "local_dir": model_storage_dir,
             "force_download": args.force_download,
             "cache_dir": model_storage_dir,
+            "etag_timeout": TIMEOUT_DOWNLOAD,
+            "local_files_only": args.local_files_only,
+            "max_workers": args.max_workers,
             "token": HF_API_TOKEN,
         }
 
-        try:
-            logger.info(f"downloading {args.embeddings_hf_repo_id} in {model_storage_dir}...")
-            snapshot_download(**params)
-        except Exception:
-            shutil.rmtree(model_storage_dir)
-            logger.error(traceback.print_exc())
-            exit(1)
+        logger.info(f"downloading {args.embeddings_hf_repo_id} in {model_storage_dir}...")
+        snapshot_download(**params)
 
     # download llm model
     model_storage_dir = os.path.join(args.models_dir, args.llm_hf_repo_id)
@@ -84,16 +85,16 @@ async def download_and_run_models(app: FastAPI):
         "local_dir": model_storage_dir,
         "force_download": args.force_download,
         "cache_dir": model_storage_dir,
+        "etag_timeout": TIMEOUT_DOWNLOAD,
+        "local_files_only": args.local_files_only,
+        "max_workers": args.max_workers,
         "token": HF_API_TOKEN,
     }
 
-    try:
-        logger.info(f"downloading {args.llm_hf_repo_id}... in {model_storage_dir}")
-        snapshot_download(**params)
-    except Exception:
-        shutil.rmtree(model_storage_dir)
-        logger.error(traceback.print_exc())
-        exit(1)
+
+
+    logger.info(f"downloading {args.llm_hf_repo_id}... in {model_storage_dir}")
+    snapshot_download(**params)
 
     if WITH_EMBEDDINGS:
         # run the embeddings model
