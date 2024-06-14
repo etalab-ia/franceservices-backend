@@ -23,11 +23,7 @@ from pyalbert.prompt import get_prompter
 ################################################################################
 
 # Custom LLM_TABLE
-# set_llm_table(
-#     [
-#         ("AgentPublic/llama3-instruct-8b", "http://localhost:8083"),
-#     ]
-# )
+#set_llm_table([{"model": "AgentPublic/llama3-instruct-8b", "url": "http://localhost:8083"}])
 default_model = "AgentPublic/llama3-instruct-8b"
 
 WELCOME = """Welcome to Albert chat

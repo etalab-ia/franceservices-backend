@@ -26,6 +26,23 @@ cache:
 ################# TEST #####################
 ############################################
 
+
+test:pyalbert:
+  stage: test
+  image: python:3.10-slim
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "staging" ||$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
+      changes:
+        - "pyalbert/**/*.py"
+      when: always
+  before_script:
+  - |
+    python -m venv venv
+    source venv/bin/activate
+    pip install --cache-dir .cache/pip .[test]
+  script:
+    - pytest -W ignore
+
 test:api:
   stage: test
   image: python:3.10-slim
@@ -36,16 +53,14 @@ test:api:
         - "api/app/**/*.py"
         - "api/pyproject.toml"
         - "pyalbert/**/*.py"
-        - "pyalbert/pyproject.toml"
       when: always
   before_script:
   - |
     python -m venv venv
     source venv/bin/activate
     pip install --cache-dir .cache/pip api/.[test]
-    pip install --cache-dir .cache/pip pyalbert/.
   script:
-    - cp -r pyalbert api/ && cd api/ && pytest -W ignore app/tests/
+    - cd api/ && pytest -W ignore app/tests/
 
 ############################################
 ################# DATABASE #################
@@ -109,7 +124,7 @@ build:llm:
     IMAGE_TAG: "$CI_LLM_IMAGE_TAG"
     IMAGE_NAME: "${CI_REGISTRY_IMAGE}/llm"
     BUILD_CONTEXT: "./llm"
-    BUILD_ARGS: "--build-context pyalbert=./pyalbert --file ./llm/Dockerfile"
+    BUILD_ARGS: "--file ./llm/Dockerfile"
   extends: .build_template
 
 deploy:llm:dinum:
@@ -147,7 +162,7 @@ build:api:
     IMAGE_TAG: "$CI_API_IMAGE_TAG"
     IMAGE_NAME: "${CI_REGISTRY_IMAGE}/api"
     BUILD_CONTEXT: "./api"
-    BUILD_ARGS: "--build-context pyalbert=./pyalbert --file ./api/Dockerfile"
+    BUILD_ARGS: "--file ./api/Dockerfile"
   extends: .build_template
 
 ################## DINUM ###################
@@ -169,6 +184,7 @@ setup:postprocessing:dinum:
     - | # send pyalbert files to remote server
       mkdir -p ./${CI_JOB_ID}/venv
       cp -r ./pyalbert ./${CI_JOB_ID}
+      cp ./pyproject.toml ./${CI_JOB_ID}/pyalbert/
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # download model on remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "
@@ -233,6 +249,7 @@ setup:postprocessing:france services:
     - | # send pyalbert files to remote server
       mkdir -p ./${CI_JOB_ID}/venv
       cp -r ./pyalbert ./${CI_JOB_ID}
+      cp ./pyproject.toml ./${CI_JOB_ID}/pyalbert/
       scp -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no -r ./${CI_JOB_ID} ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST}:/home/${CI_DEPLOY_USER}/${CI_JOB_ID}
     - | # download model on remote server
       ssh -i $CI_DEPLOY_USER_SSH_PRIVATE_KEY -o StrictHostKeyChecking=no ${CI_DEPLOY_USER}@${CI_DEPLOY_HOST} "

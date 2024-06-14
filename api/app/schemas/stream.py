@@ -65,7 +65,7 @@ class StreamBase(BaseModel):
         #         raise ValueError("Incompatible mode")
         #     if self.mode is None:
         #         self.mode = "rag"  # default
-        if self.model_name not in [m[0] for m in LLM_TABLE]:
+        if self.model_name not in [m["model"] for m in LLM_TABLE]:
             raise ValueError("Unknown model: %s" % self.model_name)
 
         # For SQLAlchemy relationship compatibility
