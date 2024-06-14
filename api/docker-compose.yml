@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       - APP_VERSION=1.0.0
-      - LLM_TABLE="[('AgentPublic/albertlight-7b', 'http://localhost:8080')]"
+      - MODELS_URLS="['http://localhost:8080']"
       - SECRET_KEY=changeme
       - ELASTIC_HOST=elasticsearch
       - ELASTIC_PORT=9200
@@ -27,9 +27,6 @@ services:
       - API_WHITELIST_FILE=pyalbert/config/whitelist_config.json
       - FRONT_URL=http://localhost:3000
       - API_URL=http://localhost:8000
-      - EMBEDDINGS_HOST=http://localhost:8080
-      - EMBEDDINGS_PORT=8000
-      - EMBEDDINGS_HF_REPO_ID=intfloat/multilingual-e5-large
     ports:
       - 8000:8090
     depends_on:

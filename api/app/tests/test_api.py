@@ -16,9 +16,10 @@ from app.mockups.mailjet_mockup import remove_mailjet_folder
 from pyalbert.clients import AlbertClient, LlmClient
 from pyalbert.config import LLM_TABLE
 
-LLM_NAME = ""
+# Mocked-up model name
+MODEL_NAME = ""
 if len(LLM_TABLE) > 0:
-    LLM_NAME = LLM_TABLE[0][0]
+    MODEL_NAME = LLM_TABLE[0]["model"]
 
 
 def _assert(response):
@@ -73,7 +74,7 @@ def _load_case(name, path="cases"):
 
 
 class TestApi:
-    llm_name = LLM_NAME
+    model_name = MODEL_NAME
 
     def setup_method(self):
         Base.metadata.drop_all(bind=engine)

@@ -27,7 +27,7 @@ class PromptConfig:
     templates: dict[str, PromptTemplate] | None
 
 
-def prompts_from_llm_table(table: list[tuple]) -> dict[str, PromptConfig]:
+def prompts_from_llm_table(table: list[dict]) -> dict[str, PromptConfig]:
     sampling_params_supported = [
         "temperature",
         "max_tokens",
@@ -42,7 +42,9 @@ def prompts_from_llm_table(table: list[tuple]) -> dict[str, PromptConfig]:
     ]
     templates = {}
     client = AlbertClient()
-    for model_name, model_url in table:
+    for model in table:
+        model_name = model["model"]
+        model_url = model["url"]
         try:
             config = client.get_prompt_config(model_url)
         except RequestException as err:
@@ -488,10 +490,10 @@ def format_chatml_prompt(
 def get_prompter(
     model_name: str, mode: str | None = None, prompt_format: str | None = None
 ) -> Prompter:
-    model = next((m for m in LLM_TABLE if m[0] == model_name), None)
+    model = next((m for m in LLM_TABLE if m["model"] == model_name), None)
     if not model:
         raise ValueError("LLM model not found in the LLM table: %s" % model_name)
-    model_url = model[1]
+    model_url = model["url"]
 
     global PROMPTS
     if model_name not in PROMPTS:

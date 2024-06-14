@@ -1,7 +1,9 @@
 import ast
 import os
+from urllib.parse import urlparse
 
 import dotenv
+import requests
 
 dotenv.load_dotenv()
 
@@ -42,7 +44,7 @@ MJ_API_KEY = os.getenv("MJ_API_KEY")
 MJ_API_SECRET = os.getenv("MJ_API_SECRET")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL")
 
-# Public Urls
+# Public URLs
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 FRONT_URL = os.getenv("FRONT_URL", "http://localhost:8000")
 API_ROUTE_VER = "/api/v2"
@@ -63,29 +65,34 @@ QDRANT_REST_PORT = os.environ.get("QDRANT_REST_PORT", "6333")
 QDRANT_URL = f"http://{QDRANT_HOST}:{QDRANT_REST_PORT}"
 QDRANT_USE_GRPC = True
 
+# RAG
+# --
 # The sources that will be parsed, chunked, indexed and embeded for the RAG.
 SHEET_SOURCES = ["service-public", "travail-emploi"]
+# Default embedding model
+RAG_EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
 
-# LLM
-LLM_TABLE = os.getenv("LLM_TABLE")
-if LLM_TABLE:
+# Build the LLM table and from the LLM API endpoints
+OPENAI_API_VERSION = (
+    ""  # @FUTURE: set it to "v1" once we move to the llm-api that support OpenAI API.
+)
+MODELS_URLS = ast.literal_eval(os.environ.get("MODELS_URLS", "[]"))
+LLM_TABLE = []
+for url in MODELS_URLS:
+    endpoint = f"{url}/{OPENAI_API_VERSION}/models" if OPENAI_API_VERSION else f"{url}/models"
     try:
-        LLM_TABLE = ast.literal_eval(LLM_TABLE)
+        response = requests.get(endpoint)
+        response.raise_for_status()
+        # Response body example:
+        # {"object":"list","data":[{"object":"model","id":"intfloat/multilingual-e5-large"},{"object":"model","id":"AgentPublic/llama3-instruct-8b"}]}
+        models: list[dict] = response.json()["data"]
+        for m in models:
+            LLM_TABLE.append({"model": m["id"], "url": url})
     except Exception as err:
-        raise ValueError("LLM_TABLE is not valid") from err
-else:  # default
-    LLM_TABLE = [
-        # model_name/api URL
-        ("AgentPublic/albertlight-7b", "http://127.0.0.1:8082")
-    ]
+        # Do not block the API if an host is down. It could be one over multiple and not our responsability
+        # Logging the error...
+        print(f'Error while fetching model at "{endpoint}": {err}')
 
-# The embedding model to target
-# @FUTURE: Use same format than the LLM_TABLE to support deploying multi model ?
-EMBEDDINGS_HOST = os.getenv("EMBEDDINGS_HOST", "localhost")
-EMBEDDINGS_PORT = os.getenv("EMBEDDINGS_PORT", "8005")
-EMBEDDINGS_URL = f"http://{EMBEDDINGS_HOST}:{EMBEDDINGS_PORT}"
-EMBEDDINGS_HF_REPO_ID = os.getenv("EMBEDDINGS_HF_REPO_ID", "intfloat/multilingual-e5-large")
-EMBEDDINGS_MODEL = (EMBEDDINGS_HF_REPO_ID, EMBEDDINGS_URL)
 
 # JWT token
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
@@ -95,7 +102,7 @@ ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 
 if ENV == "unittest":
     API_ROUTE_VER = "/"
-    LLM_TABLE = [("AgentPublic/albertlight-7b", "http://127.0.0.1:8892")]
+    LLM_TABLE = [{"model": "albert", "url": "http://127.0.0.1:8899"}]
     ELASTIC_PORT = "9211"
     QDRANT_REST_PORT = "6344"
     QDRANT_USE_GRPC = False

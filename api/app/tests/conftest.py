@@ -16,7 +16,7 @@ from app.main import app
 from pyalbert.config import ELASTIC_PORT, LLM_TABLE, QDRANT_REST_PORT
 
 if len(LLM_TABLE) > 0:
-    LLM_HOST, LLM_PORT = urlparse(LLM_TABLE[0][1]).netloc.split(":")
+    LLM_HOST, LLM_PORT = urlparse(LLM_TABLE[0]["url"]).netloc.split(":")
 
 
 def start_mock_server(command, health_route="/healthcheck", timeout=10, interval=1):

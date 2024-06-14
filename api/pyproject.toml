@@ -24,6 +24,7 @@ dependencies = [
     "SQLAlchemy==2.0.20",
     "uvicorn==0.23.2",
     "lz4==4.3.3",
+    "pyalbert==0.4.12",
 ]
 
 [project.optional-dependencies]

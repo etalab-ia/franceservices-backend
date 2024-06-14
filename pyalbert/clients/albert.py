@@ -9,10 +9,10 @@ from pyalbert.config import (
     ACCESS_TOKEN_TTL,
     API_ROUTE_VER,
     API_URL,
-    EMBEDDINGS_MODEL,
     FIRST_ADMIN_PASSWORD,
     FIRST_ADMIN_USERNAME,
     LLM_TABLE,
+    RAG_EMBEDDING_MODEL,
 )
 
 
@@ -151,11 +151,11 @@ class AlbertClient:
 
 class LlmClient:
     def __init__(self, model: str, url=None):
-        model = next((m for m in LLM_TABLE if m[0] == model), None)
+        model = next((m for m in LLM_TABLE if m["model"] == model), None)
         if not model:
             raise ValueError("LLM model not found: %s" % model)
 
-        self.url = model[1]
+        self.url = model["url"]
 
     @staticmethod
     def _get_response(response: requests.Response) -> str:
@@ -206,9 +206,12 @@ class LlmClient:
         model: str | None = None,
         openai_format: bool = False,
     ) -> list[float] | list[list[float]] | dict:
-        # client = cls(*EMBEDDINGS_MODEL)  # let's see that later !
-        # url = client.url
-        model, url = EMBEDDINGS_MODEL
+        model = model or RAG_EMBEDDING_MODEL
+        default_model, default_url = LLM_TABLE[0]["model"], LLM_TABLE[0]["url"]
+        model, url = next(
+            ((d["model"], d["url"]) for d in LLM_TABLE if d["model"] == model),
+            (default_model, default_url),
+        )
         json_data = {"input": texts}
         if doc_type:
             json_data["doc_type"] = doc_type

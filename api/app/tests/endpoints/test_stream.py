@@ -27,7 +27,7 @@ class TestEndpointsStream(TestApi):
 
         # Create User Stream:
         response = stream.create_user_stream(
-            client, token, model_name=self.llm_name, query="Bonjour, comment allez-vous ?"
+            client, token, model_name=self.model_name, query="Bonjour, comment allez-vous ?"
         )
         _assert(response)
         stream_id = response.json()["id"]
@@ -66,7 +66,7 @@ class TestEndpointsStream(TestApi):
             client,
             token,
             chat_id,
-            model_name=self.llm_name,
+            model_name=self.model_name,
             query="Bonjour, comment allez-vous ?\ntest@test.test 0000000000",
         )
         assert response.status_code == 200
@@ -100,7 +100,7 @@ class TestEndpointsStream(TestApi):
             client,
             token,
             chat_id,
-            model_name=self.llm_name,
+            model_name=self.model_name,
             query="Bonjour, comment allez-vous ?\ntest@test.test 0000000000",
             mode="rag",
             with_history=True,
