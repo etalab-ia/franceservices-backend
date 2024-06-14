@@ -2,8 +2,9 @@
 
 import json
 
-from pyalbert.config import QDRANT_IX_VER, collate_ix_name
 from qdrant_client import QdrantClient
+
+from pyalbert.config import QDRANT_IX_VER, collate_ix_name
 
 if __name__ == "__main__":
     client = QdrantClient(url="http://localhost:6333", grpc_port=6334, prefer_grpc=True)

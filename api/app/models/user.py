@@ -1,7 +1,8 @@
 import sqlalchemy.sql as sql
-from app.db.base_class import Base
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+
+from app.db.base_class import Base
 
 
 class ApiToken(Base):

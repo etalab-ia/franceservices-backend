@@ -12,6 +12,17 @@ The Postgres database has two uses:
 
 When the API is run in development mode, an SQLite database is used instead of the PostgreSQL database.
 
+
+### Database name
+
+In order to partition the databases in test, dev or production mode, the name of the database is not the same depending on the `ENV` environment variable in the API's `.env` file.
+
+When `ENV` is set to `unittest`, we are using the SQLite database. (no name to set)
+
+When `ENV` is set to `dev`, the name of the PostgreSQL database is `postgres_dev`.
+
+Otherwise, the name of the PostgreSQL database is `postgres`.
+
 ### Creating PostgreSQL database schemas with Alembic
 
 [Alembic](https://alembic.sqlalchemy.org/en/latest/) is a database schema migration tool for the [SQLAlchemy](https://www.sqlalchemy.org/) ORM. After deploying the Postgres container, to create or upgrade the data schemas according to the latest models in the API code, run the following command:

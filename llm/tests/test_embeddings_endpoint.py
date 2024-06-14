@@ -1,6 +1,7 @@
 import argparse
-import requests
 import logging
+
+import requests
 
 parser = argparse.ArgumentParser(description="Test the response of a LLM model.")
 parser.add_argument("--port", type=int, default=8082, help="Model port")

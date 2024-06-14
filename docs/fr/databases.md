@@ -10,6 +10,17 @@ La base de données PostgreSQL a deux usages :
 
 Lorsque l'API est exécuté en mode développement, une base de données SQLite est utilisée en lieu et place de la base de données PostgreSQL.
 
+
+### Nom de la base de données
+
+Pour cloisonner les bases de données en mode test, dev ou production, le nom de la base de données n'est pas le même en focntion de la variable d'environnement `ENV` dans le fichier `.env` de l'API.
+
+Lorsque `ENV` est défini à `unittest`, nous utilisons la base de données SQLite. (pas de nom à définir)
+
+Lorsque `ENV` est défini à `dev`, le nom de la base de données PostgreSQL est `postgres_dev`.
+
+Autrement, le nom de la base de données PostgreSQL est `postgres`.
+
 ### Créer les schémas de la base de données PostgreSQL avec Alembic
 
 [Alembic](https://alembic.sqlalchemy.org/en/latest/) est un outil de migration de schémas de base de données pour l'ORM [SQLAlchemy](https://www.sqlalchemy.org/).

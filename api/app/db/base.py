@@ -12,13 +12,15 @@ from pyalbert.config import ENV
 
 
 def get_db_url() -> str:
-    if ENV in ("unittest", "dev"):
-        db_uri = "sqlite:///" + os.path.join(tempfile.gettempdir(), f"albert-{ENV}-sqlite3.db")
+    if ENV == "unittest":
+        return "sqlite:///" + os.path.join(tempfile.gettempdir(), f"albert-{ENV}-sqlite3.db")
     else:
+        if ENV == "dev":
+            db_name = "postgres_dev"
+        else:
+            db_name = "postgres"
         db_user = "postgres"
         db_pass = os.environ["POSTGRES_PASSWORD"]
         db_host = os.environ.get("POSTGRES_HOST", "localhost")
         db_port = os.environ.get("POSTGRES_PORT", "5432")
-        db_name = "postgres"
-        db_uri = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-    return db_uri
+        return f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"

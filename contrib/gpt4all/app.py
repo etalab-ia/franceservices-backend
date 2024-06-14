@@ -13,12 +13,11 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from gpt4all import GPT4All
 from huggingface_hub import hf_hub_download, snapshot_download
 from huggingface_hub.utils._errors import EntryNotFoundError
+from pyalbert import Logging
+from pyalbert.schemas.llm import Embeddings
 from transformers import AutoModel, AutoTokenizer
 
 from core import make_embeddings
-
-from pyalbert import Logging
-from pyalbert.schemas.llm import Embeddings
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--host", type=str, default="localhost", help="Host name.")
