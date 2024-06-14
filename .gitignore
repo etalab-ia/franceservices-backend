@@ -8,7 +8,9 @@ api/tiny_albert.bin
 api/app/*.bin
 api/app/*.db
 api/app/tests/test_data/mailjet
-
+api/pyalbert
+api/../pyalbert
+databases/postgres/data
 #
 # Default
 #

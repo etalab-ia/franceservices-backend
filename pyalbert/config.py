@@ -32,6 +32,8 @@ if ENV not in ("unittest", "dev", "staging", "prod"):
 # Env variable must be a string with comma separated values
 # i.e.: BACKEND_CORS_ORIGINS="http://localhost:4173,http://albert-api-example.com,https://albert-api-example.com"
 BACKEND_CORS_ORIGINS = os.getenv("BACKEND_CORS_ORIGINS", "").split(",")
+if ENV == "dev":
+    BACKEND_CORS_ORIGINS = ["*"]
 
 # API / Database
 FIRST_ADMIN_USERNAME = os.getenv("FIRST_ADMIN_USERNAME", "changeme")

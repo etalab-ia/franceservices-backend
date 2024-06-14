@@ -1,9 +1,11 @@
 import json
 
+from fastapi.testclient import TestClient
+
 import app.tests.utils.login as login
 import app.tests.utils.user as user
 from app.tests.test_api import TestApi
-from fastapi.testclient import TestClient
+
 from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
 
