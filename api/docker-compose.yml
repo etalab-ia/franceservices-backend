@@ -2,7 +2,7 @@ version: "3.8"
 
 services:  
   api:
-    image: registry.gitlab.com/etalab-datalab/llm/albert-backend/api:0.4.0
+    image: albert/api:latest
     restart: always
     environment:
       - APP_VERSION=1.0.0
