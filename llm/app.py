@@ -1,8 +1,6 @@
 import argparse
 import json
 import os
-import shutil
-import traceback
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 

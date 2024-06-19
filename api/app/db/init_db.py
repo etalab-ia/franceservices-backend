@@ -14,5 +14,5 @@ from pyalbert.config import ENV
 def init_db() -> Session:
     db = SessionLocal()
     if ENV != "unittest":
-        get_or_create_admin_user(db)
+        get_or_create_admin_user()
     return db

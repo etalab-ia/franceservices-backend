@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from datetime import datetime
 
 from app import crud
 from app.models import User
@@ -6,16 +6,20 @@ from app.models import User
 from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
 
 
-def get_or_create_admin_user(db: Session) -> User:
-    admin_user = crud.user.get_user_by_email(db, FIRST_ADMIN_EMAIL)
+def get_or_create_admin_user() -> User:
+    admin_user = crud.user.get_user_by_email(FIRST_ADMIN_EMAIL)
     if not admin_user:
-        admin_user = User(
-            username=FIRST_ADMIN_USERNAME,
-            email=FIRST_ADMIN_EMAIL,
-            hashed_password=crud.user.get_hashed_password(FIRST_ADMIN_PASSWORD),
-            is_confirmed=True,
-            is_admin=True,
+        admin_user = crud.user.create_user(
+            {
+                "username": FIRST_ADMIN_USERNAME,
+                "email": FIRST_ADMIN_EMAIL,
+                "attributes": {
+                    "is_admin": True,
+                    "is_confirmed": True,
+                    "created_at": datetime.now().isoformat(),
+                },
+                "credentials": [{"value": FIRST_ADMIN_PASSWORD, "type": "password"}],
+            }
         )
-        db.add(admin_user)
-        db.commit()
+
     return admin_user

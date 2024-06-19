@@ -10,7 +10,6 @@ import requests
 from fastapi.testclient import TestClient
 
 os.environ["ENV"] = "unittest"
-from app.db.create_admin_user import get_or_create_admin_user
 from app.db.session import SessionLocal
 from app.main import app
 

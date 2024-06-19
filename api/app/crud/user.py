@@ -1,65 +1,76 @@
-import uuid
+from keycloak import KeycloakError
 
-import bcrypt
-from pydantic import EmailStr
-from sqlalchemy.orm import Session
+from app import schemas
+from app.keycloak.clients import client_admin, client_openid
 
-from app import models, schemas
-from app.auth import encode_api_token
-
-
-def get_hashed_password(password: str) -> str:
-    # Use solely bcrypt instead of passlib, due do this issue: see https://github.com/pyca/bcrypt/issues/684#issuecomment-1902590553
-    pwd_bytes = password.encode("utf-8")
-    salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password=pwd_bytes, salt=salt)
-    return hashed_password.decode("utf-8")
+keycloak_admin = client_admin()
+keycloak_openid = client_openid()
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    password_byte_bytes = plain_password.encode("utf-8")
-    hashed_password_bytes = hashed_password.encode("utf-8")
-    return bcrypt.checkpw(password=password_byte_bytes, hashed_password=hashed_password_bytes)
+def get_pending_users():
+    try:
+        users = keycloak_admin.get_users({})
+        unconfirmed_users = list(
+            userSerializer(user)
+            for user in users
+            if user.get("attributes", {}).get("is_confirmed") == ["None"] and user.get("email")
+        )
+
+        sorted_users = sorted(unconfirmed_users, key=lambda x: x["id"])
+        return sorted_users
+    except KeycloakError as e:
+        print(f"An error occurred: {e}")
+        return []
 
 
-def get_pending_users(db: Session):
-    return (
-        db.query(models.User)
-        .filter(models.User.is_confirmed.is_(None))
-        .order_by(models.User.id)
-        .all()
-    )
+# TODO: validate user data
+def create_user(user):
+    user_id = keycloak_admin.create_user(user)
+    user = get_user(user_id)
+    return user
 
 
-def create_user(db: Session, user: schemas.UserCreate, commit=True) -> models.User:
-    db_user = models.User(
-        username=user.username,
-        email=user.email,
-        hashed_password=get_hashed_password(user.password),
-    )
-    db.add(db_user)
-    if commit:
-        db.commit()
-        db.refresh(db_user)
-    return db_user
+def get_user(user_id):
+    user = keycloak_admin.get_user(user_id)
+    user = userSerializer(user)
+    return user
 
 
-def get_user(db: Session, user_id: int) -> models.User:
-    return db.query(models.User).filter(models.User.id == user_id).first()
+def get_user_by_username(username: str):
+    try:
+        users = keycloak_admin.get_users({"username": username})
+        if users:
+            user = userSerializer(users[0])
+            return user
+        else:
+            return None
+    except KeycloakError:
+        return None
 
 
-def get_user_by_username(db: Session, username: str) -> models.User:
-    return db.query(models.User).filter(models.User.username == username).first()
+def get_user_by_email(email: str):
+    try:
+        users = keycloak_admin.get_users({"email": email})
+        if users:
+            user = userSerializer(users[0])
+            return user
+        else:
+            return None
+    except KeycloakError as e:
+        print(f"An error occurred: {e}")
+        return None
 
 
-def get_user_by_email(db: Session, email: EmailStr) -> models.User:
-    return db.query(models.User).filter(models.User.email == email).first()
+def confirm_user(user_id: str, is_confirmed: bool):
+    try:
+        user = keycloak_admin.get_user(user_id)
 
+        attributes = user.get("attributes", {})
+        attributes["is_confirmed"] = str(is_confirmed)
 
-def confirm_user(db: Session, db_user: models.User, is_confirmed: bool, commit=True):
-    db_user.is_confirmed = is_confirmed
-    if commit:
-        db.commit()
+        keycloak_admin.update_user(user_id=user_id, payload={"attributes": attributes})
+    except KeycloakError as e:
+        print(f"An error occurred: {e}")
 
 
 #
@@ -67,40 +78,71 @@ def confirm_user(db: Session, db_user: models.User, is_confirmed: bool, commit=T
 #
 
 
-def resolve_user_token(db: Session, token: str) -> models.User:
-    hash = encode_api_token(token)
-    user = (
-        db.query(models.User)
-        .join(models.User.api_tokens)
-        .filter(models.ApiToken.hash == hash)
-        .first()
-    )
+def resolve_user_token(token: str):
+    try:
+        userinfo = keycloak_openid.userinfo(token)
+        user = get_user(userinfo["sub"])
+
+        return user
+    except KeycloakError as e:
+        print("An error occurred: %s", e)
+        return None
+    except Exception as e:
+        print("An unexpected error occurred: ", e)
+        return None
+
+
+def login_user(username: str, password: str):
+    try:
+        token = keycloak_openid.token(username, password)
+        return token
+    except KeycloakError as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+def logout_user(token: str):
+    try:
+        keycloak_openid.logout(token)
+    except KeycloakError as e:
+        print(f"An error occurred: {e}")
+
+
+def refresh_user_token(refresh_token: str):
+    try:
+        token = keycloak_openid.refresh_token(refresh_token)
+        return token
+    except KeycloakError as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+def userSerializer(user):
+    attributes = user.pop("attributes", {})
+    user.update(attributes)
+    user = transform_dict(user)
+    user = schemas.User(**user)
     return user
 
 
-def get_user_token(db: Session, token: str) -> models.ApiToken:
-    hash = encode_api_token(token)
-    return db.query(models.ApiToken).filter(models.ApiToken.hash == hash).first()
+# transform value to a valid Boolean
+def transform_value(key, value):
+    key_list = ["is_confirmed", "is_admin", "accept_cookie"]
+
+    if key not in key_list:
+        return value
+
+    value = value[0].lower()
+
+    if value == "true":
+        return True
+    elif value == "false":
+        return False
+    else:
+        return value
 
 
-def get_user_tokens(db: Session, user_id: int) -> list[models.ApiToken]:
-    return db.query(models.ApiToken).join(models.User).filter(models.User.id == user_id).all()
-
-
-def create_user_token(
-    db: Session, user_id: int, form_data: schemas.ApiTokenCreate, commit=True
-) -> str:
-    token = str(uuid.uuid4())
-    db_token = models.ApiToken(name=form_data.name, hash=encode_api_token(token), user_id=user_id)
-    db.add(db_token)
-    if commit:
-        db.commit()
-        db.refresh(db_token)
-    return token
-
-
-def delete_token(db: Session, token_id: int, commit=True) -> models.ApiToken:
-    result = db.query(models.ApiToken).filter(models.ApiToken.id == token_id).delete()
-    if commit:
-        db.commit()
-    return result
+def transform_dict(dictionary):
+    for key, value in dictionary.items():
+        dictionary[key] = transform_value(key, value)
+    return dictionary

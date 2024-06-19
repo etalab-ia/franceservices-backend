@@ -1,7 +1,7 @@
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, constr, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, constr, model_validator, validator
 
 from pyalbert.config import PASSWORD_PATTERN
 from pyalbert.lexicon.mfs_organizations import MFS_ORGANIZATIONS
@@ -44,6 +44,41 @@ class UserBase(BaseModel):
     accept_retrain: bool = False
 
 
+class User(BaseModel):
+    id: str
+    username: str
+    email: str
+
+    is_confirmed: Optional[bool] = False
+    is_admin: Optional[bool] = False
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    accept_cookie: Optional[bool] = False
+    accept_retrain: Optional[bool] = False
+    organization_id: Optional[str] = None
+    organization_name: Optional[str] = None
+
+    @validator("is_confirmed", "is_admin", "accept_cookie", "accept_retrain", pre=True)
+    def parse_bool(cls, v):
+        if isinstance(v, list) and len(v) == 1:
+            v = v[0]
+        if isinstance(v, str):
+            return v.lower() == "true"
+        return v
+
+    @validator("organization_id", "organization_name", "created_at", "updated_at", pre=True)
+    def unwrap_single_element_list(cls, v):
+        if isinstance(v, list) and len(v) == 1:
+            return v[0]
+        return v
+
+    class Config:
+        orm_mode = True
+
+    class Config:
+        orm_mode = True
+
+
 class UserCreate(UserBase):
     password: constr(pattern=PASSWORD_PATTERN)
 
@@ -73,14 +108,6 @@ class UserCreate(UserBase):
                 raise ValueError("unknown organization_name")
 
         return self
-
-
-class User(UserBase):
-    id: int
-    is_confirmed: bool | None = None
-    is_admin: bool
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class UserWithRelationships(User):

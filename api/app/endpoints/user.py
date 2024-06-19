@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -21,29 +23,45 @@ def read_user_me(
 
 @router.get("/users/pending", response_model=list[schemas.User], tags=["user"])
 def read_pending_users(
-    db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ) -> list[models.User]:
     if not current_user.is_admin:
         raise HTTPException(403, detail="Forbidden")
 
-    return crud.user.get_pending_users(db)
+    return crud.user.get_pending_users()
 
 
 @router.post("/user/me", tags=["user"])
 def create_user_me(
     form_data: schemas.UserCreate,
-    db: Session = Depends(get_db),
 ) -> dict[str, str]:
     username = form_data.username
     email = form_data.email
-    if crud.user.get_user_by_username(db, username):
+    password = form_data.password
+    if not username or not email:
+        raise HTTPException(status_code=400, detail="Username and email are required")
+
+    if crud.user.get_user_by_username(username):
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    if crud.user.get_user_by_email(db, email):
+    if crud.user.get_user_by_email(email):
         raise HTTPException(status_code=400, detail="Email already exists")
 
-    crud.user.create_user(db, form_data)
+    crud.user.create_user(
+        {
+            "username": username,
+            "email": email,
+            "credentials": [{"value": password, "type": "password"}],
+            "attributes": {
+                "is_confirmed": False,
+                "created_at": datetime.now().isoformat(),
+                "is_admin": False,
+                "accept_cookie": False,
+                "organization_id": "",
+                "organization_name": "",
+            },
+        }
+    )
     mailjet_client = MailjetClient()
     mailjet_client.send_create_user_me_email(email)
     mailjet_client.send_create_user_me_notify_admin_email(CONTACT_EMAIL, email)
@@ -88,36 +106,10 @@ def contact_user(
     return {"msg": "Contact form email sent"}
 
 
-@router.get("/user/token", tags=["user"], response_model=list[schemas.ApiToken])
-def read_user_tokens(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-) -> list[models.ApiToken]:
-    return crud.user.get_user_tokens(db, user_id=current_user.id)
-
-
-@router.post("/user/token/new", tags=["user"])
-def create_user_token(
-    form_data: schemas.ApiTokenCreate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-) -> str:
-    return crud.user.create_user_token(db, user_id=current_user.id, form_data=form_data)
-
-
-@router.delete("/user/token/{token}", tags=["user"], response_model=schemas.ApiToken)
-def delete_user_token(
-    token: str,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-) -> models.ApiToken:
-    db_token = crud.user.get_user_token(db, token)
-    if db_token is None:
-        raise HTTPException(404, detail="token not found")
-
-    if db_token.user_id != current_user.id:
-        raise HTTPException(403, detail="Forbidden")
-
-    crud.user.delete_token(db, db_token.id)
-
-    return db_token
+@router.get("/user/token/refresh", tags=["user"])
+def create_user_token(request: Request):
+    headers = request.headers
+    refresh_token = headers.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(401, detail="Unauthorized")
+    return crud.user.refresh_user_token(refresh_token)

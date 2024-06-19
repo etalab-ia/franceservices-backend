@@ -4,10 +4,9 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
-from app.auth import encode_token
+from app import crud, schemas
 from app.clients.mailjet_client import MailjetClient
-from app.deps import get_current_user, get_db
+from app.deps import get_db
 
 from pyalbert.config import PASSWORD_RESET_TOKEN_TTL
 
@@ -17,37 +16,26 @@ router = APIRouter()
 @router.post("/sign_in", tags=["public", "login"])
 def sign_in(
     form_data: schemas.SignInForm,
-    db: Session = Depends(get_db),
-) -> dict[str, str]:
+):
     username = form_data.username
-    email = form_data.email
     password = form_data.password
-    if username:
-        user = crud.user.get_user_by_username(db, username)
-    else:
-        user = crud.user.get_user_by_email(db, email)
 
-    if not user or not crud.user.verify_password(password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
+    # user needs to be enabled on keycloak
+    token = crud.user.login_user(username, password)
 
-    if not user.is_confirmed:
-        raise HTTPException(400, detail="User not confirmed")
+    if not token:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
 
-    crud.login.delete_expired_blacklist_tokens(db)
-
-    token = encode_token(user.id)
-    return {"token": token}
+    return token
 
 
 @router.post("/sign_out", tags=["login"])
 def sign_out(
     req: Request,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),  # noqa
 ) -> dict[str, str]:
     auth_header = req.headers.get("Authorization")
     token = auth_header.split(" ")[1]
-    crud.login.create_blacklist_token(db, token)
+    crud.user.logout_user(token)
     return {"msg": "Success"}
 
 

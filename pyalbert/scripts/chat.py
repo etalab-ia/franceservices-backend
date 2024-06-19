@@ -6,7 +6,6 @@ sys.path.append(".")
 
 from prompt_toolkit import PromptSession
 
-from pyalbert import set_llm_table
 from pyalbert.clients import LlmClient
 from pyalbert.prompt import get_prompter
 from pyalbert.utils import sse_decoder
