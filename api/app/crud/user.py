@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional
+
 from keycloak import KeycloakError
 
 from app import schemas
