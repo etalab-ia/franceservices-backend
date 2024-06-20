@@ -117,7 +117,6 @@ def client() -> Generator:
 
 @pytest.fixture(scope="session")
 def db() -> Generator:
-    print("Setup session...")
     try:
         session = SessionLocal()
         yield session

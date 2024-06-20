@@ -33,10 +33,13 @@ def sign_in(
 def sign_out(
     req: Request,
 ) -> dict[str, str]:
-    auth_header = req.headers.get("Authorization")
-    token = auth_header.split(" ")[1]
-    crud.user.logout_user(token)
-    return {"msg": "Success"}
+    try:
+        auth_header = req.headers.get("Authorization")
+        token = auth_header.split(" ")[1]
+        crud.user.logout_user(token)
+        return {"msg": "Success"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/send_reset_password_email", tags=["login"])

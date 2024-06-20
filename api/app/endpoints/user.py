@@ -54,7 +54,7 @@ def create_user_me(
             "credentials": [{"value": password, "type": "password"}],
             "attributes": {
                 "is_confirmed": False,
-                "created_at": datetime.now().isoformat(),
+                "created_at": datetime.utcnow().isoformat(),
                 "is_admin": False,
                 "accept_cookie": False,
                 "organization_id": "",

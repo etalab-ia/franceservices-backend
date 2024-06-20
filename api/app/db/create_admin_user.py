@@ -15,7 +15,7 @@ def get_or_create_admin_user():
                 "attributes": {
                     "is_admin": True,
                     "is_confirmed": True,
-                    "created_at": datetime.now().isoformat(),
+                    "created_at": datetime.utcnow().isoformat()
                 },
                 "credentials": [{"value": FIRST_ADMIN_PASSWORD, "type": "password"}],
             }

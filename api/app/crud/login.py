@@ -1,38 +1,6 @@
-from datetime import datetime, timedelta
-
 from sqlalchemy.orm import Session
 
 from app import models
-
-from pyalbert.config import ACCESS_TOKEN_TTL
-
-# ******************
-# * BlacklistToken *
-# ******************
-
-
-def create_blacklist_token(db: Session, token: str, commit=True):
-    db_blacklist_token = models.BlacklistToken(token=token)
-    db.add(db_blacklist_token)
-    if commit:
-        db.commit()
-        db.refresh(db_blacklist_token)
-    return db_blacklist_token
-
-
-def get_blacklist_token(db: Session, token: str):
-    return db.query(models.BlacklistToken).filter(models.BlacklistToken.token == token).first()
-
-
-def delete_expired_blacklist_tokens(db: Session, commit=True):
-    dt_ttl = datetime.utcnow() - timedelta(seconds=ACCESS_TOKEN_TTL)
-    rows = (
-        db.query(models.BlacklistToken).filter(models.BlacklistToken.created_at < dt_ttl).delete()
-    )
-    if commit:
-        db.commit()
-    return rows
-
 
 # **********************
 # * PasswordResetToken *

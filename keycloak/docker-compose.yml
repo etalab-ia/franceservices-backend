@@ -1,0 +1,57 @@
+version: "3.8"
+
+volumes:
+  pgadmin:
+  keycloak:
+
+services:
+  keycloak-db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD}
+    volumes:
+      - ${KEYCLOAK_POSTGRES_STORAGE_PATH}/${COMPOSE_PROJECT_NAME}-auth-postgres:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+
+  keycloak:
+    build:
+      context: .
+      dockerfile: keycloak/Dockerfile
+    restart: always
+    depends_on:
+      - keycloak-db
+    environment:
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_METRICS_ENABLED: "true"
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_LOG_LEVEL: INFO
+      KC_LOG: console,file
+      KC_FEATURES: token-exchange
+      KC_HTTP_RELATIVE_PATH: /auth
+      PROXY_ADDRESS_FORWARDING: "true"
+      KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
+      DSFR_THEME_SERVICE_TITLE: ${DSFR_THEME_SERVICE_TITLE}
+      DSFR_THEME_BRAND_TOP: ${DSFR_THEME_BRAND_TOP}
+      DSFR_THEME_TOS_URL: ${DSFR_THEME_TOS_URL}
+      DSFR_THEME_CONTACT_EMAIL: ${DSFR_THEME_CONTACT_EMAIL}
+      DSFR_THEME_LOGIN_HTML: ${DSFR_THEME_LOGIN_HTML}
+    ports:
+      - 80:8080
+      - 443:8443
+    volumes:
+      - keycloak:/opt/keycloak/data
+      - ./keycloak/ssl:/etc/x509/https
+
+    healthcheck:
+      test: curl --fail http://localhost:8080/auth/realms/visudsn/.well-known/openid-configuration || exit 1
+      interval: 5s
+      retries: 50
+      start_period: 0s
+      timeout: 3s
