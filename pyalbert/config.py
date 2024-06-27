@@ -51,7 +51,7 @@ FRONT_URL = os.getenv("FRONT_URL", "http://localhost:8000")
 API_ROUTE_VER = "/api/v2"
 
 # Elasticsearch
-ELASTICSEARCH_IX_VER = "v3"
+ELASTICSEARCH_IX_VER = "v4"
 ELASTIC_HOST = os.environ.get("ELASTIC_HOST", "localhost")
 ELASTIC_PORT = os.environ.get("ELASTIC_PORT", "9200")
 ELASTICSEARCH_URL = f"http://{ELASTIC_HOST}:{ELASTIC_PORT}"
@@ -59,7 +59,7 @@ ELASTIC_PASSWORD = os.environ.get("ELASTIC_PASSWORD", "")
 ELASTICSEARCH_CREDS = ("elastic", ELASTIC_PASSWORD)
 
 # Qdrant
-QDRANT_IX_VER = "v3"
+QDRANT_IX_VER = "v4"
 QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")
 QDRANT_GRPC_PORT = os.environ.get("QDRANT_GRPC_PORT", "6334")
 QDRANT_REST_PORT = os.environ.get("QDRANT_REST_PORT", "6333")
