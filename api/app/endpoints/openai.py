@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -25,9 +26,10 @@ async def create_chat_completion(
 
     # @TODO: For vllm openai compatible request on the back
     # generator = await openai_serving_chat.create_chat_completion(request, raw_request)
+    # Run the blocking I/O operation in a thread pool
+    generator = await run_in_threadpool(generate_v0, request)
     # if isinstance(generator, proto.ErrorResponse):
     #    return JSONResponse(content=generator.model_dump(), status_code=generator.code)
-    generator = generate_v0(request)
 
     if request.stream:
         return StreamingResponse(content=generator, media_type="text/event-stream")

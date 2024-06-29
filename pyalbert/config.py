@@ -48,6 +48,7 @@ MJ_API_SECRET = os.getenv("MJ_API_SECRET")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL")
 
 # Public URLs
+# @TODO: build pyalbert with the public Albert API endpoint.
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 FRONT_URL = os.getenv("FRONT_URL", "http://localhost:8000")
 API_PREFIX = "/api"

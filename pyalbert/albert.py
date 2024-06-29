@@ -50,12 +50,13 @@ from docopt import docopt
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
+from pyalbert import __version__
 from pyalbert.config import SHEET_SOURCES
 
 
 def main():
     # Parse CLI arguments
-    args = docopt(__doc__, version="0")
+    args = docopt(__doc__, version=__version__)
     debug = True if args["--debug"] else False
 
     if args["create_whitelist"]:
