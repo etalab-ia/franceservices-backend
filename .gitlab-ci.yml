@@ -58,7 +58,7 @@ test:api:
     source venv/bin/activate
     pip install --cache-dir .cache/pip api/.[test]
   script:
-    - cd api/ && pytest -W ignore app/tests/
+    - cd api/ && pytest -W ignore
 
 ################## BUILD ###################
 

@@ -24,11 +24,21 @@ dependencies = [
     "SQLAlchemy==2.0.20",
     "uvicorn==0.23.2",
     "lz4==4.3.3",
-    "pyalbert==0.4.12",
+    "pyalbert==0.5.5",
 ]
+
+# Tests
 
 [project.optional-dependencies]
 test = ["pytest==7.4.4"]
+
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Linter
 
 [tool.ruff]
 line-length = 100
@@ -51,7 +61,6 @@ section-order = [
   "api",
   "pyalbert",
 ]
-
 
 [tool.setuptools]
 py-modules = []

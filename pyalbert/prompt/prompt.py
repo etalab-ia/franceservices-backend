@@ -1,5 +1,6 @@
 import os
 import re
+from functools import wraps
 from typing import Any
 
 from jinja2 import BaseLoader, Environment, Template, meta
@@ -25,6 +26,87 @@ class PromptConfig:
     config: dict
     # The key is the prompt **mode**
     templates: dict[str, PromptTemplate] | None
+
+
+def prompt_encoder(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs) -> str | list[dict]:
+        messages = func(self, *args, **kwargs)
+
+        # Format messages
+        # --
+        # @FUTURE: Remove the default value at True when vllm.openai will be supported.
+        do_encode_prompt = kwargs.get("do_encode_prompt", True)
+        prompt_format = kwargs.get("prompt_format") or self.config.get("prompt_format")
+        if do_encode_prompt and prompt_format and prompt_format != "openai":
+            if prompt_format in ["llama-chat", "llama2-chat"]:
+                chat_formatter = format_llama2chat_prompt
+            elif prompt_format == "llama3-chat":
+                chat_formatter = format_llama3chat_prompt
+            elif prompt_format == "chatml":
+                chat_formatter = format_chatml_prompt
+            else:
+                raise ValueError("Prompt format unkown: %s" % prompt_format)
+
+            add_generation_prompt = kwargs.get("add_generation_prompt")
+            encoded_prompt = chat_formatter(messages, add_generation_prompt=add_generation_prompt)
+        elif do_encode_prompt and (not prompt_format or prompt_format != "openai"):
+            raise ValueError("prompt_format is not defined to that template")
+        else:
+            encoded_prompt = messages
+
+        return encoded_prompt
+
+    return wrapper
+
+
+def conversation_length_checker(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs) -> list[dict]:
+        # Compress messages
+        # default strategy is just a truncation
+        messages = func(self, *args, **kwargs)
+
+        head = []
+        tail = messages
+        if messages[0]["role"] == "system":
+            head.append(tail.pop(0))
+
+        # Cut history to fit the max_tokens model parameter
+        words_len = sum([len(m["content"].split()) for m in (head + tail)])
+        while len(tail) > 3 and words_len * 1.25 > self.sampling_params["max_tokens"] * 0.8:
+            print("WARNING: conversation size overflow, reducing limit...")
+            # Keep the same messages parity to avoid a confusion between a inference and a fine-tuning prompt
+            [tail.pop(0) for _ in tail[:2] if tail]
+            words_len = sum([len(m["content"].split()) for m in (head + tail)])
+
+        compressed_messages = head + tail
+        return compressed_messages
+
+    return wrapper
+
+
+def sources_length_checker(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs) -> list[dict]:
+        messages = func(self, *args, **kwargs)
+        if not self.template:
+            # RAG is not activated
+            return messages
+
+        # Cut history to fit the max_tokens model parameter
+        words_len = sum([len(m["content"].split()) for m in messages])
+        limit = kwargs.get("limit") or 4
+        while limit > 1 and words_len * 1.25 > self.sampling_params["max_tokens"] * 0.8:
+            print("WARNING: RAG size overflow, reducing limit...")
+            limit -= 1
+            kwargs["limit"] = limit
+            messages = func(self, *args, **kwargs)
+            words_len = sum([len(m["content"].split()) for m in messages])
+
+        return messages
+
+    return wrapper
 
 
 def prompts_from_llm_table(table: list[dict]) -> dict[str, PromptConfig]:
@@ -107,7 +189,7 @@ PROMPTS = {}
 class Prompter:
     # Default sampling params fo a given child class
     SAMPLING_PARAMS = {
-        "temperature": 20,
+        "temperature": 0.2,
         "max_tokens": 4096,
     }
 
@@ -115,9 +197,9 @@ class Prompter:
         self,
         config: dict | None = None,
         template: PromptTemplate | str | None = None,
-        api_token=None,
+        api_key=None,
     ):
-        self.api_token = api_token
+        self.api_key = api_key
         # The prompt config
         self.config = config or {}
         # The sampling params to pass to LLM generate function for inference.
@@ -191,14 +273,18 @@ class Prompter:
 
         return prompt
 
+    @prompt_encoder
+    @sources_length_checker
+    @conversation_length_checker
     def make_prompt(
         self,
+        expand_acronyms: bool = True,
         system_prompt: str | None = None,
         prompt_format: str | None = None,
         add_generation_prompt: bool = False,
-        expand_acronyms: bool = True,
+        do_encode_prompt: bool = False,
         **kwargs,
-    ):
+    ) -> list[dict]:
         """Render simple to RAG prompt from template.
 
         Supported prompt_format
@@ -222,57 +308,17 @@ class Prompter:
                 [x["content"] for i, x in enumerate(history) if x["role"] == "user"][-3:]
             )
 
-        # Set default prompt_format
-        prompt_format = prompt_format or self.config.get("prompt_format")
-
-        # Build template and render prompt with variables if any
+        # Build template and render prompt with RAG variables if any
         if self.template:
             data = self.make_variables(kwargs, self.template["variables"], self.template["default"])
             prompt = self.template["template"].render(**data)
-            system_prompt = system_prompt or self.template.get("system_prompt") or self.config.get("system_prompt")  # fmt: skip
+            system_prompt = kwargs.get("system_prompt") or self.template.get("system_prompt") or self.config.get("system_prompt")  # fmt: skip
         else:
             prompt = kwargs.get("query")
-            system_prompt = system_prompt or self.config.get("system_prompt")
+            system_prompt = kwargs.get("system_prompt") or self.config.get("system_prompt")
 
-        # Format prompt
-        # --
-        if prompt_format:
-            if prompt_format in ["llama-chat", "llama2-chat"]:
-                chat_formatter = format_llama2chat_prompt
-            elif prompt_format == "llama3-chat":
-                chat_formatter = format_llama3chat_prompt
-            elif prompt_format == "chatml":
-                chat_formatter = format_chatml_prompt
-            elif prompt_format == "openai":
-                chat_formatter = format_messages_prompt
-            else:
-                raise ValueError("Prompt format unkown: %s" % prompt_format)
-
-            raw_prompt = chat_formatter(
-                prompt,
-                system_prompt=system_prompt,
-                history=history,
-                add_generation_prompt=add_generation_prompt,
-            )
-
-            # Cut history to fit the max_tokens model para
-            while (
-                history
-                and isinstance(raw_prompt, str)
-                and len(raw_prompt.split()) * 1.25 > self.sampling_params["max_tokens"] * 0.8
-            ):
-                # Keep the same history parity to avoid a confusion between a inference and a fine-tuning prompt
-                [history.pop(0) for _ in history[:2] if history]
-                raw_prompt = chat_formatter(
-                    prompt,
-                    system_prompt=system_prompt,
-                    history=history,
-                    add_generation_prompt=add_generation_prompt,
-                )
-        else:
-            raw_prompt = prompt
-
-        return raw_prompt
+        messages = format_messages_prompt(prompt, system_prompt=system_prompt, history=history)
+        return messages
 
     def make_variables(
         self, passed_data: dict[str, Any], variables: list[str], default: dict[str, Any]
@@ -303,7 +349,7 @@ class Prompter:
                 data[k] = v
 
         search_query = data.get("search_query", data.get("query"))
-        client = AlbertClient(api_token=self.api_token)
+        client = AlbertClient(api_key=self.api_key)
 
         # Extract one similar value in a collection from query
         if "most_similar_experience" in variables:
@@ -365,8 +411,20 @@ def format_messages_prompt(
     query: str, system_prompt: str | None = None, history: list[dict] | None = None
 ) -> list[dict]:
     messages = history or []
+
+    # Do not overwrite used defined system prompt
+    if system_prompt and not (messages and messages[0]["role"] == "system"):
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt,
+            }
+        ] + messages
+
     if history:
         if history[-1]["role"] == "user":
+            # Inference case.
+            # The query is rewritten as it can be augmented (RAG)
             messages[-1] = messages[-1].copy()
             messages[-1]["content"] = query
         elif (
@@ -374,10 +432,13 @@ def format_messages_prompt(
             and history[-1]["role"] == "assistant"
             and history[-2]["role"] == "user"
         ):
+            # Training case.
+            # query is rewritten as it can be augmented (RAG)
+            # @DEBUG: enable the "continue" feature by allowing "assistant" the the last message
             messages[-2] = messages[-2].copy()
             messages[-2]["content"] = query
     else:
-        messages = [{"role": "user", "content": query}]
+        messages.append({"role": "user", "content": query})
 
     return messages
 
@@ -385,24 +446,21 @@ def format_messages_prompt(
 # see https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L284
 # see also to implement this part in the driver management module of the llm API: https://gitlab.com/etalab-datalab/llm/albert-backend/-/issues/119
 def format_llama2chat_prompt(
-    query: str,
-    system_prompt: str | None = None,
-    history: list[dict] | None = None,
+    messages: list[dict],
     add_generation_prompt: bool = False,
 ) -> str:
-    messages = format_messages_prompt(query, system_prompt=system_prompt, history=history)
-
+    # @DEBUG: this format inner system role and consecutive user or assistant message
     BOS, EOS = "<s>", "</s>"
     B_INST, E_INST = "[INST]", "[/INST]"
     B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
-    if system_prompt:
+    if messages[0]["role"] == "system":
         messages = [
             {
-                "role": messages[0]["role"],
-                "content": B_SYS + system_prompt + E_SYS + messages[0]["content"],
+                "role": messages[1]["role"],
+                "content": B_SYS + messages[0]["content"] + E_SYS + messages[1]["content"],
             }
-        ] + messages[1:]
+        ] + messages[2:]
 
     messages_list = [
         f"{BOS}{B_INST} {(prompt['content']).strip()} {E_INST} {(answer['content']).strip()} {EOS}"
@@ -413,64 +471,39 @@ def format_llama2chat_prompt(
         messages_list.append(f"{BOS}{B_INST} {(messages[-1]['content']).strip()} {E_INST}")
 
     prompt = "".join(messages_list)
-
     return prompt
 
 
 def format_llama3chat_prompt(
-    query: str,
-    system_prompt: str | None = None,
-    history: list[dict] | None = None,
+    messages: list[dict],
     add_generation_prompt: bool = False,
 ) -> str:
-    messages = format_messages_prompt(query, system_prompt=system_prompt, history=history)
-
     BOS, EOS = "<|begin_of_text|>", "<|end_of_text|>"
 
-    sysprompt = ""
-    if system_prompt:
-        sysprompt = "<|start_header_id|>system<|end_header_id|>\n\n" + system_prompt + "<|eot_id|>"
-
-    last_even = len(messages) if add_generation_prompt else len(messages) - 1
     messages_list = [
         f"<|start_header_id|>{message['role']}<|end_header_id|>\n\n"
         + message["content"].strip()
         + "<|eot_id|>"
-        for message in messages[:last_even]
+        for message in messages
     ]
 
-    if not add_generation_prompt:
-        messages_list.append(
-            f"<|start_header_id|>{messages[-1]['role']}<|end_header_id|>\n\n"
-            + messages[-1]["content"].strip()
-            + "<|eot_id|>"
-            + "<|start_header_id|>assistant<|end_header_id|>\n\n"
-        )
-    else:
+    if add_generation_prompt:
         messages_list.append(EOS)
+    else:
+        messages_list[-1] += "<|start_header_id|>assistant<|end_header_id|>\n\n"
 
-    messages_list = [BOS] + [sysprompt] + messages_list
+    messages_list = [BOS] + messages_list
     prompt = "".join(messages_list)
-
     return prompt
 
 
 def format_chatml_prompt(
-    query: str,
-    system_prompt: str | None = None,
-    history: list[dict] | None = None,
+    messages: list[dict],
     add_generation_prompt: bool = False,
 ) -> str:
-    messages = format_messages_prompt(query, system_prompt=system_prompt, history=history)
-
-    sysprompt = ""
-    if system_prompt:
-        sysprompt = "<|im_start|>system\n" + system_prompt + "<|im_end|>\n"
-
-    last_even = len(messages) if add_generation_prompt else len(messages) - 1
     messages_list = [
         f"<|im_start|>{message['role']}\n" + message["content"].strip() + "<|im_end|>\n"
-        for message in messages[:last_even]
+        for message in messages
     ]
 
     if not add_generation_prompt:
@@ -478,12 +511,16 @@ def format_chatml_prompt(
             f"<|im_start|>{messages[-1]['role']}\n"
             + messages[-1]["content"].strip()
             + "<|im_end|>\n"
-            + "<|im_start|>assistant\n"
         )
 
-    messages_list = [sysprompt] + messages_list
-    prompt = "".join(messages_list)
+    if add_generation_prompt:
+        # @DEBUG: There is no EOS for chatml ?
+        pass
+    else:
+        messages_list[-1] += "<|im_start|>assistant\n"
 
+    messages_list = messages_list
+    prompt = "".join(messages_list)
     return prompt
 
 

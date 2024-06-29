@@ -9,8 +9,7 @@ from pyalbert.prompt import get_prompter
 
 if __name__ == "__main__":
     config = dict(
-        api_url="https://franceservices.etalab.gouv.fr/",
-        api_version="/api/v2",
+        base_url="https://franceservices.etalab.gouv.fr/",
         username=os.getenv("FIRST_ADMIN_USERNAME"),
         password=os.getenv("FIRST_ADMIN_PASSWORD"),
     )

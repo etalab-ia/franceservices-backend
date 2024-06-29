@@ -1,6 +1,6 @@
 [project]
 name = "pyalbert"
-version = "0.4.12"
+version = "0.5.5"
 description = "The Albert toolkit -- CLI, libraries and lexicons"
 authors = [
     {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
@@ -35,7 +35,7 @@ Documentation = "https://github.com/etalab-ia/albert/tree/main/docs"
 # Tests
 
 [project.optional-dependencies]
-dev = ["pytest==7.4.4"]
+test = ["pytest==7.4.4"]
 devops = [
     "huggingface-hub==0.23.0",
     "prompt_toolkit==3.0.39",
@@ -47,7 +47,7 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 
-#Packaging
+# Packaging
 
 [build-system]
 requires = ["setuptools", "wheel"]
@@ -65,6 +65,7 @@ packages = [
     "pyalbert.lexicon",
     "pyalbert.prompt",
     "pyalbert.schemas",
+    "pyalbert.schemas.openai",
     "pyalbert.whitelist",
 ]
 include-package-data = true

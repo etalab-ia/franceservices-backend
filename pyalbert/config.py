@@ -38,6 +38,8 @@ BACKEND_CORS_ORIGINS = os.getenv("BACKEND_CORS_ORIGINS", "").split(",")
 FIRST_ADMIN_USERNAME = os.getenv("FIRST_ADMIN_USERNAME", "changeme")
 FIRST_ADMIN_EMAIL = os.getenv("FIRST_ADMIN_EMAIL", "changeme@changeme.fr")
 FIRST_ADMIN_PASSWORD = os.getenv("FIRST_ADMIN_PASSWORD", "changeme")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "changeme")
 
 # Email
@@ -48,7 +50,10 @@ CONTACT_EMAIL = os.getenv("CONTACT_EMAIL")
 # Public URLs
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 FRONT_URL = os.getenv("FRONT_URL", "http://localhost:8000")
-API_ROUTE_VER = "/api/v2"
+API_PREFIX = "/api"
+API_ROUTE_VER = "v2"
+API_PREFIX_V2 = API_PREFIX.rstrip("/") + "/" + API_ROUTE_VER if API_ROUTE_VER else ""
+API_PREFIX_V1 = API_PREFIX.rstrip("/") + "/v1"
 
 # Elasticsearch
 ELASTICSEARCH_IX_VER = "v3"
@@ -74,13 +79,13 @@ SHEET_SOURCES = ["service-public", "travail-emploi"]
 RAG_EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
 
 # Build the LLM table and from the LLM API endpoints
-OPENAI_API_VERSION = (
+LLM_API_VER = (
     ""  # @FUTURE: set it to "v1" once we move to the llm-api that support OpenAI API.
 )
 MODELS_URLS = ast.literal_eval(os.environ.get("MODELS_URLS", "[]"))
 LLM_TABLE = []
 for url in MODELS_URLS:
-    endpoint = f"{url}/{OPENAI_API_VERSION}/models" if OPENAI_API_VERSION else f"{url}/models"
+    endpoint = f"{url}/{LLM_API_VER}/models" if LLM_API_VER else f"{url}/models"
     try:
         response = requests.get(endpoint)
         response.raise_for_status()
@@ -102,7 +107,6 @@ PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
 ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 
 if ENV == "unittest":
-    API_ROUTE_VER = "/"
     LLM_TABLE = [{"model": "albert", "url": "http://127.0.0.1:8899"}]
     ELASTIC_PORT = "9211"
     QDRANT_REST_PORT = "6344"
@@ -111,5 +115,3 @@ if ENV == "unittest":
     ELASTICSEARCH_URL = f"http://{ELASTIC_HOST}:{ELASTIC_PORT}"
     PASSWORD_RESET_TOKEN_TTL = 3  # seconds
     ACCESS_TOKEN_TTL = 9  # seconds
-elif ENV == "dev":
-    API_ROUTE_VER = os.getenv("API_ROUTE_VER", "/")
