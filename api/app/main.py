@@ -5,10 +5,12 @@ from fastapi import APIRouter, FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from app.db.init_db import init_db
-from app.endpoints import chat, feedback, login, misc, search, stream, user
+from app.endpoints import chat, feedback, login, misc, openai, search, stream, user
 from app.mockups import install_mockups
 
 from pyalbert.config import (
+    API_PREFIX_V1,
+    API_PREFIX_V2,
     APP_DESCRIPTION,
     APP_NAME,
     APP_VERSION,
@@ -33,12 +35,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-api_router = APIRouter()
-api_router.include_router(misc.router)
-api_router.include_router(user.router)
-api_router.include_router(login.router)
-api_router.include_router(search.router)
-api_router.include_router(stream.router)
-api_router.include_router(chat.router)
-api_router.include_router(feedback.router)
-app.include_router(api_router)
+api_v1_router = APIRouter()
+api_v1_router.include_router(openai.router)
+
+api_v2_router = APIRouter()
+api_v2_router.include_router(misc.router)
+api_v2_router.include_router(user.router)
+api_v2_router.include_router(login.router)
+api_v2_router.include_router(search.router)
+api_v2_router.include_router(stream.router)
+api_v2_router.include_router(chat.router)
+api_v2_router.include_router(feedback.router)
+
+app.include_router(api_v1_router, prefix=API_PREFIX_V1)
+app.include_router(api_v2_router, prefix=API_PREFIX_V2)

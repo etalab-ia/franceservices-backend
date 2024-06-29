@@ -23,7 +23,7 @@ prompt = prompter.make_prompt(query=query)
 
 # Generate
 llm_client = LlmClient(model)
-stream = llm_client.generate(prompt, temperature=20, stream=True)
+stream = llm_client.generate(prompt, stream=True)
 for c in stream:
     print(c, end="", flush=True)
 

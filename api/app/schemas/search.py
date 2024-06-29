@@ -2,6 +2,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from pyalbert.schemas import IndexSource
+
 # **************
 # * Embeddings *
 # **************
@@ -33,9 +35,6 @@ class IndexSimilarity(str, Enum):
     e5 = "e5"
 
 
-class IndexSource(str, Enum):
-    service_public = "service-public"
-    travail_emploi = "travail-emploi"
 
 
 class Index(BaseModel):

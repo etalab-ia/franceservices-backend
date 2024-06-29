@@ -25,5 +25,5 @@ prompt = prompter.make_prompt(query=query)
 
 # Generate
 llm_client = LlmClient(model)
-chat_name = llm_client.generate(prompt, temperature=20)
+chat_name = llm_client.generate(prompt)
 print(chat_name)

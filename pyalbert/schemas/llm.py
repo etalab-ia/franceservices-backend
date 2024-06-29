@@ -1,6 +1,5 @@
 from typing import List, Optional, Union
 
-from fastapi import Request
 from pydantic import BaseModel
 
 
@@ -14,11 +13,7 @@ class Embeddings(BaseModel):
     encoding_format: str = "float"  # only float is supported.
 
 
-class Generate(Request):
-    # Request is needed because is_disconneted attribute is call in generate endpoint
-    prompt: str
-    stream: bool = True
-
+class SamplingParams(BaseModel):
     # sampling parameters from vllm:
     # https://github.com/vllm-project/vllm/blob/main/vllm/sampling_params.py
     n: int = 1
@@ -44,3 +39,9 @@ class Generate(Request):
     skip_special_tokens: bool = True
     spaces_between_special_tokens: bool = True
     # logits_processors: Optional[List[LogitsProcessor]] = None # ignored for now because it generate a bug with pydantic
+
+class Generate(SamplingParams):
+    # Request is needed because is_disconneted attribute is call in generate endpoint
+    prompt: str
+    stream: bool = False
+

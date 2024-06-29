@@ -6,6 +6,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     LargeBinary,
@@ -72,7 +73,7 @@ class Stream(Base):
     context = Column(Text)
     institution = Column(Text)
     links = Column(Text)
-    temperature = Column(Integer, nullable=False, default=20)
+    temperature = Column(Float, nullable=False, default=0.2)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

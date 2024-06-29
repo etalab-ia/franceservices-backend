@@ -7,7 +7,7 @@ from spacy.lang.fr import French
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.core.llm import auto_set_chat_name
+from app.core import auto_set_chat_name
 from app.deps import get_current_user, get_db
 
 from pyalbert.clients import LlmClient
@@ -166,21 +166,6 @@ def start_stream(
         must_not_sids=must_not_sids,
         history=history,
     )
-
-    while len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8 and limit > 1:
-        print("WARNING: promt size overflow, reducing limit...")
-        limit -= 1
-        prompt = prompter.make_prompt(
-            query=query,
-            institution=institution,
-            context=context,
-            links=links,
-            limit=limit,
-            sources=sources,
-            should_sids=should_sids,
-            must_not_sids=must_not_sids,
-            history=history,
-        )
 
     if len(prompt.split()) * 1.25 > prompter.sampling_params["max_tokens"] * 0.8:
         raise HTTPException(413, detail="Prompt too large")

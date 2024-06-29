@@ -14,7 +14,7 @@ from app.mockups import install_mockups
 from app.mockups.mailjet_mockup import remove_mailjet_folder
 
 from pyalbert.clients import AlbertClient, LlmClient
-from pyalbert.config import LLM_TABLE
+from pyalbert.config import API_PREFIX_V2, LLM_TABLE
 
 # Mocked-up model name
 MODEL_NAME = ""
@@ -29,10 +29,11 @@ def _assert(response):
         )
 
 
-def _fetch(self, method, route, headers=None, json_data=None):
+def _fetch(self, method, route, headers=None, json_data=None, stream=None):
     # Just change the method fetch method of the Api/Abert client
     # by overwriting the original model. It allows to make request using
-    # the fastapi test client insteaod of http request.
+    # the fastapi test client instead of http request.
+    # {stream} is ignored and handled with httpx directly in the test functions.
     with TestClient(app) as c:
         d = {
             "POST": c.post,
@@ -40,7 +41,8 @@ def _fetch(self, method, route, headers=None, json_data=None):
             "PUT": c.put,
             "DELETE": c.delete,
         }
-        response = d[method](f"{route}", headers=headers, json=json_data)
+        url = "/" + API_PREFIX_V2.strip("/") if API_PREFIX_V2 else "/"
+        response = d[method](f"{url}{route}", headers=headers, json=json_data)
         response.raise_for_status()
         return response
 

@@ -35,19 +35,19 @@ def retry(tries=3, delay=2):
 
 
 class LlmClientV1:
-    def __init__(self, model, api_token=None):
+    def __init__(self, model, api_key=None):
         if "mixtral-" in model or "mistral-" in model:
             self.endpoint = "https://api.mistral.ai/v1/chat/completions"
-            self.api_token = os.getenv("MISTRAL_API_KEY")
+            self.api_key = os.getenv("MISTRAL_API_KEY")
         elif "gpt-" in model:
             self.endpoint = "https://api.openai.com/v1/chat/completions"
-            self.api_token = os.getenv("OPENAI_API_KEY")
+            self.api_key = os.getenv("OPENAI_API_KEY")
         else:
             raise NotImplementedError("Unknow model")
 
         self.model = model
-        if api_token:
-            self.api_token = api_token
+        if api_key:
+            self.api_key = api_key
 
     @retry(tries=3, delay=2)
     def chat_completion(self, messages: list[dict], **sampling_params):
@@ -55,7 +55,7 @@ class LlmClientV1:
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "Authorization": f"Bearer {self.api_token}",
+            "Authorization": f"Bearer {self.api_key}",
         }
 
         # Making the POST request to the API

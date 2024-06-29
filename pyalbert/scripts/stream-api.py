@@ -1,49 +1,24 @@
-import json
 import os
+import sys
 
-import requests
+sys.path.append(".")
 
 import pyalbert.config as config
+from pyalbert.clients import AlbertClient
 
-
-def log_and_raise_for_status(response: requests.Response):
-    if not response.ok:
-        try:
-            error_detail = response.json().get("detail")
-        except Exception:
-            error_detail = response.text
-        print(f"Error: Albert API Error Detail: {error_detail}")
-        response.raise_for_status()
-
-
-def new_chat(api_url, api_token) -> int:
-    headers = {
-        "Authorization": f"Bearer {api_token}",
-    }
-
-    data = {
-        "chat_type": "qa",
-    }
-    response = requests.post(f"{api_url}/chat", headers=headers, json=data)
-    log_and_raise_for_status(response)
-    chat_id = response.json()["id"]
-    return chat_id
-
+api_key = os.getenv("ALBERT_API_KEY")
 
 if __name__ == "__main__":
     query = "Quelles sont les dates limite pour déclarer sa déclaration d'impots sur le revenu ?"
-
-    api_token = os.getenv("ALBERT_API_KEY")
-    api_url = config.API_URL
     api_model = "AgentPublic/llama3-instruct-8b"
     api_mode = "rag"
     with_history = False
-    chat_id = None
+
+    client = AlbertClient(api_key=api_key)
 
     # Create Stream:
-    headers = {
-        "Authorization": f"Bearer {api_token}",
-    }
+    # --
+    chat_id = None
     data = {
         "query": query,
         "model_name": api_model,
@@ -53,40 +28,15 @@ if __name__ == "__main__":
     }
     if with_history:
         if not chat_id:
-            chat_id = new_chat(api_url, api_token)
+            chat_id = client.new_chat(chat_type="qa")
             print("chat id:", chat_id)
-        response = requests.post(f"{api_url}/stream/chat/{chat_id}", headers=headers, json=data)
     else:
-        response = requests.post(f"{api_url}/stream", headers=headers, json=data)
-    log_and_raise_for_status(response)
+        chat_id = None
+    stream_id = client.new_stream(chat_id=chat_id, **data)
 
-    stream_id = response.json()["id"]
-
-    # Start Stream:
-    # @TODO: implement non-streaming response
-    data = {"stream_id": stream_id}
-    response = requests.get(
-        f"{api_url}/stream/{stream_id}/start", headers=headers, json=data, stream=True
-    )
-    log_and_raise_for_status(response)
-
-    answer = ""
-    for line in response.iter_lines():
-        if not line:
-            continue
-
-        decoded_line = line.decode("utf-8")
-        _, _, data = decoded_line.partition("data: ")
-        try:
-            text = json.loads(data)
-            if text == "[DONE]":
-                break
-            answer += text
-            print(text, end="", flush=True)
-        except json.decoder.JSONDecodeError as e:
-            # Should never happen...
-            print("\nDATA: " + data)
-            print("\nERROR:")
-            raise e
+    # Start Stream
+    stream = client.generate(stream_id, stream=True)
+    for c in stream:
+        print(c, end="", flush=True)
 
     print()
