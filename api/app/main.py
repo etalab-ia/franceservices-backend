@@ -9,6 +9,7 @@ from app.endpoints import chat, feedback, login, misc, openai, search, stream, u
 from app.mockups import install_mockups
 
 from pyalbert.config import (
+    API_PREFIX,
     API_PREFIX_V1,
     API_PREFIX_V2,
     APP_DESCRIPTION,
@@ -25,7 +26,15 @@ if ENV in ("unittest", "dev"):
 init_db()
 
 
-app = FastAPI(title=APP_NAME, description=APP_DESCRIPTION, version=APP_VERSION, contact=CONTACT)
+app = FastAPI(
+    title=APP_NAME,
+    description=APP_DESCRIPTION,
+    version=APP_VERSION,
+    contact=CONTACT,
+    docs_url=API_PREFIX.rstrip("/") + "/docs",
+    redoc_url=API_PREFIX.rstrip("/") + "/redoc",
+    openapi_url=API_PREFIX.rstrip("/") + "/openapi.json",
+)
 
 app.add_middleware(
     CORSMiddleware,
