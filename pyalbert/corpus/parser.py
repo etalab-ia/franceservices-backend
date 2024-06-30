@@ -675,4 +675,15 @@ class RagSource:
             else:
                 raise NotImplementedError("Rag source unknown")
 
+        # Remove duplicate
+        sids = [x["sid"] for x in sheets]
+        seen = set()
+        to_remove = [i for i, sid in enumerate(sids) if sid in seen or seen.add(sid)]
+        n_dup = len(to_remove)
+        if n_dup > 0:
+            print(f"Dropping {n_dup} duplicated sheets")
+            print([sheets[i]["sid"] for i in to_remove])
+        for ix in sorted(to_remove, reverse=True):
+            sheets.pop(ix)
+
         return sheets
