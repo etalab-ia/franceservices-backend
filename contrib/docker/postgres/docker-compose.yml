@@ -5,10 +5,10 @@ services:
     container_name: albert-postgres-db-dev
     restart: no
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
     ports:
-      - '5439:5432'
+      - '5432:5432'
     volumes: 
       - db:/var/lib/postgresql/data
 volumes:

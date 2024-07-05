@@ -92,8 +92,9 @@ class TestEndpointsStream(TestApi):
             client, token, stream_id, {"message": "that is excelent !"}
         )
         assert response.status_code == 200
+        feedback_id = response.json()["id"]
 
-        ## Create another "rag" stremam
+        ## Create another "rag" stream
         #
         # Create Chat Stream:
         response = stream.create_chat_stream(
@@ -124,3 +125,8 @@ class TestEndpointsStream(TestApi):
         archive_true = _pop_time_ref(_load_case("archive"))
         # WARNING: change file to adapt API change...
         assert archive == archive_true
+
+        # Delete feedback:
+        response = feedback.delete_feedback(client, token, feedback_id)
+        assert response.status_code == 200
+

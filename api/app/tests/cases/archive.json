@@ -5,6 +5,9 @@
     "updated_at": "2024-03-10T02:01:38",
     "user_id": 1,
     "chat_name": "<s>[INST] <<SYS>>\na general system prompt...\n<</SYS>>\n\nSynth\u00e9tise la demande suivante en un court titre de quelque mots (pas plus de 8 mots) permettant d'identifier la th\u00e9matique. Le titre doit \u00eatre court, clair et accrocheur:\n\nBonjour, comment allez-vous ?\ntest@test.test 0000000000 [/INST]",
+    "operator": null,
+    "themes": null,
+    "stream_count": 2,
     "streams": [
         {
             "model_name": "albert",

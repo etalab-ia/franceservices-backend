@@ -19,5 +19,11 @@ def create_feedback(client: TestClient, token, stream_id, data):
 
 def read_feedback(client: TestClient, token, feedback_id):
     return client.get(
-        f"{ROOT_PATH}feedback/{feedback_id}", headers={"Authorization": f"Bearer {token}"}
+        f"{ROOT_PATH}/feedback/{feedback_id}", headers={"Authorization": f"Bearer {token}"}
+    )
+
+
+def delete_feedback(client: TestClient, token, feedback_id):
+    return client.delete(
+        f"{ROOT_PATH}/feedback/delete/{feedback_id}", headers={"Authorization": f"Bearer {token}"}
     )

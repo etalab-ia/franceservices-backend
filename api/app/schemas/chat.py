@@ -16,6 +16,8 @@ class ChatBase(BaseModel):
     # Pydantic configuration:
     model_config = ConfigDict(use_enum_values=True)
     chat_type: ChatType
+    operator: str | None = None
+    themes: list[str] | None = None
 
 
 class ChatCreate(ChatBase):
@@ -28,6 +30,7 @@ class Chat(ChatBase):
     updated_at: datetime
     user_id: int
     chat_name: str | None
+    stream_count: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

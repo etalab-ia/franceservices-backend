@@ -39,3 +39,7 @@ class TestEndpointsChat(TestApi):
         # Read Chat:
         response = chat.read_chat(client, token, chat_id)
         assert response.status_code == 200
+
+        # Delete Chat:
+        response = chat.delete_chat(client, token, chat_id)
+        assert response.status_code == 200
