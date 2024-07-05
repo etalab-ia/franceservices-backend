@@ -146,12 +146,23 @@ class AlbertClient:
         stream = response.json()
         return stream
 
+    def get_full_chat(self, chat_id: int) -> dict:
+        # Get stream data
+        response = self._signed_in_fetch("GET", f"/chat/archive/{chat_id}")
+        chat = response.json()
+        return chat
+
     def review_prompt(self, stream_id: int) -> str | None:
         """Get the raw prompt used for the given stream id"""
         stream = self.get_stream(stream_id)
         if not stream["prompt"]:
             return None
         return lz4.frame.decompress(bytes.fromhex(stream["prompt"])).decode("utf-8")
+
+    def review_chat(self, chat_id: int) -> str | None:
+        """Get the raw prompt used for the given stream id"""
+        chat = self.get_full_chat(chat_id)
+        return chat
 
     def new_chat(self, chat_type: str) -> int:
         response = self._signed_in_fetch("POST", "/chat", json={"chat_type": chat_type})

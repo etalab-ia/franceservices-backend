@@ -56,23 +56,10 @@ class StreamBase(BaseModel):
     # --
     @model_validator(mode="after")
     def validate_model(self):
-        # if self.model_name == ModelName.fabrique_miaou:
-        #     if self.mode is not None:
-        #         raise ValueError("Incompatible mode")
-
-        # elif self.model_name == ModelName.fabrique_reference:
-        #     if self.mode not in (None, "simple", "experience", "expert"):
-        #         raise ValueError("Incompatible mode")
-        #     if self.mode is None:
-        #         self.mode = "simple"  # default
-
-        # elif self.model_name == ModelName.albert_light:
-        #     if self.mode not in (None, "simple", "rag"):
-        #         raise ValueError("Incompatible mode")
-        #     if self.mode is None:
-        #         self.mode = "rag"  # default
-        if self.model_name not in [m["model"] for m in LLM_TABLE]:
-            raise ValueError("Unknown model: %s" % self.model_name)
+        # Do not apply this check as it break review of old stream where models
+        # are not deployed anymoren, and so missing from the LLM_TABLE
+        # if self.model_name not in [m["model"] for m in LLM_TABLE]:
+        #     raise ValueError("Unknown model: %s" % self.model_name)
 
         # For SQLAlchemy relationship compatibility
         if not self.sources:
