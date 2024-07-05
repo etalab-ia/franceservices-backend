@@ -33,3 +33,9 @@ def read_archive(client: TestClient, token, chat_id):
     return client.get(
         f"{ROOT_PATH}/chat/archive/{chat_id}", headers={"Authorization": f"Bearer {token}"}
     )
+
+
+def delete_chat(client: TestClient, token, chat_id):
+    return client.delete(
+        f"{ROOT_PATH}/chat/delete/{chat_id}", headers={"Authorization": f"Bearer {token}"}
+    )

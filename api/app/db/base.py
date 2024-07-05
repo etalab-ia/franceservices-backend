@@ -1,6 +1,9 @@
 import os
 import tempfile
 
+from sqlalchemy import create_engine
+from sqlalchemy_utils import create_database, database_exists
+
 # Import all the models, so that Base has them before being imported by Alembic
 from app.db.base_class import Base  # noqa
 from app.models.chat import Chat  # noqa
@@ -8,7 +11,13 @@ from app.models.login import BlacklistToken, PasswordResetToken  # noqa
 from app.models.stream import Stream  # noqa
 from app.models.user import User  # noqa
 
-from pyalbert.config import ENV
+from pyalbert.config import (
+    ENV,
+    FIRST_ADMIN_USERNAME,
+    POSTGRES_HOST,
+    POSTGRES_PASSWORD,
+    POSTGRES_PORT,
+)
 
 
 def get_db_url() -> str:
@@ -20,7 +29,19 @@ def get_db_url() -> str:
         else:
             db_name = "postgres"
         db_user = "postgres"
-        db_pass = os.environ["POSTGRES_PASSWORD"]
-        db_host = os.environ.get("POSTGRES_HOST", "localhost")
-        db_port = os.environ.get("POSTGRES_PORT", "5432")
+        db_host = POSTGRES_HOST
+        db_port = POSTGRES_PORT
+        db_pass = POSTGRES_PASSWORD
         return f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+
+
+def create_database_if_not_exists(database_url):
+    """Create empty database if it does not exist yet."""
+    engine = create_engine(database_url)
+    if not database_exists(engine.url):
+        create_database(engine.url)
+    # Does not work :(
+    # conn = engine.connect()
+    # conn.execute("commit")
+    # conn.execute("CREATE DATABASE IF NOT EXISTS mydatabase")
+    # conn.close()

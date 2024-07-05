@@ -50,3 +50,10 @@ def update_chat(
         db.commit()
 
     return db_chat
+
+
+def delete_chat(db: Session, chat_id: int, commit=True):
+    result = db.query(models.Chat).filter(models.Chat.id == chat_id).delete()
+    if commit:
+        db.commit()
+    return result

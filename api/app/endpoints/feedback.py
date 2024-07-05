@@ -9,6 +9,22 @@ router = APIRouter()
 # TODO: add update / delete endpoints
 
 
+@router.get("/feedback/{feedback_id}", response_model=schemas.Feedback, tags=["feedback"])
+def read_feedback(
+    feedback_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> models.Feedback:
+    db_feedback = crud.feedback.get_feedback(db, feedback_id=feedback_id)
+    if db_feedback is None:
+        raise HTTPException(404, detail="Feedback not found")
+
+    if not (db_feedback.user_id == current_user.id or current_user.is_admin):
+        raise HTTPException(403, detail="Forbidden")
+
+    return db_feedback
+
+
 @router.get("/feedbacks", response_model=list[schemas.Feedback], tags=["feedback"])
 def read_feedbacks(
     skip: int = 0,
@@ -38,22 +54,6 @@ def create_feedback(
         )
     else:
         db_feedback = crud.feedback.update_feedback(db, db_stream.feedback, feedback)
-
-    return db_feedback
-
-
-@router.get("/feedback/{feedback_id}", response_model=schemas.Feedback, tags=["feedback"])
-def read_feedback(
-    feedback_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-) -> models.Feedback:
-    db_feedback = crud.feedback.get_feedback(db, feedback_id=feedback_id)
-    if db_feedback is None:
-        raise HTTPException(404, detail="Feedback not found")
-
-    if not (db_feedback.user_id == current_user.id or current_user.is_admin):
-        raise HTTPException(403, detail="Forbidden")
 
     return db_feedback
 
