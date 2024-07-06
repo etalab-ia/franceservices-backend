@@ -10,13 +10,18 @@ stages:
   script:
     - | # build and push image to gitlab registry
       docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker build --tag ${IMAGE_NAME}:${IMAGE_TAG} $BUILD_ARGS $BUILD_CONTEXT
-      docker push ${IMAGE_NAME}:${IMAGE_TAG}
-      if [ "$CI_COMMIT_BRANCH" == "main" ]; then
+      docker build --tag ${IMAGE_NAME}:${CI_COMMIT_SHORT_SHA} $BUILD_ARGS $BUILD_CONTEXT
+
+      if [[ $CI_COMMIT_BRANCH == "dev" ]]; then
+        docker push ${IMAGE_NAME}:${CI_COMMIT_SHORT_SHA}
         docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
         docker push ${IMAGE_NAME}:latest
+
+      elif [[ $CI_COMMIT_BRANCH == "main" ]]; then
+        docker tag ${IMAGE_NAME}:${CI_COMMIT_SHORT_SHA} ${IMAGE_NAME}:stable
+        docker push ${IMAGE_NAME}:stable
+
       fi
-      
 
 cache:
   paths:
@@ -64,11 +69,10 @@ test:api:
 
 build:llm:
   rules:
-    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"
       changes:
         - llm/**/*
   variables:
-    IMAGE_TAG: "${CI_COMMIT_BRANCH}-${CI_COMMIT_SHORT_SHA}"
     IMAGE_NAME: "${CI_REGISTRY_IMAGE}/llm"
     BUILD_CONTEXT: "./llm"
     BUILD_ARGS: "--file ./llm/Dockerfile"
@@ -76,11 +80,10 @@ build:llm:
 
 build:api:
   rules:
-    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"
       changes:
         - api/**/*
   variables:
-    IMAGE_TAG: "${CI_COMMIT_BRANCH}-${CI_COMMIT_SHORT_SHA}"
     IMAGE_NAME: "${CI_REGISTRY_IMAGE}/api"
     BUILD_CONTEXT: "./api"
     BUILD_ARGS: "--file ./api/Dockerfile"
