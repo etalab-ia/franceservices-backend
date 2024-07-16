@@ -1,4 +1,4 @@
-.PHONY: help version build push clean package
+.PHONY: help version build push clean publish
 
 help:
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -21,7 +21,7 @@ build: version
 push: build
 	twine upload dist/*
 
-package: push clean
+publish: push clean
 
 clean:
 	rm -rf dist build *.egg-info version.py
@@ -49,6 +49,9 @@ info:
 	@echo "Number of questions (from sheets): $$(cat _data/questions.json | jq 'length')"
 	@echo
 	@cat _data/chunks.info
+
+fetch_openai_openapi:
+	wget https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml
 
 fetch_colab_notebooks:
 	wget 'https://colab.research.google.com/drive/1_FQw20VjpKaE-Al-dh4jfVRtPawbD0fe' -O notebooks/llama-finetuning-7b-4bit.ipynb

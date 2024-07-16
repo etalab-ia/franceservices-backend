@@ -25,7 +25,7 @@ def get_models(
     current_user: models.User = Depends(get_current_user), response_model=dict[str, list[str]]
 ) -> JSONResponse:
     model_prompts = prompts_from_llm_table(LLM_TABLE)
-    model_prompts = {k: v for k, v in model_prompts.items() if [v.pop("templates")]}
+    model_prompts = {k: v for k, v in model_prompts.items() if [v.pop("prompts")]}
     return JSONResponse(model_prompts)
 
 

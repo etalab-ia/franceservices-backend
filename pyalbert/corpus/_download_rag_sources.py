@@ -23,7 +23,7 @@ def download_rag_sources(storage_dir: str, config_file: str):
         coprus_config = json.load(f)
 
     for corpus_id, corpus in coprus_config.items():
-        print(f"Dowloading '{corpus_id}'...\n")
+        print(f"Downloading '{corpus_id}'...\n")
         last_name = corpus["url"].split("/")[-1]
         target = f"{storage_dir}/{corpus['output']}"
         filename_tmp = f"{storage_dir}/temp_{last_name}"

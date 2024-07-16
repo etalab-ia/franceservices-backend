@@ -1,38 +1,125 @@
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app import models
-from app.core import generate_v0
-from app.deps import get_current_user, get_db
+from app.core import albert_request_intercept
+from app.deps import get_current_user
 
+from pyalbert.config import LLM_API_VER, LLM_TABLE
 from pyalbert.schemas import RagChatCompletionRequest
-from pyalbert.schemas.openai import ChatCompletionResponse
+from pyalbert.schemas.openai import ChatCompletionRequest
 
 router = APIRouter()
 
 
-@router.post("/chat/completions", tags=["openai"])
-async def create_chat_completion(
-    request: RagChatCompletionRequest,
-    raw_request: Request,
-    db: Session = Depends(get_db),
-    # authentication needed
+async def forward_stream(
+    url: str, request: Request, headers: dict | None = None, json: dict | None = None
+):
+    """Asynchronous generator function that relay a stream from request to a given target API."""
+    async with httpx.AsyncClient() as client:
+        async with client.stream(
+            request.method,
+            url,
+            headers=headers,
+            params=request.query_params,
+            json=json,
+        ) as response:
+            async for chunk in response.aiter_raw():
+                yield chunk
+
+
+@router.api_route(
+    "/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], tags=["openai"]
+)
+async def openai_api_proxy(
+    request: Request,
+    path: str,  # authentication needed
     current_user: models.User = Depends(get_current_user),
 ):
-    if len(request.messages) == 0:
-        raise HTTPException(413, detail="Empty messages, please provide at least one message.")
+    """
+    Proxy endpoint that forwards requests to the OpenAI API.
 
-    # @TODO: For vllm openai compatible request on the back
-    # generator = await openai_serving_chat.create_chat_completion(request, raw_request)
-    # Run the blocking I/O operation in a thread pool
-    generator = await run_in_threadpool(generate_v0, request)
-    # if isinstance(generator, proto.ErrorResponse):
-    #    return JSONResponse(content=generator.model_dump(), status_code=generator.code)
+    This endpoint acts as a proxy, forwarding incoming requests to the OpenAI API
+    with the same method, headers, query parameters, and JSON body. It supports GET, POST,
+    PUT, DELETE, and PATCH methods.
 
-    if request.stream:
-        return StreamingResponse(content=generator, media_type="text/event-stream")
+    If the JSON body contains a key "stream" with a value of True, the response from the
+    OpenAI API is streamed back to the client as Server-Sent Events (SSE). Otherwise, the
+    response is returned normally.
+
+    Parameters:
+    - request (Request): The incoming HTTP request.
+    - path (str): The sub-path to be appended to the OpenAI API base URL.
+
+    Returns:
+    - StreamingResponse: If "stream" is True in the JSON body, returns a streaming response
+      with the content from the OpenAI API.
+    - JSON: If "stream" is not present or False, returns the JSON response from the OpenAI API.
+
+    Raises:
+    - HTTPException: If the JSON body is invalid or if there is an error forwarding the request.
+    """
+    client = httpx.AsyncClient()
+
+    # Determine if we need to forward a JSON body
+    json_body = None
+    stream = False
+    model = None
+    target_url = None
+    if request.method in ["POST", "PUT", "PATCH"]:
+        try:
+            # Request Interception
+            json_body = await request.json()
+            stream = json_body.get("stream", stream)
+            model = json_body.get("model")
+            if not model:
+                raise ValueError("model parameter is required.")
+        except Exception as err:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON body ({err})")
+
+        _model = next((m for m in LLM_TABLE if m["model"] == model), None)
+        target_url = (
+            f"{_model['url']}/{LLM_API_VER}/{path}" if LLM_API_VER else f"{_model['url']}/{path}"
+        )
+
+        if path == "chat/completions":
+            json_data = RagChatCompletionRequest(**json_body)
+            json_data = await run_in_threadpool(albert_request_intercept, json_data)
+            upstream_fields = set(RagChatCompletionRequest.model_fields.keys()) - set(ChatCompletionRequest.model_fields.keys())  # fmt: off
+            # Warning: The JSON body will include all default values defined in the schema,
+            # potentially leading to unnecessary network payload.
+            # Furthermore, it cause sopenapi openai issue due to non-aligned default_factory value in the spec.
+            json_body = json_data.model_dump(exclude=upstream_fields, exclude_unset=True)
+
     else:
-        assert isinstance(generator, ChatCompletionResponse)
-        return JSONResponse(content=generator.model_dump())
+        raise NotImplementedError
+
+    headers_to_keep = ["Authorization"]
+    headers = {h: request.headers[h] for h in headers_to_keep if h in request.headers}
+
+    if stream:
+        # Return a streaming response
+        return StreamingResponse(
+            content=forward_stream(target_url, request, headers=headers, json=json_body),
+            media_type="text/event-stream",
+        )
+
+    try:
+        # Forward the request to the target API
+        response = await client.request(
+            method=request.method,
+            url=target_url,
+            headers=headers,
+            params=request.query_params,
+            json=json_body,
+        )
+
+        # Return the response from the target API
+        return response.json()
+    except httpx.RequestError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        await client.aclose()

@@ -4,6 +4,7 @@ from pyalbert.config import API_PREFIX_V2
 
 ROOT_PATH = API_PREFIX_V2
 
+
 def read_pending_users(client: TestClient, token):
     return client.get(f"{ROOT_PATH}/users/pending", headers={"Authorization": f"Bearer {token}"})
 

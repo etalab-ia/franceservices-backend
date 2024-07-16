@@ -1,43 +1,40 @@
 from enum import Enum
+from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
-from .protocol import ChatCompletionRequest
+from .api_v1 import ChatCompletionRequest
 
 
 class IndexSource(str, Enum):
     service_public = "service-public"
     travail_emploi = "travail-emploi"
 
+class RagParams(BaseModel):
+    model_config = ConfigDict(extra="ignore")
 
-class RagChatCompletionRequest(ChatCompletionRequest):
     # Activate the RAG with the given strategy
-    rag: str | None = Field(
-        default=None,
+    strategy: str = Field(
+        default="last",
         description="Activate the RAG with the given strategy. Available strategy: last.",
     )
 
-    # Optionnal mode
+    # The Template (aka mode) to use
     mode: str | None = Field(
         default=None,
         description="A mode is a predefined prompt engineering settings (sampling params, system prompt and user prompt template). They are defined in the huggingface repo of the model, in the pompt_config.yml file.",
     )
 
-    # Optionnal limit
+    # Number of reference for the RAG
     limit: int | None = Field(
         default=None,
         description="The max number of document to retrieves within the RAG. Use None to let the algorithm decides the best number.",
     )
 
-    # Optionnal RAG sources
+    # Search engine sources for the RAG
     sources: list[IndexSource] | None = Field(
         default=None, description="Restrict the list of source to search within in RAG mode."
     )
 
-    @model_validator(mode="after")
-    def check_rag(self):
-        if self.rag and self.rag not in ["last"]:
-            raise ValueError("Unknown rag strategy: %s" % self.rag)
-        elif self.mode and self.mode.startswith("rag") and not self.rag:
-            raise ValueError("The rag option must be activated to use this mode.")
-        return self
+class RagChatCompletionRequest(ChatCompletionRequest):
+    rag: Optional[RagParams] = None

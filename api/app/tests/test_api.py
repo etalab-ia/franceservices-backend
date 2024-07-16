@@ -22,10 +22,14 @@ if len(LLM_TABLE) > 0:
     MODEL_NAME = LLM_TABLE[0]["model"]
 
 
-def _assert(response):
+def log_and_assert(response, code):
+    if code != 200:
+        assert response.status_code == code
+        return
+
     if response.status_code != 200:
         fail(
-            f"Expected status code 200, but got {response.status_code}.\nError details: {response.text}"
+            f"Expected status code 200, but got {response.status_code}.\nError details: {response.text if isinstance(response.text, str) else response}"
         )
 
 
@@ -45,10 +49,6 @@ def _fetch(self, method, route, headers=None, json_data=None, stream=None):
         response = d[method](f"{url}{route}", headers=headers, json=json_data)
         response.raise_for_status()
         return response
-
-
-def _create_embeddings(*args, **kwargs):
-    return list(range(1000))
 
 
 def _pop_time_ref(d):
@@ -86,11 +86,10 @@ class TestApi:
         get_or_create_admin_user(db)
 
         AlbertClient._fetch = _fetch
-        LlmClient.create_embeddings = _create_embeddings
 
     def teardown_method(self):
         remove_mailjet_folder()
 
-    def test_mockup(self, mock_server1, mock_server2, mock_server3):
+    def test_mockup(self, mock_server_es, mock_server_qdrant, mock_server_models):
         # Start the server
         pass

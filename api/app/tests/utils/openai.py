@@ -8,7 +8,7 @@ from pyalbert.config import API_PREFIX_V1
 ROOT_PATH = API_PREFIX_V1
 
 
-def chat_completion(client: TestClient, token, data):
+def chat_completions(client: TestClient, token, data):
     headers = None
     if token:
         headers = {"Authorization": f"Bearer {token}"}
@@ -34,7 +34,17 @@ async def chat_completion_stream(client: TestClient, token, data):
             json=data,
         ) as response:
             response.encoding = "utf-8"
-            async for line in response.aiter_bytes():
-                pass
+            content = await response.aread()
+            return response, content
 
-            return response
+
+def create_embeddings(client: TestClient, token, data):
+    headers = None
+    if token:
+        headers = {"Authorization": f"Bearer {token}"}
+
+    return client.post(
+        f"{ROOT_PATH}/embeddings",
+        headers=headers,
+        json=data,
+    )

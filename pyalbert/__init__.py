@@ -1,4 +1,4 @@
-from ._logging import Logging
+from ._logging import Logging, get_logger
 from ._version import __version__
 from .config import LLM_TABLE
 
