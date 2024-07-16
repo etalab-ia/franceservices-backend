@@ -14,24 +14,32 @@ from app.db.session import SessionLocal
 from app.main import app
 
 from pyalbert.config import ELASTIC_PORT, LLM_TABLE, QDRANT_REST_PORT
+from pyalbert.prompt import PROMPTS, PromptConfig
 
 if len(LLM_TABLE) > 0:
     LLM_HOST, LLM_PORT = urlparse(LLM_TABLE[0]["url"]).netloc.split(":")
+    LLM_MODEL = LLM_TABLE[0]["model"]
+    PROMPTS[LLM_MODEL] = PromptConfig.from_file(
+        "app/tests/mockups/prompt_config.yml"
+    ).set_defaults()
 
 
-def start_mock_server(command, health_route="/healthcheck", timeout=10, interval=1):
+def start_mock_server(
+    command, health_route="/healthcheck", health_headers=None, timeout=10, interval=1
+):
     """Starts a mock server using subprocess.Popen and waits for it to be ready
     by polling a health check endpoint.
     """
     process = subprocess.Popen(command)
-
     try:
         end_time = time.time() + timeout
         while True:
             try:
                 host = "localhost"
                 port = command[-1]
-                response = requests.get(f"http://{host}:{port}" + health_route)
+                response = requests.get(
+                    f"http://{host}:{port}" + health_route, headers=health_headers
+                )
                 if response.status_code == 200:
                     # Server is ready
                     break
@@ -56,7 +64,7 @@ def start_mock_server(command, health_route="/healthcheck", timeout=10, interval
 
 
 @pytest.fixture(scope="session")
-def mock_server1():
+def mock_server_es():
     process = start_mock_server(
         ["uvicorn", "app.tests.mockups.elasticsearch:app", "--port", ELASTIC_PORT]
     )
@@ -65,7 +73,7 @@ def mock_server1():
 
 
 @pytest.fixture(scope="session")
-def mock_server2():
+def mock_server_qdrant():
     process = start_mock_server(
         ["uvicorn", "app.tests.mockups.qdrant:app", "--port", QDRANT_REST_PORT]
     )
@@ -73,9 +81,20 @@ def mock_server2():
     process.kill()
 
 
+# @pytest.fixture(scope="session")
+# def mock_server_models():
+#     process = start_mock_server(["uvicorn", "app.tests.mockups.llm:app", "--port", LLM_PORT])
+#     yield
+#     process.kill()
+
+
 @pytest.fixture(scope="session")
-def mock_server3():
-    process = start_mock_server(["uvicorn", "app.tests.mockups.llm:app", "--port", LLM_PORT])
+def mock_server_models():
+    process = start_mock_server(
+        ["prism", "mock", "app/tests/mockups/openai-openapi.yaml", "-p", LLM_PORT],
+        health_route="/models",
+        health_headers={"Authorization": "Bearer IAM_HERE"},
+    )
     yield
     process.kill()
 

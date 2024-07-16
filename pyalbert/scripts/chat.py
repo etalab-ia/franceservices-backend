@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python
 
 import sys
 
@@ -9,6 +9,7 @@ from prompt_toolkit import PromptSession
 from pyalbert import set_llm_table
 from pyalbert.clients import LlmClient
 from pyalbert.prompt import get_prompter
+from pyalbert.utils import sse_decoder
 
 ################################################################################
 ### The Albert REPL chat
@@ -23,7 +24,7 @@ from pyalbert.prompt import get_prompter
 ################################################################################
 
 # Custom LLM_TABLE
-#set_llm_table([{"model": "AgentPublic/llama3-instruct-8b", "url": "http://localhost:8083"}])
+# set_llm_table([{"model": "AgentPublic/llama3-instruct-8b", "url": "http://localhost:8083"}])
 default_model = "AgentPublic/llama3-instruct-8b"
 
 WELCOME = """Welcome to Albert chat
@@ -115,14 +116,12 @@ while True:
         with_history = not with_history
         continue
 
-    # Make prompt replace the last user query by the prompt provided
-    # @DEBUG: this logic is due to the create/start stream double call...to fix!
+    # Push the history/messages
     history.append({"role": "user", "content": query})
 
     # Build prompt
     prompter = get_prompter(model, mode)
     prompt = prompter.make_prompt(
-        query=query,
         limit=limit,
         history=history,
         prompt_format=prompt_format,
@@ -135,12 +134,13 @@ while True:
         continue
 
     # Generate
-    sampling_params = prompter.sampling_params
+    sampling_params = prompter.get_upstream_sampling_params()
     stream = llm_client.generate(prompt, stream=True, **sampling_params)
     raw_response = ""
-    for c in stream:
-        print(c, end="", flush=True)
-        raw_response += c
+    for c in sse_decoder(stream):
+        text = c["text"]
+        print(text, end="", flush=True)
+        raw_response += text
 
     history.extend(
         [

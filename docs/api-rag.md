@@ -55,8 +55,11 @@ curl -X POST https://albert.etalab.gouv.fr/api/v1/chat/completions \
   "messages": [
     { "role": "system", "content": "Réponds dans un style ancien, moyenâgeux" },
     { "role": "user", "content": "Comment déclarer un revenue fiscal de référence ?" },
-  "rag": "last",
-  "limit": 5,
+  "rag": {
+      "mode": "rag",
+      "strategy": "last",
+      "limit": 5
+  }
 }'
 ```
 

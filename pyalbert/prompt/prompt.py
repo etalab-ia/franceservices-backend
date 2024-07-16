@@ -1,31 +1,173 @@
-import os
 import re
 from functools import wraps
+from pathlib import Path
 from typing import Any
 
+import yaml
+from huggingface_hub import hf_hub_download
+from huggingface_hub.utils._errors import EntryNotFoundError, RepositoryNotFoundError
 from jinja2 import BaseLoader, Environment, Template, meta
-from requests.exceptions import RequestException
+from pydantic import BaseModel
 
+from pyalbert import get_logger
 from pyalbert.clients import AlbertClient
-from pyalbert.config import LLM_TABLE
+from pyalbert.config import DO_ENCODE_PROMPT, HF_TOKEN, LLM_TABLE
 from pyalbert.lexicon import ACRONYMS
 
+logger = get_logger()
 
-class PromptTemplate:
+
+def fetch_hf_file(
+    hf_repo_id: str, filename: str, fail_if_notfound=False, local=False
+) -> str | None:
+    if local:
+        return filename
+    file_path = None
+    try:
+        file_path = hf_hub_download(
+            repo_id=hf_repo_id,
+            filename=filename,
+            # local_dir=args.model,
+            # cache_dir=args.model,
+            token=HF_TOKEN,
+        )
+    except EntryNotFoundError as err:
+        if fail_if_notfound:
+            raise err
+        else:
+            logger.warning(f"File {filename} not found in Hugginface repository {hf_repo_id}.")
+    except RepositoryNotFoundError as err:
+        if fail_if_notfound:
+            raise err
+        else:
+            logger.warning(f"Hugginface repository {hf_repo_id} not found.")
+
+    return file_path
+
+
+def fetch_hf_prompt_config(hf_repo_id: str, config_filename: str, local=False) -> dict | None:
+    """Return the parsed prompt_config from huggingface repo if the file is found in the repo
+    else, returns a empty dict.
+    """
+    config = None
+    config_file_path = fetch_hf_file(hf_repo_id, config_filename, local=local)
+    if not config_file_path:
+        return config
+
+    with open(config_file_path) as file:
+        config = yaml.safe_load(file)
+
+    # open the prompt templates
+    for i, prompt in enumerate(config.get("prompts", [])):
+        if not prompt.get("template"):
+            continue
+        template_filename = prompt["template"]
+        if local:
+            template_filename = Path(config_filename).parent / template_filename
+
+        template_path = fetch_hf_file(hf_repo_id, template_filename, local=local)
+        if template_path is None:
+            raise ValueError(f"{template_path} not found in remote model repository.")
+
+        with open(template_path) as file:
+            config["prompts"][i]["template"] = file.read()
+
+    return config
+
+
+SAMPLING_PARAMS_SUPPORTED = [
+    "temperature",
+    "max_tokens",
+    "top_p",
+    "top_k",
+    "min_p",
+    "presence_penalty",
+    "length_penalty",
+    "frequency_penalty",
+    "repetition_penalty",
+    "stop_token_ids",
+]
+
+
+class PromptTemplate(BaseModel):
     mode: str
-    template: Template
-    variables: set[str]
-    default: dict
+    template: str | None = None
+    variables: set[str] | None = None
+    default: dict | None = None
     # Overwrite the default config
-    system_prompt: str | None
-    sampling_params: dict
+    system_prompt: str | None = None
+    sampling_params: dict | None = None
 
 
-class PromptConfig:
+class PromptConfig(BaseModel):
     # Global prompt config
     config: dict
-    # The key is the prompt **mode**
-    templates: dict[str, PromptTemplate] | None
+    # Specific prompt config (called "mode"), with optional template.
+    prompts: list[PromptTemplate] | None = None
+
+    @classmethod
+    def from_hf(cls, hf_repo_id):
+        config_files = ["prompt_config.yml", "prompt_config.yaml"]
+        for config_filename in config_files:
+            config = fetch_hf_prompt_config(hf_repo_id, config_filename)
+            if config:
+                config = {"config": config, "prompts": config.pop("prompts", [])}
+                break
+
+        if not config:
+            logger.info(f"prompt_config configuration not found for repo {hf_repo_id}")
+            config = {"config": {}}
+
+        return cls(**config)
+
+    @classmethod
+    def from_file(cls, config_filename):
+        config = fetch_hf_prompt_config("file://", config_filename, local=True)
+        config = {"config": config, "prompts": config.pop("prompts", [])}
+        return cls(**config)
+
+    def set_defaults(self) -> dict:
+        """Set default params and variables values for this prompt configuration.
+        Additionally, parse the template and prerender jinja Template.
+        """
+        top_config = self.model_dump()
+        config = top_config["config"]
+        prompts = top_config.get("prompts") or []
+
+        # Default prompt system
+        system_prompt = config.get("system_prompt")
+
+        # Default sampling paramerters
+        sampling_params = {}
+        for k in SAMPLING_PARAMS_SUPPORTED:
+            if k in config:
+                sampling_params[k] = config[k]
+        config["sampling_params"] = sampling_params
+
+        # Parse templates
+        for prompt in prompts:
+            # Overwrite system prompt
+            mode_system_prompt = prompt.get("system_prompt", system_prompt)
+            prompt["system_prompt"] = mode_system_prompt
+            # Overwrite sampling params
+            mode_sampling_params = sampling_params.copy()
+            for param in SAMPLING_PARAMS_SUPPORTED:
+                if param in prompt:
+                    mode_sampling_params[param] = prompt[param]
+            prompt["sampling_params"] = mode_sampling_params
+
+            # Template from file template
+            if not prompt.get("template"):
+                continue
+            template_string = prompt["template"]
+            env = Environment(loader=BaseLoader())
+            variables = meta.find_undeclared_variables(env.parse(template_string))
+            prompt["_template"] = env.from_string(template_string)
+            prompt["variables"] = variables
+
+        # Convert the list of template to a dict with mode as key.
+        top_config["prompts"] = {d["mode"]: d for d in prompts}
+        return top_config
 
 
 def prompt_encoder(func):
@@ -35,8 +177,9 @@ def prompt_encoder(func):
 
         # Format messages
         # --
-        # @FUTURE: Remove the default value at True when vllm.openai will be supported.
-        do_encode_prompt = kwargs.get("do_encode_prompt", True)
+        do_encode_prompt = (
+            kwargs["do_encode_prompt"] if "do_encode_prompt" in kwargs else DO_ENCODE_PROMPT
+        )
         prompt_format = kwargs.get("prompt_format") or self.config.get("prompt_format")
         if do_encode_prompt and prompt_format and prompt_format != "openai":
             if prompt_format in ["llama-chat", "llama2-chat"]:
@@ -109,72 +252,14 @@ def sources_length_checker(func):
     return wrapper
 
 
-def prompts_from_llm_table(table: list[dict]) -> dict[str, PromptConfig]:
-    sampling_params_supported = [
-        "temperature",
-        "max_tokens",
-        "top_p",
-        "top_k",
-        "min_p",
-        "presence_penalty",
-        "length_penalty",
-        "frequency_penalty",
-        "repetition_penalty",
-        "stop_token_ids",
-    ]
+def prompts_from_llm_table(table: list[dict]) -> dict[str, dict]:
+    """Returns a dict of prompt configs per model with precomputed templates"""
     templates = {}
-    client = AlbertClient()
     for model in table:
-        model_name = model["model"]
-        model_url = model["url"]
-        try:
-            config = client.get_prompt_config(model_url)
-        except RequestException as err:
-            print(f"Error: Failed to fetch templates file for url {model_url} ({err}), passing...")
-            continue
-
-        # Default prompt system
-        system_prompt = config.get("system_prompt")
-
-        # Default sampling paramerters
-        sampling_params = {}
-        for param in sampling_params_supported:
-            if param in config:
-                sampling_params[param] = config[param]
-        config["sampling_params"] = sampling_params
-
-        # Parse templates
-        prompt_templates = {}
-        for prompt in config.get("prompts", []):
-            # Overwrite system prompt
-            mode_system_prompt = prompt.get("system_prompt", system_prompt)
-            # Overwrite sampling params
-            mode_sampling_params = sampling_params.copy()
-            for param in sampling_params_supported:
-                if param in prompt:
-                    mode_sampling_params[param] = prompt[param]
-
-            # Template from file template
-            # --
-            # template_file = hf_hub_download(repo_id=model["hf_repo_id"], filename=prompt["template"])
-            # env = Environment(loader=FileSystemLoader(os.path.dirname(template_file)))
-            # template = env.get_template(prompt["template"])
-            # template_ = template.environment.loader.get_source(template.environment, template.name)
-            # Template from string template
-            template_string = prompt["template"]
-            env = Environment(loader=BaseLoader())
-            template = env.from_string(template_string)
-            variables = meta.find_undeclared_variables(env.parse(template_string))
-            prompt_templates[prompt["mode"]] = {
-                "mode": prompt["mode"],
-                "template": template,
-                "variables": variables,
-                "default": prompt.get("default", {}),
-                "system_prompt": mode_system_prompt,
-                "sampling_params": mode_sampling_params,
-            }
-
-        templates[model_name] = {"config": config, "templates": prompt_templates}
+        if model["type"] in ["text-generation"]:
+            templates[model["model"]] = PromptConfig.from_hf(model["model"]).set_defaults()
+        else:
+            templates[model["model"]] = {}
 
     return templates
 
@@ -208,9 +293,9 @@ class Prompter:
             self.sampling_params.update(self.config["sampling_params"])
 
         # Load or set the prompt template
-        self.template = template
+        self.template = None
         if isinstance(template, str):
-            if not os.path.exists(template):
+            if not Path(template).exists():
                 raise FileNotFoundError("Template not found: %s" % template)
 
             with open(template) as f:
@@ -221,14 +306,20 @@ class Prompter:
                 t = env.from_string(template_string)
                 variables = meta.find_undeclared_variables(env.parse(template_string))
                 self.template = {
-                    "template": t,
+                    "template": template_string,
+                    "_template": t,
                     "variables": variables,
-                    "default": config.get("default", {}),
+                    "default": config.get("default"),
                     "system_prompt": None,
                     "sampling_params": None,
                 }
             else:
                 raise ValueError("Template format unknown: %s" % template)
+        elif isinstance(template, dict):
+            self.template = template
+
+        if self.template:
+            self.template["default"] = self.template.get("default") or {}
 
         # Eventually stores the sources returned by the last RAG prompt built
         self.sources = None
@@ -295,12 +386,18 @@ class Prompter:
         - openai: a list for {role, content}
         - null : force no chat template (to avoid conflict with the prompt_format template config)
         """
+
+        history = kwargs.get("history")
+        if not kwargs.get("query"):
+            if not history:
+                raise ValueError("Either history or query must be set")
+            kwargs["query"] = history[-1]["content"]
+
         if expand_acronyms and "query" in kwargs:
             kwargs["query"] = self.preprocess_prompt(kwargs["query"])
 
         # Set search query
-        kwargs["seach_query"] = kwargs.get("query")
-        history = kwargs.get("history")
+        kwargs["seach_query"] = kwargs["query"]
         if history:
             history = history.copy()
             # Use the three last user prompt to build the search query (embedding)
@@ -311,10 +408,10 @@ class Prompter:
         # Build template and render prompt with RAG variables if any
         if self.template:
             data = self.make_variables(kwargs, self.template["variables"], self.template["default"])
-            prompt = self.template["template"].render(**data)
+            prompt = self.template["_template"].render(**data)
             system_prompt = kwargs.get("system_prompt") or self.template.get("system_prompt") or self.config.get("system_prompt")  # fmt: skip
         else:
-            prompt = kwargs.get("query")
+            prompt = kwargs["query"]
             system_prompt = kwargs.get("system_prompt") or self.config.get("system_prompt")
 
         messages = format_messages_prompt(prompt, system_prompt=system_prompt, history=history)
@@ -348,14 +445,11 @@ class Prompter:
             if not data.get(k):
                 data[k] = v
 
-        search_query = data.get("search_query", data.get("query"))
+        search_query = data.get("search_query", data["query"])
         client = AlbertClient(api_key=self.api_key)
 
         # Extract one similar value in a collection from query
         if "most_similar_experience" in variables:
-            # Using LLM
-            # rep1 = llm_client.generate(prompt, stream=False,  max_tokens=500, **FabriquePrompter.SAMPLING_PARAMS)
-            # rep1 = "".join(rep1)
             # Using similar experience
             skip_first = data.get("skip_first")
             n_exp = 1
@@ -405,6 +499,13 @@ class Prompter:
             data[v] = hits
 
         return data
+
+    def get_upstream_sampling_params(self):
+        sampling_params = self.sampling_params.copy()
+        # Remove sampling_params as it will cause the completion to fail if max_tokens is set to the
+        # maximum context length.
+        sampling_params.pop("max_tokens")
+        return sampling_params
 
 
 def format_messages_prompt(
@@ -548,7 +649,7 @@ def get_prompter(
     template = None
 
     # Find template according to mode
-    templates = prompt_config.get("templates", {})
+    templates = prompt_config.get("prompts", {})
     if templates.get(mode):
         template = templates[mode]
         if "sampling_params" in template:
@@ -559,7 +660,7 @@ def get_prompter(
     if mode and not template:
         raise ValueError(
             "Prompt mode unknown: %s (available: %s)"
-            % (mode, list(prompt_config.get("templates", {})))
+            % (mode, list(prompt_config.get("prompts", {})))
         )
 
     if prompt_format:

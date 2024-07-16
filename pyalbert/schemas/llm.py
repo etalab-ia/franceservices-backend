@@ -2,6 +2,8 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
+# @Deprecated : remove this file when llm/app will be turn off
+
 
 class Embeddings(BaseModel):
     input: str | list[str]
@@ -40,8 +42,8 @@ class SamplingParams(BaseModel):
     spaces_between_special_tokens: bool = True
     # logits_processors: Optional[List[LogitsProcessor]] = None # ignored for now because it generate a bug with pydantic
 
+
 class Generate(SamplingParams):
     # Request is needed because is_disconneted attribute is call in generate endpoint
     prompt: str
     stream: bool = False
-

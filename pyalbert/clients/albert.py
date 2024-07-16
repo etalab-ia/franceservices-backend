@@ -7,25 +7,20 @@ import requests
 
 from pyalbert.config import (
     ACCESS_TOKEN_TTL,
+    ALBERT_MODELS_API_KEY,
     API_PREFIX_V1,
     API_PREFIX_V2,
     API_ROUTE_VER,
     API_URL,
     FIRST_ADMIN_PASSWORD,
     FIRST_ADMIN_USERNAME,
+    LLM_API_VER,
     LLM_TABLE,
     RAG_EMBEDDING_MODEL,
 )
-
-
-def log_and_raise_for_status(response):
-    if not response.ok:
-        try:
-            error_detail = response.json().get("detail")
-        except Exception:
-            error_detail = response.text
-        print(f"Error: Albert API Error Detail: {error_detail}")
-        response.raise_for_status()
+from pyalbert.schemas import RagParams
+from pyalbert.schemas.openai import ChatCompletionResponse
+from pyalbert.utils import log_and_raise_for_status, retry, sse_decoder
 
 
 class AlbertClient:
@@ -77,10 +72,8 @@ class AlbertClient:
             "PUT": requests.put,
             "DELETE": requests.delete,
         }
-        response = d[method](
-            f"{self.url}{route}", headers=headers, json=json_data, stream=stream
-        )
-        log_and_raise_for_status(response)
+        response = d[method](f"{self.url}{route}", headers=headers, json=json_data, stream=stream)
+        log_and_raise_for_status(response, "Albert API error")
         return response
 
     def _signed_in_fetch(self, method, route, json_data=None, stream=None):
@@ -90,21 +83,6 @@ class AlbertClient:
             self._sign_in()
         headers = {"Authorization": f"Bearer {self.token}"}
         return self._fetch(method, route, headers=headers, json_data=json_data, stream=stream)
-
-    def create_embeddings(
-        self,
-        texts: str | list[str],
-        doc_type: str | None = None,
-        model: str | None = None,
-    ) -> dict:
-        json_data = {"input": texts}
-        if doc_type:
-            json_data["doc_type"] = doc_type
-        if model:
-            json_data["model"] = model
-        response = self._signed_in_fetch("POST", "/embeddings", json_data=json_data)
-        log_and_raise_for_status(response)
-        return response.json()
 
     def search(
         self,
@@ -130,24 +108,14 @@ class AlbertClient:
         response = self._signed_in_fetch("POST", "/indexes", json_data=json_data)
         return response.json()
 
-    def get_prompt_config(self, url: str) -> dict:
-        # @IMPROVE: this function suppose that the client that use this class has access to the url
-        # given in the LLM_TABLE which expose llm-api that is not intended to be publicly open.
-        # Thus, to make this function usable by client outside the private network of Albert,
-        # the albert-api should implement a bridge route to /get_prompt_config.
-        headers = {}
-        response = requests.get(f"{url}/get_prompt_config", headers=headers)
-        log_and_raise_for_status(response)
-        return response.json()
-
     def get_stream(self, stream_id: int) -> dict:
-        # Get stream data
+        """Get the given stream data"""
         response = self._signed_in_fetch("GET", f"/stream/{stream_id}")
         stream = response.json()
         return stream
 
     def get_full_chat(self, chat_id: int) -> dict:
-        # Get stream data
+        """Get the so-called chat archive"""
         response = self._signed_in_fetch("GET", f"/chat/archive/{chat_id}")
         chat = response.json()
         return chat
@@ -165,126 +133,122 @@ class AlbertClient:
         return chat
 
     def new_chat(self, chat_type: str) -> int:
-        response = self._signed_in_fetch("POST", "/chat", json={"chat_type": chat_type})
+        response = self._signed_in_fetch("POST", "/chat", json_data={"chat_type": chat_type})
         chat_id = response.json()["id"]
         return chat_id
 
     def new_stream(self, chat_id: None | str = None, **kwargs) -> int:
         if chat_id:
-            response = self._signed_in_fetch("POST", f"/stream/chat/{chat_id}", json=kwargs)
+            response = self._signed_in_fetch("POST", f"/stream/chat/{chat_id}", json_data=kwargs)
         else:
-            response = self._signed_in_fetch("POST", "/stream", json=kwargs)
+            response = self._signed_in_fetch("POST", "/stream", json_data=kwargs)
         stream_id = response.json()["id"]
         return stream_id
 
     def generate(self, stream_id, stream=False) -> str | Generator:
-        response = self._signed_in_fetch("GET", "/stream/{stream_id}/start", stream=stream)
+        response = self._signed_in_fetch("GET", f"/stream/{stream_id}/start", stream=stream)
         if stream:
-            for chunk in response.iter_lines():
-                if not chunk:
-                    continue
-
-                decoded_line = chunk.decode("utf-8")
-                _, _, data = decoded_line.partition("data: ")
-                try:
-                    text = json.loads(data)
-                    if text == "[DONE]":
-                        break
-                    yield text
-                except json.decoder.JSONDecodeError as e:
-                    # Should never happen...
-                    print("\nDATA: " + data)
-                    print("\nERROR:")
-                    raise e
+            for chunk in sse_decoder(response.iter_content(chunk_size=1024)):
+                yield chunk["text"]
         else:
             # @TODO
             text = json.loads(response.content)
             return text
 
 
-    @staticmethod
-    def _get_streaming_response(response: requests.Response) -> Generator[str, None, None]:
-        prev_len = 0
-        chunks = response.iter_lines(chunk_size=8192, delimiter=b"\0")
-        for chunk in chunks:
-            if not chunk:
-                continue
-
-            data = json.loads(chunk.decode("utf-8"))
-            # Beams ignored
-            output = data["text"][0]
-            yield output[prev_len:]
-            prev_len = len(output)
-
 class LlmClient:
-    def __init__(self, model: str, url=None):
-        model = next((m for m in LLM_TABLE if m["model"] == model), None)
-        if not model:
-            raise ValueError("LLM model not found: %s" % model)
+    def __init__(self, model: str, api_key=None, base_url=None):
+        self.model = model
+        self.api_key = api_key
+        if not base_url:
+            model_ = next((m for m in LLM_TABLE if m["model"] == model), None)
+            if not model_:
+                raise ValueError("LLM model not found: %s" % model)
 
-        self.url = model["url"]
+            self.url = model_["url"]
+        else:
+            self.url = base_url
+
+        self.url = self.url.rstrip("/")
 
     @staticmethod
-    def _get_response(response: requests.Response) -> str:
-        data = json.loads(response.content)
-        output = data["text"]
-        # Beams ignored
-        return output[0].strip()
-
-    @staticmethod
-    def _get_streaming_response(response: requests.Response) -> Generator[str, None, None]:
-        prev_len = 0
-        chunks = response.iter_lines(chunk_size=8192, delimiter=b"\0")
-        for chunk in chunks:
-            if not chunk:
-                continue
-
-            data = json.loads(chunk.decode("utf-8"))
-            # Beams ignored
-            output = data["text"][0]
-            yield output[prev_len:]
-            prev_len = len(output)
+    def _get_streaming_response(response: requests.Response) -> Generator[bytes, None, None]:
+        for chunk in response.iter_content(chunk_size=1024):
+            yield chunk
 
     # TODO: turn into async
+    @retry(tries=3, delay=2)
     def generate(
         self,
-        prompt: str,
-        stream=False,
+        messages: str | list[dict] | None = None,
+        stream: bool = False,
+        path: str = "chat/completions",
+        rag: dict | None = None,
         **sampling_params,
-    ) -> str | Generator:
-        url = f"{self.url}/generate"
-        data = sampling_params.copy()
-        data["prompt"] = prompt
-        data["stream"] = stream
-        response = requests.post(url, json=data, stream=stream)
+    ) -> ChatCompletionResponse | Generator:
+        if isinstance(messages, str):
+            messages = [{"role": "user", "content": messages}]
+        elif isinstance(messages, list):
+            # Assume ChatCompletionRequest
+            pass
+        else:
+            raise ValueError("messages type not supported. Messages must be str of list[dict]")
 
+        json_data = sampling_params.copy()
+        json_data["messages"] = messages
+        json_data["model"] = self.model
+        json_data["stream"] = stream
+        if rag:
+            json_data["rag"] = RagParams(**rag).model_dump()
+
+        headers = None
+        if self.api_key:
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+        elif ALBERT_MODELS_API_KEY:
+            headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
+        url = f"{self.url}/{LLM_API_VER}/{path}" if LLM_API_VER else f"{self.url}/{path}"
+        response = requests.post(url, headers=headers, json=json_data, stream=stream)
+        log_and_raise_for_status(response, "Albert API error")
         if stream:
             return self._get_streaming_response(response)
         else:
-            return self._get_response(response)
+            r = response.json()
+            return ChatCompletionResponse(**r)
 
-    # Only one embedding model supported for now
+    # TODO: turn into async
     @classmethod
+    @retry(tries=3, delay=2)
     def create_embeddings(
         cls,
         texts: str | list[str],
         doc_type: str | None = None,
         model: str | None = None,
+        path: str = "embeddings",
         openai_format: bool = False,
+        api_key=None,
     ) -> list[float] | list[list[float]] | dict:
+        """Simple interface to create an embedding vector from a text input or a list of texd inputs."""
         model = model or RAG_EMBEDDING_MODEL
         default_model, default_url = LLM_TABLE[0]["model"], LLM_TABLE[0]["url"]
         model, url = next(
             ((d["model"], d["url"]) for d in LLM_TABLE if d["model"] == model),
             (default_model, default_url),
         )
+
         json_data = {"input": texts}
         if doc_type:
             json_data["doc_type"] = doc_type
         if model:
             json_data["model"] = model
-        response = requests.post(url.rstrip("/") + "/embeddings", json=json_data)
-        log_and_raise_for_status(response)
+
+        headers = None
+        if api_key:
+            headers = {"Authorization": f"Bearer {api_key}"}
+        elif ALBERT_MODELS_API_KEY:
+            headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
+        url = f"{url}/{LLM_API_VER}/{path}" if LLM_API_VER else f"{url}/{path}"
+        response = requests.post(url, headers=headers, json=json_data)
+        log_and_raise_for_status(response, "LLM API error")
         results = response.json()
         if openai_format:
             return results

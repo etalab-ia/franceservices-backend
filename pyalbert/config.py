@@ -28,6 +28,8 @@ ENV = os.getenv("ENV", "dev")
 if ENV not in ("unittest", "dev", "staging", "prod"):
     raise EnvironmentError("Wrong ENV value")
 
+VERBOSE_LEVEL = "INFO"
+
 # CORS
 # Env variable must be a string with comma separated values
 # i.e.: BACKEND_CORS_ORIGINS="http://localhost:4173,http://albert-api-example.com,https://albert-api-example.com"
@@ -72,17 +74,20 @@ QDRANT_REST_PORT = os.environ.get("QDRANT_REST_PORT", "6333")
 QDRANT_URL = f"http://{QDRANT_HOST}:{QDRANT_REST_PORT}"
 QDRANT_USE_GRPC = True
 
-# RAG
+# LLM/RAG
 # --
+DO_ENCODE_PROMPT = False  # if True, the Prompter class will encode the prompt according the "prompt_format" given in prompt config.
+HF_TOKEN = os.getenv("HF_TOKEN")
 # The sources that will be parsed, chunked, indexed and embeded for the RAG.
 SHEET_SOURCES = ["service-public", "travail-emploi"]
 # Default embedding model
-RAG_EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
+# RAG_EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
+RAG_EMBEDDING_MODEL = "BAAI/bge-m3"
 
 # Build the LLM table and from the LLM API endpoints
-LLM_API_VER = (
-    ""  # @FUTURE: set it to "v1" once we move to the llm-api that support OpenAI API.
-)
+ALBERT_MODELS_API_KEY = os.getenv("ALBERT_MODELS_API_KEY", "changeme")
+LLM_API_VER = "v1"
+ACTIVATE_SSE_WRAPPER = False
 MODELS_URLS = ast.literal_eval(os.environ.get("MODELS_URLS", "[]"))
 LLM_TABLE = []
 for url in MODELS_URLS:
@@ -94,7 +99,7 @@ for url in MODELS_URLS:
         # {"object":"list","data":[{"object":"model","id":"intfloat/multilingual-e5-large"},{"object":"model","id":"AgentPublic/llama3-instruct-8b"}]}
         models: list[dict] = response.json()["data"]
         for m in models:
-            LLM_TABLE.append({"model": m["id"], "url": url})
+            LLM_TABLE.append({"model": m["id"], "type": m["type"], "url": url})
     except Exception as err:
         # Do not block the API if an host is down. It could be one over multiple and not our responsability
         # Logging the error...
@@ -108,11 +113,17 @@ PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
 ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 
 if ENV == "unittest":
-    LLM_TABLE = [{"model": "albert", "url": "http://127.0.0.1:8899"}]
+    LLM_TABLE = [{"model": "albert", "type": "text-generation", "url": "http://127.0.0.1:8899"}]
+    ELASTIC_HOST = "localhost"
     ELASTIC_PORT = "9211"
+    QDRANT_HOST = "localhost"
     QDRANT_REST_PORT = "6344"
     QDRANT_USE_GRPC = False
     QDRANT_URL = f"http://{QDRANT_HOST}:{QDRANT_REST_PORT}"
     ELASTICSEARCH_URL = f"http://{ELASTIC_HOST}:{ELASTIC_PORT}"
     PASSWORD_RESET_TOKEN_TTL = 3  # seconds
     ACCESS_TOKEN_TTL = 9  # seconds
+
+    # @warning: prism mock does not support basepath prefix.
+    # --
+    LLM_API_VER = ""

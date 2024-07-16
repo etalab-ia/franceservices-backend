@@ -5,12 +5,12 @@ from fastapi.testclient import TestClient
 
 import app.tests.utils.login as login
 import app.tests.utils.openai as openai
-from app.tests.test_api import TestApi
+from app.tests.test_api import TestApi, log_and_assert
 
 from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
 
 # Define multiple test cases for conversations
-conversations = [
+conversation_testcases = [
     {
         "model": "albert",
         "messages": [{"role": "user", "content": "Hello tests."}],
@@ -45,9 +45,14 @@ conversations = [
 
 rag_testcases = [
     {},
-    {"rag": "last"},
-    {"rag": "last", "limit": 10},
-    {"rag": "last", "limit": 10, "mode": "rag"},
+    {"strategy": "last"},
+    {"strategy": "last", "limit": 10},
+    {"strategy": "last", "limit": 10, "mode": "rag"},
+]
+
+embedding_testcases = [
+    {"model": "albert", "input": "embed this text"},
+    {"model": "albert", "input": ["embed this text", "and this one"]},
 ]
 
 
@@ -63,15 +68,16 @@ class TestEndpointsUser(TestApi):
         }
 
         # Unauthenticated user
-        response = openai.chat_completion(client, None, conversation)
-        assert response.status_code == 400
+        response = openai.chat_completions(client, None, conversation)
+        assert response.status_code in [400, 401, 403]
 
-    @pytest.mark.parametrize("conversation", conversations)
+    @pytest.mark.parametrize("conversation", conversation_testcases)
     @pytest.mark.parametrize("rag", rag_testcases)
     @pytest.mark.parametrize("stream", [True, False])
     def test_chat_completion(self, client: TestClient, conversation, rag, stream):
         conversation["stream"] = stream
-        conversation.update(rag)
+        if rag:
+            conversation["rag"] = rag
 
         # Sign In:
         response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
@@ -80,11 +86,11 @@ class TestEndpointsUser(TestApi):
 
         # Authenticated user
         if stream:
-            response = asyncio.run(openai.chat_completion_stream(client, token, conversation))
+            response, _ = asyncio.run(openai.chat_completion_stream(client, token, conversation))
         else:
-            response = openai.chat_completion(client, token, conversation)
+            response = openai.chat_completions(client, token, conversation)
 
-        assert response.status_code == 200
+        log_and_assert(response, 200)
 
         if not stream:
             response_json = response.json()
@@ -92,3 +98,20 @@ class TestEndpointsUser(TestApi):
             assert len(response_json["choices"]) > 0
             assert "message" in response_json["choices"][0]
             assert "content" in response_json["choices"][0]["message"]
+
+    @pytest.mark.parametrize("input", embedding_testcases)
+    def test_create_embeddings(self, client: TestClient, input):
+        # Sign In:
+        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
+        assert response.status_code == 200
+        token = response.json()["token"]
+
+        # Authenticated user
+        response = openai.create_embeddings(client, token, input)
+
+        log_and_assert(response, 200)
+
+        response_json = response.json()
+        assert "data" in response_json
+        assert len(response_json["data"]) > 0
+        assert "embedding" in response_json["data"][0]

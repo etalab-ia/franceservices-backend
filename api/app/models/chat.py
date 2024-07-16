@@ -32,10 +32,12 @@ class Chat(Base):
 
     @stream_count.expression
     def stream_count(cls):
-        return (select([func.count(Stream.id)])
-                .where(Stream.chat_id == cls.id)
-                .correlate(cls)
-                .label("stream_count"))
+        return (
+            select([func.count(Stream.id)])
+            .where(Stream.chat_id == cls.id)
+            .correlate(cls)
+            .label("stream_count")
+        )
 
     def to_dict(self, with_streams=True):
         # For serialisation purpose
@@ -53,6 +55,6 @@ class Chat(Base):
         streams = [stream.to_dict() for stream in self.streams]
         result.stream_count = len(streams)
         if with_streams:
-            result.streams = sorted(streams, key=lambda x:x.id)
+            result.streams = sorted(streams, key=lambda x: x.id)
 
         return result
