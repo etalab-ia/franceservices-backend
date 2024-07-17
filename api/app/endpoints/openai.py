@@ -69,6 +69,7 @@ async def openai_api_proxy(
     stream = False
     model = None
     target_url = None
+    prompter = None
     if request.method in ["POST", "PUT", "PATCH"]:
         try:
             # Request Interception
@@ -87,11 +88,11 @@ async def openai_api_proxy(
 
         if path == "chat/completions":
             json_data = RagChatCompletionRequest(**json_body)
-            json_data = await run_in_threadpool(albert_request_intercept, json_data)
+            json_data, prompter = await run_in_threadpool(albert_request_intercept, json_data)
             upstream_fields = set(RagChatCompletionRequest.model_fields.keys()) - set(ChatCompletionRequest.model_fields.keys())  # fmt: off
             # Warning: The JSON body will include all default values defined in the schema,
             # potentially leading to unnecessary network payload.
-            # Furthermore, it cause sopenapi openai issue due to non-aligned default_factory value in the spec.
+            # Furthermore, it causes openapi openai issue due to non-aligned default_factory value in the spec.
             json_body = json_data.model_dump(exclude=upstream_fields, exclude_unset=True)
 
     else:
@@ -118,7 +119,12 @@ async def openai_api_proxy(
         )
 
         # Return the response from the target API
-        return response.json()
+        data = response.json()
+        # Add sources if any
+        sources = getattr(prompter, "sources", None)
+        if sources:
+            data["sources"] = sources
+        return data
     except httpx.RequestError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
     finally:
