@@ -126,7 +126,7 @@ async def openai_api_proxy(
         # @TODO: Handle other strategy (see tools in albert-api)
         sources = getattr(prompter, "sources", None)
         if sources:
-            data["rag_context"] = [{"stratgegy":"last", "references":sources}]
+            data["rag_context"] = [{"strategy":"last", "references":sources}]
 
         return data
     except httpx.RequestError as exc:
