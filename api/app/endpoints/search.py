@@ -6,14 +6,23 @@ from app import crud, models, schemas
 from app.core.indexes import get_document, search_indexes
 from app.deps import get_current_user, get_db
 
+from pyalbert import get_logger
 from pyalbert.prompt import Prompter
 
 router = APIRouter()
 
+logger = get_logger()
 
 # ***********
 # * Indexes *
 # ***********
+
+def get_document_safe(index_name: str, uid: str) -> dict:
+    try:
+        return get_document(index_name, uid)
+    except Exception as err:
+        logger.error(f"Chunk or document not found: {err}")
+        return {}
 
 
 # TODO: rename to /search !?
@@ -60,7 +69,7 @@ def get_chunk(
     uid: str,
     current_user: models.User = Depends(get_current_user),  # noqa
 ):
-    hit = get_document("chunks", uid)
+    hit = get_document_safe("chunks", uid)
     return JSONResponse(hit)
 
 
@@ -69,7 +78,7 @@ def get_sheet(
     uid: str,
     current_user: models.User = Depends(get_current_user),  # noqa
 ):
-    hit = get_document("sheets", uid)
+    hit = get_document_safe("sheets", uid)
     return JSONResponse(hit)
 
 
@@ -80,7 +89,7 @@ def get_chunks(
 ):
     hits = []
     for uid in uids.uids:
-        hits.append(get_document("chunks", uid))
+        hits.append(get_document_safe("chunks", uid))
 
     return JSONResponse(hits)
 
@@ -92,6 +101,6 @@ def get_sheets(
 ):
     hits = []
     for uid in uids.uids:
-        hits.append(get_document("sheets", uid))
+        hits.append(get_document_safe("sheets", uid))
 
     return JSONResponse(hits)

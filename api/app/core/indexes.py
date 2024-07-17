@@ -58,7 +58,7 @@ def _retrieves(index_name: str, similarity=None):
     return retrieves
 
 
-def get_document(index_name: str, uid: str):
+def get_document(index_name: str, uid: str) -> dict:
     es = Elasticsearch(ELASTICSEARCH_URL, basic_auth=ELASTICSEARCH_CREDS)
     _extract = lambda x: dict((r, x[r]) for r in _retrieves(index_name) if r in x)
 
@@ -78,7 +78,7 @@ def get_document(index_name: str, uid: str):
 
 def search_indexes(
     name, query, limit, similarity, institution, sources, should_sids=None, must_not_sids=None
-):
+) -> list[dict]:
     _extract = lambda x: dict((r, x[r]) for r in _retrieves(name, similarity) if r in x)
 
     hits = None
