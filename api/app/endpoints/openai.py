@@ -120,10 +120,14 @@ async def openai_api_proxy(
 
         # Return the response from the target API
         data = response.json()
+
         # Add sources if any
+        # @TODO: Align pyalbert.Prompter with RagContext.
+        # @TODO: Handle other strategy (see tools in albert-api)
         sources = getattr(prompter, "sources", None)
         if sources:
-            data["sources"] = sources
+            data["rag_context"] = [{"stratgegy":"last", "references":sources}]
+
         return data
     except httpx.RequestError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
