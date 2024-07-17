@@ -1,14 +1,15 @@
-import json
 from typing import Generator
 
-from pyalbert.prompt import get_prompter
+from pyalbert.prompt import Prompter, get_prompter
 from pyalbert.schemas import RagChatCompletionRequest
 
 
-def albert_request_intercept(request: RagChatCompletionRequest):
+def albert_request_intercept(
+    request: RagChatCompletionRequest,
+) -> tuple[RagChatCompletionRequest, Prompter]:
     """Overwrite the request with prompt augmentation"""
     if not request.rag:
-        return request
+        return request, None
 
     model_name = request.model
     messages = request.messages
@@ -32,4 +33,4 @@ def albert_request_intercept(request: RagChatCompletionRequest):
         if k not in request.__fields_set__:
             setattr(request, k, v)
 
-    return request
+    return request, prompter
