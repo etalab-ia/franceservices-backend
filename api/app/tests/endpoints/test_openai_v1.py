@@ -7,7 +7,8 @@ import app.tests.utils.login as login
 import app.tests.utils.openai as openai
 from app.tests.test_api import TestApi, log_and_assert
 
-from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
+from pyalbert.clients import LlmClient
+from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD, LLM_TABLE
 
 # Define multiple test cases for conversations
 conversation_testcases = [
@@ -98,6 +99,14 @@ class TestEndpointsUser(TestApi):
             assert len(response_json["choices"]) > 0
             assert "message" in response_json["choices"][0]
             assert "content" in response_json["choices"][0]["message"]
+
+        # Test LlmClient
+        model_ = LLM_TABLE[0]
+        model_name = model_["model"]
+        model_url = model_["url"]
+        aclient = LlmClient(model_name, base_url=model_url, api_key="something")
+        result = aclient.generate(messages=conversation["messages"], rag=rag)
+        assert len(result.choices[0].message.content) > 0
 
     @pytest.mark.parametrize("input", embedding_testcases)
     def test_create_embeddings(self, client: TestClient, input):

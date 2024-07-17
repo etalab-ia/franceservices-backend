@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .api_v1 import ChatCompletionRequest
+from .api_v1 import ChatCompletionRequest, ChatCompletionResponse
 
 
 class IndexSource(str, Enum):
@@ -36,5 +36,14 @@ class RagParams(BaseModel):
         default=None, description="Restrict the list of source to search within in RAG mode."
     )
 
+class RagContext(BaseModel):
+    strategy: str
+    references: list[str]
+
+
 class RagChatCompletionRequest(ChatCompletionRequest):
     rag: Optional[RagParams] = None
+
+class RagChatCompletionResponse(ChatCompletionResponse):
+    # Allow to return sources used with the rag
+    rag_context: Optional[list[RagContext]]
