@@ -1,4 +1,5 @@
 import re
+from copy import deepcopy
 from functools import wraps
 from pathlib import Path
 from typing import Any
@@ -92,7 +93,7 @@ SAMPLING_PARAMS_SUPPORTED = [
 class PromptTemplate(BaseModel):
     mode: str
     template: str | None = None
-    variables: set[str] | None = None
+    variables: list[str] | None = None
     default: dict | None = None
     # Overwrite the default config
     system_prompt: str | None = None
@@ -101,7 +102,7 @@ class PromptTemplate(BaseModel):
 
 class PromptConfig(BaseModel):
     # Global prompt config
-    config: dict
+    global_config: dict
     # Specific prompt config (called "mode"), with optional template.
     prompts: list[PromptTemplate] | None = None
 
@@ -111,38 +112,38 @@ class PromptConfig(BaseModel):
         for config_filename in config_files:
             config = fetch_hf_prompt_config(hf_repo_id, config_filename)
             if config:
-                config = {"config": config, "prompts": config.pop("prompts", [])}
+                config = {"global_config": config, "prompts": config.pop("prompts", [])}
                 break
 
         if not config:
             logger.info(f"prompt_config configuration not found for repo {hf_repo_id}")
-            config = {"config": {}}
+            config = {"global_config": {}}
 
         return cls(**config)
 
     @classmethod
     def from_file(cls, config_filename):
         config = fetch_hf_prompt_config("file://", config_filename, local=True)
-        config = {"config": config, "prompts": config.pop("prompts", [])}
+        config = {"global_config": config, "prompts": config.pop("prompts", [])}
         return cls(**config)
 
     def set_defaults(self) -> dict:
         """Set default params and variables values for this prompt configuration.
         Additionally, parse the template and prerender jinja Template.
         """
-        top_config = self.model_dump()
-        config = top_config["config"]
-        prompts = top_config.get("prompts") or []
+        config = self.model_dump()
+        global_config = config["global_config"]
+        prompts = config.get("prompts") or []
 
         # Default prompt system
-        system_prompt = config.get("system_prompt")
+        system_prompt = global_config.get("system_prompt")
 
         # Default sampling paramerters
         sampling_params = {}
         for k in SAMPLING_PARAMS_SUPPORTED:
-            if k in config:
-                sampling_params[k] = config[k]
-        config["sampling_params"] = sampling_params
+            if k in global_config:
+                sampling_params[k] = global_config.pop(k)
+        global_config["sampling_params"] = sampling_params
 
         # Parse templates
         for prompt in prompts:
@@ -150,7 +151,7 @@ class PromptConfig(BaseModel):
             mode_system_prompt = prompt.get("system_prompt", system_prompt)
             prompt["system_prompt"] = mode_system_prompt
             # Overwrite sampling params
-            mode_sampling_params = sampling_params.copy()
+            mode_sampling_params = deepcopy(sampling_params)
             for param in SAMPLING_PARAMS_SUPPORTED:
                 if param in prompt:
                     mode_sampling_params[param] = prompt[param]
@@ -163,11 +164,11 @@ class PromptConfig(BaseModel):
             env = Environment(loader=BaseLoader())
             variables = meta.find_undeclared_variables(env.parse(template_string))
             prompt["_template"] = env.from_string(template_string)
-            prompt["variables"] = variables
+            prompt["variables"] = list(variables)
 
         # Convert the list of template to a dict with mode as key.
-        top_config["prompts"] = {d["mode"]: d for d in prompts}
-        return top_config
+        config["prompts"] = {d["mode"]: d for d in prompts}
+        return config
 
 
 def prompt_encoder(func):
@@ -256,10 +257,11 @@ def prompts_from_llm_table(table: list[dict]) -> dict[str, dict]:
     """Returns a dict of prompt configs per model with precomputed templates"""
     templates = {}
     for model in table:
+        pconfig = {"type": model["type"]}
         if model["type"] in ["text-generation"]:
-            templates[model["model"]] = PromptConfig.from_hf(model["model"]).set_defaults()
-        else:
-            templates[model["model"]] = {}
+            pconfig.update(PromptConfig.from_hf(model["model"]).set_defaults())
+
+        templates[model["model"]] = pconfig
 
     return templates
 
@@ -308,7 +310,7 @@ class Prompter:
                 self.template = {
                     "template": template_string,
                     "_template": t,
-                    "variables": variables,
+                    "variables": list(variables),
                     "default": config.get("default"),
                     "system_prompt": None,
                     "sampling_params": None,
@@ -645,7 +647,7 @@ def get_prompter(
         )
 
     prompt_config = PROMPTS[model_name]
-    config = prompt_config["config"]
+    config = deepcopy(prompt_config["global_config"])
     template = None
 
     # Find template according to mode

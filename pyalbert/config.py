@@ -17,7 +17,7 @@ dotenv.load_dotenv()
 
 APP_NAME = "albert-api"
 APP_DESCRIPTION = "Albert, also known as LIA: the **L**egal **I**nformation **A**ssistant, is a conversational agent that uses official French data sources to answer administrative agent questions."
-APP_VERSION = "2.0.0"
+APP_VERSION = os.getenv("APP_VERSION", "0.0.0")
 CONTACT = {
     "name": "Etalab - Datalab",
     "url": "https://www.etalab.gouv.fr/",
