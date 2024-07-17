@@ -46,4 +46,4 @@ class RagChatCompletionRequest(ChatCompletionRequest):
 
 class RagChatCompletionResponse(ChatCompletionResponse):
     # Allow to return sources used with the rag
-    rag_context: Optional[list[RagContext]]
+    rag_context: Optional[list[RagContext]] = None

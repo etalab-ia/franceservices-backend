@@ -18,8 +18,7 @@ from pyalbert.config import (
     LLM_TABLE,
     RAG_EMBEDDING_MODEL,
 )
-from pyalbert.schemas import RagParams
-from pyalbert.schemas.openai import ChatCompletionResponse
+from pyalbert.schemas import RagChatCompletionResponse, RagParams
 from pyalbert.utils import log_and_raise_for_status, retry, sse_decoder
 
 
@@ -185,7 +184,7 @@ class LlmClient:
         path: str = "chat/completions",
         rag: dict | None = None,
         **sampling_params,
-    ) -> ChatCompletionResponse | Generator:
+    ) -> RagChatCompletionResponse | Generator:
         if isinstance(messages, str):
             messages = [{"role": "user", "content": messages}]
         elif isinstance(messages, list):
@@ -213,7 +212,7 @@ class LlmClient:
             return self._get_streaming_response(response)
         else:
             r = response.json()
-            return ChatCompletionResponse(**r)
+            return RagChatCompletionResponse(**r)
 
     # TODO: turn into async
     @classmethod
