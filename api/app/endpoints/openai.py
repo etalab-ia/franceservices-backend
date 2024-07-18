@@ -77,11 +77,14 @@ async def openai_api_proxy(
             stream = json_body.get("stream", stream)
             model = json_body.get("model")
             if not model:
-                raise ValueError("model parameter is required.")
+                raise HTTPException(status_code=403, detail="model parameter is required.")
         except Exception as err:
             raise HTTPException(status_code=400, detail=f"Invalid JSON body ({err})")
 
         _model = next((m for m in LLM_TABLE if m["model"] == model), None)
+        if not _model:
+            raise HTTPException(status_code=403, detail="LLM model not found: %s" % model)
+
         target_url = (
             f"{_model['url']}/{LLM_API_VER}/{path}" if LLM_API_VER else f"{_model['url']}/{path}"
         )

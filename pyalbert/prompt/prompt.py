@@ -632,7 +632,7 @@ def get_prompter(
 ) -> Prompter:
     model = next((m for m in LLM_TABLE if m["model"] == model_name), None)
     if not model:
-        raise ValueError("LLM model not found in the LLM table: %s" % model_name)
+        raise ValueError("LLM model not found: %s" % model_name)
     model_url = model["url"]
 
     global PROMPTS
