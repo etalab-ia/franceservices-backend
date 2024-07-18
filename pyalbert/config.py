@@ -99,7 +99,10 @@ for url in MODELS_URLS:
         # {"object":"list","data":[{"object":"model","id":"intfloat/multilingual-e5-large"},{"object":"model","id":"AgentPublic/llama3-instruct-8b"}]}
         models: list[dict] = response.json()["data"]
         for m in models:
-            LLM_TABLE.append({"model": m["id"], "type": m["type"], "url": url})
+            # Assume it is a text-generation model by default.
+            LLM_TABLE.append(
+                {"model": m["id"], "type": m.get("type", "text-generation"), "url": url}
+            )
     except Exception as err:
         # Do not block the API if an host is down. It could be one over multiple and not our responsability
         # Logging the error...
