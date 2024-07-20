@@ -1,6 +1,7 @@
 import os
 import subprocess
 import time
+from pathlib import Path
 from typing import Generator
 from urllib.parse import urlparse
 
@@ -20,17 +21,17 @@ if len(LLM_TABLE) > 0:
     LLM_HOST, LLM_PORT = urlparse(LLM_TABLE[0]["url"]).netloc.split(":")
     LLM_MODEL = LLM_TABLE[0]["model"]
     PROMPTS[LLM_MODEL] = PromptConfig.from_file(
-        "app/tests/mockups/prompt_config.yml"
+        Path(__file__).parent / "mockups/prompt_config.yml"
     ).set_defaults()
 
 
 def start_mock_server(
-    command, health_route="/healthcheck", health_headers=None, timeout=10, interval=1
+    command, health_route="/healthcheck", health_headers=None, timeout=10, interval=1, cwd=None
 ):
     """Starts a mock server using subprocess.Popen and waits for it to be ready
     by polling a health check endpoint.
     """
-    process = subprocess.Popen(command)
+    process = subprocess.Popen(command, cwd=cwd)
     try:
         end_time = time.time() + timeout
         while True:
@@ -62,11 +63,14 @@ def start_mock_server(
 # API mockups
 #
 
+APP_FOLDER = Path(__file__).resolve().parents[2]
+
 
 @pytest.fixture(scope="session")
 def mock_server_es():
     process = start_mock_server(
-        ["uvicorn", "app.tests.mockups.elasticsearch:app", "--port", ELASTIC_PORT]
+        ["uvicorn", "app.tests.mockups.elasticsearch:app", "--port", ELASTIC_PORT],
+        cwd=APP_FOLDER,
     )
     yield
     process.kill()
@@ -75,7 +79,8 @@ def mock_server_es():
 @pytest.fixture(scope="session")
 def mock_server_qdrant():
     process = start_mock_server(
-        ["uvicorn", "app.tests.mockups.qdrant:app", "--port", QDRANT_REST_PORT]
+        ["uvicorn", "app.tests.mockups.qdrant:app", "--port", QDRANT_REST_PORT],
+        cwd=APP_FOLDER,
     )
     yield
     process.kill()
@@ -94,6 +99,7 @@ def mock_server_models():
         ["prism", "mock", "app/tests/mockups/openai-openapi.yaml", "-p", LLM_PORT],
         health_route="/models",
         health_headers={"Authorization": "Bearer IAM_HERE"},
+        cwd=APP_FOLDER,
     )
     yield
     process.kill()

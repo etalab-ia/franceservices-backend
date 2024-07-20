@@ -71,7 +71,7 @@ def fetch_hf_prompt_config(hf_repo_id: str, config_filename: str, local=False) -
             raise ValueError(f"{template_path} not found in remote model repository.")
 
         with open(template_path) as file:
-            config["prompts"][i]["template"] = file.read()
+            config["prompts"][i]["template_string"] = file.read()
 
     return config
 
@@ -93,6 +93,7 @@ SAMPLING_PARAMS_SUPPORTED = [
 class PromptTemplate(BaseModel):
     mode: str
     template: str | None = None
+    template_string: str | None = None
     variables: list[str] | None = None
     default: dict | None = None
     # Overwrite the default config
@@ -158,9 +159,9 @@ class PromptConfig(BaseModel):
             prompt["sampling_params"] = mode_sampling_params
 
             # Template from file template
-            if not prompt.get("template"):
+            if not prompt.get("template_string"):
                 continue
-            template_string = prompt["template"]
+            template_string = prompt["template_string"]
             env = Environment(loader=BaseLoader())
             variables = meta.find_undeclared_variables(env.parse(template_string))
             prompt["_template"] = env.from_string(template_string)
@@ -259,7 +260,11 @@ def prompts_from_llm_table(table: list[dict]) -> dict[str, dict]:
     for model in table:
         pconfig = {"type": model["type"]}
         if model["type"] in ["text-generation"]:
-            pconfig.update(PromptConfig.from_hf(model["model"]).set_defaults())
+            # @old: we used to fetch the template from huggingface model directly.
+            #pconfig.update(PromptConfig.from_hf(model["model"]).set_defaults())
+
+            prompt_config_file = Path(__file__).resolve().parent / "templates" / "prompt_config.yml"
+            pconfig.update(PromptConfig.from_file(prompt_config_file).set_defaults())
 
         templates[model["model"]] = pconfig
 
@@ -308,7 +313,8 @@ class Prompter:
                 t = env.from_string(template_string)
                 variables = meta.find_undeclared_variables(env.parse(template_string))
                 self.template = {
-                    "template": template_string,
+                    "template": template,
+                    "template_string": template_string,
                     "_template": t,
                     "variables": list(variables),
                     "default": config.get("default"),

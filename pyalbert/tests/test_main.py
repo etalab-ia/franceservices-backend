@@ -1,10 +1,11 @@
-import os
 import sys
+from pathlib import Path
 
 import pytest
 
 # Add the parent directory of pyalbert to the system path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+local_parent_dir = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(local_parent_dir))
 
 from pyalbert.albert import main
 

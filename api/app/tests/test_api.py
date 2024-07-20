@@ -1,5 +1,5 @@
 import json
-import os
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 from pytest import fail
@@ -66,8 +66,8 @@ def _pop_time_ref(d):
 
 
 def _load_case(name, path="cases"):
-    local_dir = os.path.dirname(os.path.realpath(__file__))
-    basename = os.path.join(local_dir, path, name)
+    local_dir = Path(__file__).resolve().parent
+    basename = local_dir / path / name
     payload = None
     with open(f"{basename}.json") as f:
         payload = json.load(f)
