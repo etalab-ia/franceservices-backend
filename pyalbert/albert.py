@@ -40,14 +40,14 @@ Examples:
     pyalbert index chunks --storage-dir <path>       # assumes <path>/sheets_as_chunks.json + _data/fiches-travail.json exist
 """
 
-import os
 import sys
 from pathlib import Path
 
 from docopt import docopt
 
 # Allow `python pyalbert/albert.py` and `cd pyalbert/python ./albert.py` to work whithout needed to edit the PYTHONPATH
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+local_parent_dir = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(local_parent_dir))
 
 
 from pyalbert import __version__
@@ -68,7 +68,7 @@ def main():
         # @DEBUG: this modularity has side effect since the whiltelist path is hardcoded
         #         in the prompt.postprocessing module that uses this file...
         config_file = (
-            Path(__file__).parent.resolve() / "config" / "whitelist_config.json"
+            Path(__file__).resolve().parent / "config" / "whitelist_config.json"
             if args["--config-file"] is None
             else args["--config-file"]
         )  # if --config-file is not provided, use default path /config/whitelist_config.json
@@ -82,7 +82,7 @@ def main():
         storage_dir = "/data/sources" if args["--storage-dir"] is None else args["--storage-dir"]
 
         config_file = (
-            Path(__file__).parent.resolve() / "config" / "rag_sources.json"
+            Path(__file__).resolve().parent / "config" / "rag_sources.json"
             if args["--config-file"] is None
             else args["--config-file"]
         )

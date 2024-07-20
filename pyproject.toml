@@ -1,6 +1,6 @@
 [project]
 name = "pyalbert"
-version = "0.6.8"
+version = "0.6.11"
 description = "The Albert toolkit -- CLI, libraries and lexicons"
 authors = [
     {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
@@ -72,7 +72,7 @@ packages = [
 include-package-data = true
 
 [tool.setuptools.package-data]
-pyalbert = ["config/*"]
+pyalbert = ["config/*", "prompt/templates/*"]
 
 # Linter
 

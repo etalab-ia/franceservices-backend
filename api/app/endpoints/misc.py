@@ -25,7 +25,7 @@ def get_models(
     current_user: models.User = Depends(get_current_user), response_model=dict[str, list[str]]
 ) -> JSONResponse:
     model_prompts = prompts_from_llm_table(LLM_TABLE)
-    prompt_purge = ["template", "_template"]
+    prompt_purge = ["template_string", "_template"]
     for k, v in model_prompts.items():
         if "prompts" in v:
             v["prompts"] = list(v["prompts"].values())
