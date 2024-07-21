@@ -23,7 +23,7 @@ dependencies = [
     "sqlalchemy-utils==0.41.2",
     "uvicorn==0.30.1",
     "lz4==4.3.3",
-    "pyalbert==0.6.11",
+    "pyalbert==0.6.12",
 ]
 
 # Tests
