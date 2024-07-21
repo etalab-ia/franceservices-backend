@@ -9,13 +9,15 @@ from app.deps import get_current_user, get_db
 from pyalbert import get_logger
 from pyalbert.prompt import Prompter
 
+logger = get_logger()
+
 router = APIRouter()
 
-logger = get_logger()
 
 # ***********
 # * Indexes *
 # ***********
+
 
 def get_document_safe(index_name: str, uid: str) -> dict:
     try:
