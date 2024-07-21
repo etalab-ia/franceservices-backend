@@ -2,16 +2,21 @@ import sys
 
 sys.path.append("..")
 from fastapi import APIRouter, FastAPI
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
 
 from app.db.init_db import init_db
 from app.endpoints import chat, feedback, login, misc, openai, search, stream, user
 from app.mockups import install_mockups
 
+from pyalbert import get_logger
 from pyalbert.config import (
     API_PREFIX,
     API_PREFIX_V1,
     API_PREFIX_V2,
+    API_URL,
     APP_DESCRIPTION,
     APP_NAME,
     APP_VERSION,
@@ -20,10 +25,22 @@ from pyalbert.config import (
     ENV,
 )
 
+logger = get_logger()
+
 if ENV in ("unittest", "dev"):
     install_mockups()
 
 init_db()
+
+
+class ErrorLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        try:
+            response = await call_next(request)
+            return response
+        except Exception as err:
+            logger.error(f"An error occurred on **franceservice**({API_URL}): {err}", exc_info=True)
+            return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
 
 
 app = FastAPI(
@@ -35,6 +52,8 @@ app = FastAPI(
     redoc_url=API_PREFIX.rstrip("/") + "/redoc",
     openapi_url=API_PREFIX.rstrip("/") + "/openapi.json",
 )
+
+app.add_middleware(ErrorLoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

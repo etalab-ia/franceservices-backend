@@ -8,9 +8,12 @@ from app import models
 from app.core import albert_request_intercept
 from app.deps import get_current_user
 
+from pyalbert import get_logger
 from pyalbert.config import LLM_API_VER, LLM_TABLE
 from pyalbert.schemas import RagChatCompletionRequest
 from pyalbert.schemas.openai import ChatCompletionRequest
+
+logger = get_logger()
 
 router = APIRouter()
 
@@ -19,7 +22,7 @@ async def forward_stream(
     url: str, request: Request, headers: dict | None = None, json: dict | None = None
 ):
     """Asynchronous generator function that relay a stream from request to a given target API."""
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=20) as client:
         async with client.stream(
             request.method,
             url,
@@ -62,7 +65,7 @@ async def openai_api_proxy(
     Raises:
     - HTTPException: If the JSON body is invalid or if there is an error forwarding the request.
     """
-    client = httpx.AsyncClient()
+    client = httpx.AsyncClient(timeout=20)
 
     # Determine if we need to forward a JSON body
     json_body = None
@@ -132,7 +135,8 @@ async def openai_api_proxy(
             data["rag_context"] = [{"strategy":"last", "references":sources}]
 
         return data
-    except httpx.RequestError as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+    except httpx.RequestError as err:
+        logger.error(f"{err}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(err))
     finally:
         await client.aclose()
