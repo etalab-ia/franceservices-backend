@@ -20,9 +20,11 @@ from pyalbert.prompt import PROMPTS, PromptConfig
 if len(LLM_TABLE) > 0:
     LLM_HOST, LLM_PORT = urlparse(LLM_TABLE[0]["url"]).netloc.split(":")
     LLM_MODEL = LLM_TABLE[0]["model"]
-    PROMPTS[LLM_MODEL] = PromptConfig.from_file(
+    LLM_TYPE = LLM_TABLE[0]["type"]
+    PROMPTS[LLM_MODEL] = {"model": LLM_MODEL, "type": LLM_TYPE}
+    PROMPTS[LLM_MODEL].update(PromptConfig.from_file(
         Path(__file__).parent / "mockups/prompt_config.yml"
-    ).set_defaults()
+    ).set_defaults())
 
 
 def start_mock_server(

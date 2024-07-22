@@ -258,10 +258,10 @@ def prompts_from_llm_table(table: list[dict]) -> dict[str, dict]:
     """Returns a dict of prompt configs per model with precomputed templates"""
     templates = {}
     for model in table:
-        pconfig = {"type": model["type"]}
+        pconfig = {"model": model["model"], "type": model["type"]}
         if model["type"] in ["text-generation"]:
             # @old: we used to fetch the template from huggingface model directly.
-            #pconfig.update(PromptConfig.from_hf(model["model"]).set_defaults())
+            # pconfig.update(PromptConfig.from_hf(model["model"]).set_defaults())
 
             prompt_config_file = Path(__file__).resolve().parent / "templates" / "prompt_config.yml"
             pconfig.update(PromptConfig.from_file(prompt_config_file).set_defaults())
@@ -422,7 +422,9 @@ class Prompter:
             prompt = kwargs["query"]
             system_prompt = kwargs.get("system_prompt") or self.config.get("system_prompt")
 
-        messages = format_messages_prompt(prompt, system_prompt=system_prompt, history=history)
+        messages = format_messages_prompt(
+            prompt, system_prompt=system_prompt, history=history, model=self.config["model"]
+        )
         return messages
 
     def make_variables(
@@ -517,9 +519,9 @@ class Prompter:
 
 
 def format_messages_prompt(
-    query: str, system_prompt: str | None = None, history: list[dict] | None = None
+    query: str, system_prompt: str | None = None, history: list[dict] | None = None, model=None
 ) -> list[dict]:
-    messages = history or []
+    messages = (history or []).copy()
 
     # Do not overwrite used defined system prompt
     if system_prompt and not (messages and messages[0]["role"] == "system"):
@@ -548,6 +550,28 @@ def format_messages_prompt(
             messages[-2]["content"] = query
     else:
         messages.append({"role": "user", "content": query})
+
+    if model:
+        messages = messages_compatibility(model, messages)
+
+    return messages
+
+
+def messages_compatibility(model: str, messages: list) -> list:
+    """Return an updated version of messages that make it compatible with certain model limitations"""
+    messages = messages.copy()
+    has_system_msg = False
+    if messages[0]["role"] == "system":
+        has_system_msg = True
+
+    model_name = model.split("/")[-1]
+    if model_name.startswith("gemma") and has_system_msg:
+        system = messages.pop(0)
+        index = next((i for i, d in enumerate(messages) if d["role"] == "user"), None)
+        if index is not None:
+            item = messages[index].copy()
+            item["content"] = "\n\n---\n\n".join([system["content"], item["content"]])
+            messages[index] = item
 
     return messages
 
@@ -654,6 +678,7 @@ def get_prompter(
 
     prompt_config = PROMPTS[model_name]
     config = deepcopy(prompt_config["global_config"])
+    config.update({k: prompt_config[k] for k in ["model", "type"]})
     template = None
 
     # Find template according to mode

@@ -22,22 +22,6 @@ from pyalbert.schemas import RagChatCompletionResponse, RagParams
 from pyalbert.utils import log_and_raise_for_status, retry, sse_decoder
 
 
-def messages_compatibility(model: str, messages: list) -> list:
-    has_system_msg = False
-    if messages[0]["role"] == "system":
-        has_system_msg = True
-
-    model_name = model.split("/")[-1]
-    if model_name.startswith("gemma") and has_system_msg:
-        system = messages.pop(0)
-        messages[-1]
-        index = next((i for i, d in enumerate(messages) if d["role"] == "user"), None)
-        if index:
-            messages[index] = "\n\n---\n\n".join([system, messages[index]])
-
-    return messages
-
-
 class AlbertClient:
     CONFIG = {
         "base_url": API_URL,
@@ -208,8 +192,6 @@ class LlmClient:
             pass
         else:
             raise ValueError("messages type not supported. Messages must be str of list[dict]")
-
-        messages = messages_compatibility(self.model, messages)
 
         json_data = sampling_params.copy()
         json_data["messages"] = messages
