@@ -523,7 +523,7 @@ def format_messages_prompt(
 ) -> list[dict]:
     messages = (history or []).copy()
 
-    # Do not overwrite used defined system prompt
+    # Do not overwrite user defined system prompt
     if system_prompt and not (messages and messages[0]["role"] == "system"):
         messages = [
             {
@@ -557,20 +557,33 @@ def format_messages_prompt(
     return messages
 
 
-def messages_compatibility(model: str, messages: list) -> list:
+def messages_compatibility(model: str, messages: list, msg_separator="\n\n---\n\n") -> list:
     """Return an updated version of messages that make it compatible with certain model limitations"""
     messages = messages.copy()
     has_system_msg = False
     if messages[0]["role"] == "system":
         has_system_msg = True
 
+    # Some model does only support alternate user/assistant messages
+    # -> Merge two consecutive identical role messages.
+    indices = [
+        i for i in range(len(messages) - 1) if (messages[i]["role"] == messages[i + 1]["role"])
+    ]
+    for i in reversed(indices):
+        msg = messages.pop(i + 1)
+        messages[i] = {
+            "role": msg["role"],
+            "content": msg_separator.join([messages[i]["content"], msg["content"]]),
+        }
+
+    # Merge system prompt into last message.
     model_name = model.split("/")[-1]
     if model_name.startswith("gemma") and has_system_msg:
         system = messages.pop(0)
         index = next((i for i, d in enumerate(messages) if d["role"] == "user"), None)
         if index is not None:
             item = messages[index].copy()
-            item["content"] = "\n\n---\n\n".join([system["content"], item["content"]])
+            item["content"] = msg_separator.join([system["content"], item["content"]])
             messages[index] = item
 
     return messages
