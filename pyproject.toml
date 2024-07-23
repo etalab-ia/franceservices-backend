@@ -1,6 +1,6 @@
 [project]
 name = "pyalbert"
-version = "0.6.16"
+version = "0.6.17"
 description = "The Albert toolkit -- CLI, libraries and lexicons"
 authors = [
     {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
@@ -82,4 +82,3 @@ exclude = [ "lexicon/" ]
 
 [tool.ruff.lint]
 ignore-init-module-imports = true
-
