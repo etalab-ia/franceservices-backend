@@ -5,7 +5,8 @@ Lors de la réponse à l'utilisateur :
 
 <context>
 {% for chunk in sheet_chunks %}
-title : {{chunk.title}} {% if chunk.context %}({{chunk.context}}){% endif %}
+url: {{chunk.url}}
+title: {{chunk.title}} {% if chunk.context %}({{chunk.context}}){% endif %}
 text: {{chunk.text}} {% if not loop.last %}{{"\n"}}{% endif %}
 {% endfor %}
 </context>
