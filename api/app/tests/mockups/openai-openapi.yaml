@@ -1,3 +1,8 @@
+# Modified version due to prism regression on string value
+# in order to make it compliant with pyalbert/schema/openai
+# ---
+# ChatCompletionRequestFunctionMessage: add default to function
+
 openapi: 3.0.0
 info:
     title: OpenAI API
@@ -7681,6 +7686,7 @@ components:
                     description: The ID of the tool call.
                 type:
                     type: string
+                    default: function
                     enum: ["function"]
                     description: The type of the tool. Currently, only `function` is supported.
                 function:

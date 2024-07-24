@@ -30,6 +30,7 @@ async def forward_stream(
             params=request.query_params,
             json=json,
         ) as response:
+            #response.raise_for_status() ?
             async for chunk in response.aiter_raw():
                 yield chunk
 
@@ -107,14 +108,14 @@ async def openai_api_proxy(
     headers_to_keep = ["Authorization"]
     headers = {h: request.headers[h] for h in headers_to_keep if h in request.headers}
 
-    if stream:
-        # Return a streaming response
-        return StreamingResponse(
-            content=forward_stream(target_url, request, headers=headers, json=json_body),
-            media_type="text/event-stream",
-        )
-
     try:
+        if stream:
+            # Return a streaming response
+            return StreamingResponse(
+                content=forward_stream(target_url, request, headers=headers, json=json_body),
+                media_type="text/event-stream",
+            )
+
         # Forward the request to the target API
         response = await client.request(
             method=request.method,
@@ -123,6 +124,7 @@ async def openai_api_proxy(
             params=request.query_params,
             json=json_body,
         )
+        response.raise_for_status()
 
         # Return the response from the target API
         data = response.json()
@@ -135,6 +137,9 @@ async def openai_api_proxy(
             data["rag_context"] = [{"strategy":"last", "references":sources}]
 
         return data
+    except httpx.HTTPStatusError as err:
+        error_detail = err.response.json()
+        raise HTTPException(status_code=err.response.status_code, detail=error_detail)
     except httpx.RequestError as err:
         logger.error(f"{err}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(err))
