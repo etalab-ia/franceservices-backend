@@ -23,13 +23,13 @@ dependencies = [
     "sqlalchemy-utils==0.41.2",
     "uvicorn==0.30.1",
     "lz4==4.3.3",
-    "pyalbert==0.6.17",
+    "pyalbert==0.6.18",
 ]
 
 # Tests
 
 [project.optional-dependencies]
-test = ["pytest==8.2.2"]
+test = ["pytest==8.2.2", "pytest-asyncio==0.23.8"]
 
 [tool.pytest.ini_options]
 testpaths = ["app/tests"]

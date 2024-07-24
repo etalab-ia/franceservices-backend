@@ -570,13 +570,20 @@ def messages_compatibility(model: str, messages: list, msg_separator="\n\n---\n\
         i for i in range(len(messages) - 1) if (messages[i]["role"] == messages[i + 1]["role"])
     ]
     for i in reversed(indices):
-        msg = messages.pop(i + 1)
-        messages[i] = {
-            "role": msg["role"],
-            "content": msg_separator.join([messages[i]["content"], msg["content"]]),
-        }
+        next_message = messages.pop(i + 1)
+        messages[i]["content"] += msg_separator + next_message["content"]
 
-    # Merge system prompt into last message.
+    # -> some model does not support when first message is from assistant
+    if (has_system_msg and len(messages) > 1 and messages[1]["role"] == "assistant") or (
+        messages[0]["role"] == "assistant"
+    ):
+        empty_user_msg = {"role": "user", "content": ""}
+        if has_system_msg:
+            messages.insert(1, empty_user_msg)
+        else:
+            messages.insert(0, empty_user_msg)
+
+    # Merge system prompt into the first user message.
     model_name = model.split("/")[-1]
     if model_name.startswith("gemma") and has_system_msg:
         system = messages.pop(0)
