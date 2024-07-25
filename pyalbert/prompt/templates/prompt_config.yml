@@ -1,15 +1,25 @@
-# The model prompt encoder format (ignored). We used the vllm template engine, which internally
-# use the huggingface template library using the template defined in the tokenizer_config.json file.
-prompt_format: llama3-chat
-
-# The max context length
+# Default sampling params for all models.
+# If a model in the 'models' section or a prompt config in the 'prompts' section defined a value,
+# it will overwrite the defaut value in this top section
+temperature: 0.3
 max_tokens: 8192
-
 # old fix to prevent infinite generation due to
 # missing tokens in the huggingface token config.
 #stop_token_ids: 
 #  - 128001
 #  - 128009
+
+
+# Per model configuration
+models:
+  - model_kind: llama3
+    max_tokens: 8192
+    # The model prompt encoder format (ignored). We used the vllm template engine, which internally
+    # use the huggingface template library using the template defined in the tokenizer_config.json file.
+    prompt_format: llama3-chat
+  - model_kind: gemma
+    max_tokens: 2048
+
 
 prompts:
   - mode: rag

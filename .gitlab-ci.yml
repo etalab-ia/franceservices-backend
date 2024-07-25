@@ -60,7 +60,7 @@ test:api:
   before_script:
   - |
     apt-get update && apt-get install -y npm
-    npm install -g @stoplight/prism-cli@5.8.2
+    npm install -g @stoplight/prism-cli@5.8.3
     python -m venv venv
     source venv/bin/activate
     pip install --cache-dir .cache/pip api/.[test]

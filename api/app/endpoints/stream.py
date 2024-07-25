@@ -13,7 +13,7 @@ from app.deps import get_current_user, get_db
 from pyalbert.clients import LlmClient
 from pyalbert.config import ACTIVATE_SSE_WRAPPER
 from pyalbert.prompt import (
-    SAMPLING_PARAMS_SUPPORTED,
+    SamplingParams,
     check_url,
     correct_mail,
     correct_number,
@@ -321,7 +321,7 @@ def start_stream(
     sampling_params.update(
         {
             k: getattr(db_stream, k, None)
-            for k in SAMPLING_PARAMS_SUPPORTED
+            for k in SamplingParams.model_fields
             if getattr(db_stream, k, None)
         }
     )
