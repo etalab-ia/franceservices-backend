@@ -1,12 +1,11 @@
 from datetime import datetime
 
 from app import crud
-from app.models import User
 
 from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
 
 
-def get_or_create_admin_user() -> User:
+def get_or_create_admin_user():
     admin_user = crud.user.get_user_by_email(FIRST_ADMIN_EMAIL)
     if not admin_user:
         admin_user = crud.user.create_user(

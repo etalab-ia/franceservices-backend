@@ -2,8 +2,6 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .user import User
-
 
 class ReasonType(str, Enum):
     # Good
@@ -55,5 +53,5 @@ class Feedback(FeedbackBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class FeedbackWithRelationships(Feedback):
-    user: User | None
+# class FeedbackWithRelationships(Feedback):
+#     user: User | None

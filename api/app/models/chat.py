@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func, select
@@ -21,8 +21,7 @@ class Chat(Base):
     operator = Column(Text, nullable=True)
     themes = Column(JSON, nullable=True)
 
-    user = relationship("User", back_populates="chats")
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(String)
 
     streams = relationship("Stream", back_populates="chat")
 

@@ -23,8 +23,8 @@ def read_user_me(
 
 @router.get("/users/pending", response_model=list[schemas.User], tags=["user"])
 def read_pending_users(
-    current_user: models.User = Depends(get_current_user),
-) -> list[models.User]:
+    current_user = Depends(get_current_user),
+) -> list:
     if not current_user.is_admin:
         raise HTTPException(403, detail="Forbidden")
 
@@ -33,7 +33,7 @@ def read_pending_users(
 
 @router.post("/user/me", tags=["user"])
 def create_user_me(
-    form_data: schemas.UserCreate,
+    form_data,
 ) -> dict[str, str]:
     username = form_data.username
     email = form_data.email
@@ -68,11 +68,18 @@ def create_user_me(
     return {"msg": "User created. An admin must confirm the user."}
 
 
+@router.get("/user/me", response_model=schemas.User, tags=["user"])
+def read_user_me(
+    current_user = Depends(get_current_user),
+):
+    return current_user
+
+
 @router.post("/user/confirm", tags=["user"])
 def confirm_user(
-    form_data: schemas.ConfirmUser,
+    form_data,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
 ) -> dict[str, str]:
     if not current_user.is_admin:
         raise HTTPException(403, detail="Forbidden")
@@ -96,8 +103,8 @@ def confirm_user(
 
 @router.post("/user/contact", tags=["user"])
 def contact_user(
-    form_data: schemas.ContactForm,
-    current_user: models.User = Depends(get_current_user),
+    form_data,
+    current_user = Depends(get_current_user),
 ) -> dict[str, str]:
     mailjet_client = MailjetClient()
     mailjet_client.send_contact_email(

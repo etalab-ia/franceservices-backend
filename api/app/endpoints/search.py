@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
+from app import crud, schemas
 from app.core.indexes import get_document, search_indexes
 from app.deps import get_current_user, get_db
 
@@ -31,7 +31,7 @@ def get_document_safe(index_name: str, uid: str) -> dict:
 def search(
     index: schemas.Index,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
 ):
     query = index.query
 
@@ -65,7 +65,7 @@ def search(
 @router.get("/get_chunk/{uid}", tags=["search"])
 def get_chunk(
     uid: str,
-    current_user: models.User = Depends(get_current_user),  # noqa
+    current_user = Depends(get_current_user),  # noqa
 ):
     hit = get_document_safe("chunks", uid)
     return JSONResponse(hit)
@@ -74,7 +74,7 @@ def get_chunk(
 @router.get("/get_sheet/{uid}", tags=["search"])
 def get_sheet(
     uid: str,
-    current_user: models.User = Depends(get_current_user),  # noqa
+    current_user = Depends(get_current_user),  # noqa
 ):
     hit = get_document_safe("sheets", uid)
     return JSONResponse(hit)
@@ -83,7 +83,7 @@ def get_sheet(
 @router.post("/get_chunks", tags=["search"])
 def get_chunks(
     uids: schemas.QueryDocs,
-    current_user: models.User = Depends(get_current_user),  # noqa
+    current_user = Depends(get_current_user),  # noqa
 ):
     hits = []
     for uid in uids.uids:
@@ -95,7 +95,7 @@ def get_chunks(
 @router.post("/get_sheets", tags=["search"])
 def get_sheets(
     uids: schemas.QueryDocs,
-    current_user: models.User = Depends(get_current_user),  # noqa
+    current_user = Depends(get_current_user),  # noqa
 ):
     hits = []
     for uid in uids.uids:

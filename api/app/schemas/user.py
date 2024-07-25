@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, constr, model_validator, validator
@@ -51,8 +52,8 @@ class User(BaseModel):
 
     is_confirmed: Optional[bool] = False
     is_admin: Optional[bool] = False
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     accept_cookie: Optional[bool] = False
     accept_retrain: Optional[bool] = False
     organization_id: Optional[str] = None
@@ -66,14 +67,19 @@ class User(BaseModel):
             return v.lower() == "true"
         return v
 
-    @validator("organization_id", "organization_name", "created_at", "updated_at", pre=True)
+    @validator("organization_id", "organization_name", pre=True)
     def unwrap_single_element_list(cls, v):
         if isinstance(v, list) and len(v) == 1:
             return v[0]
         return v
 
-    class Config:
-        orm_mode = True
+    @validator("created_at", "updated_at", pre=True, always=True)
+    def parse_datetime(cls, v):
+        if isinstance(v, list) and len(v) == 1:
+            v = v[0]
+        if isinstance(v, str):
+            return datetime.fromisoformat(v)
+        return v
 
     class Config:
         orm_mode = True
@@ -112,23 +118,3 @@ class UserCreate(UserBase):
 
 class UserWithRelationships(User):
     streams: list["Stream"] | None
-
-
-class ApiTokenBase(BaseModel):
-    name: str
-
-    @model_validator(mode="after")
-    def validate_model(self):
-        pattern = re.compile(r"^[a-zA-Z0-9:_\-\.]{1,100}$")
-        if not bool(pattern.match(self.name)):
-            raise ValueError("Only alphanumeric and [:_-.] characters are supported.")
-
-        return self
-
-
-class ApiTokenCreate(ApiTokenBase):
-    pass
-
-
-class ApiToken(ApiTokenBase):
-    pass

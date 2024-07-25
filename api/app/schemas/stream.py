@@ -4,7 +4,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .feedback import Feedback
 from .search import IndexSource
-from .user import User
 
 from pyalbert.config import LLM_TABLE
 
@@ -94,5 +93,5 @@ class Stream(StreamBase):
     model_config = ConfigDict(from_attributes=True, json_encoders={bytes: lambda bs: bs.hex()})
 
 
-class StreamWithRelationships(Stream):
-    user: User | None
+# class StreamWithRelationships(Stream):
+#     user: User | None

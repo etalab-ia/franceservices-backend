@@ -169,7 +169,7 @@ def read_streams(
     chat_id: int | None = None,
     desc: bool = False,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
 ) -> list[schemas.Stream]:
     streams = crud.stream.get_streams(
         db, user_id=current_user.id, skip=skip, limit=limit, chat_id=chat_id, desc=desc
@@ -181,7 +181,7 @@ def read_streams(
 def create_user_stream(
     stream: schemas.StreamCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
 ) -> schemas.Stream:
     return crud.stream.create_stream(db, stream, user_id=current_user.id).to_dict()
 
@@ -192,7 +192,7 @@ def create_chat_stream(
     stream: schemas.StreamCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
 ) -> schemas.Stream:
     db_chat = crud.chat.get_chat(db, chat_id)
     if db_chat is None:
@@ -212,7 +212,7 @@ def create_chat_stream(
 def read_stream(
     stream_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
 ) -> schemas.Stream:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
@@ -234,7 +234,7 @@ def read_stream(
 def start_stream(
     stream_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
 ) -> StreamingResponse:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
@@ -379,7 +379,7 @@ def start_stream(
 def stop_stream(
     stream_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user = Depends(get_current_user),
 ) -> schemas.Stream:
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:

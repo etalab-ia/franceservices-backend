@@ -88,9 +88,7 @@ class Stream(Base):
     # one-to-one / use use_list=False ?
     feedback = relationship("Feedback", back_populates="stream", uselist=False)
 
-    # one-to-many
-    user = relationship("User", back_populates="streams")
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(String)
     chat = relationship("Chat", back_populates="streams")
     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=True)
 
