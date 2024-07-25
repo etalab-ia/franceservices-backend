@@ -3,8 +3,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from app.clients.keycloak_mail_client import KeycloakMailClient
 from app import crud, models, schemas
-from app.clients.mailjet_client import MailjetClient
+from app.keycloak.clients import client_admin
 from app.deps import get_current_user, get_db
 
 from pyalbert.config import CONTACT_EMAIL
@@ -33,39 +34,46 @@ def read_pending_users(
 
 @router.post("/user/me", tags=["user"])
 def create_user_me(
-    form_data,
+    form_data: schemas.UserCreate,
 ) -> dict[str, str]:
-    username = form_data.username
-    email = form_data.email
-    password = form_data.password
-    if not username or not email:
-        raise HTTPException(status_code=400, detail="Username and email are required")
+    try:
+        username = form_data.username
+        email = form_data.email
+        password = form_data.password
+        if not username or not email:
+            raise HTTPException(status_code=400, detail="Username and email are required")
 
-    if crud.user.get_user_by_username(username):
-        raise HTTPException(status_code=400, detail="Username already exists")
+        if crud.user.get_user_by_username(username):
+            raise HTTPException(status_code=400, detail="Username already exists")
 
-    if crud.user.get_user_by_email(email):
-        raise HTTPException(status_code=400, detail="Email already exists")
+        if crud.user.get_user_by_email(email):
+            raise HTTPException(status_code=400, detail="Email already exists")
 
-    crud.user.create_user(
-        {
-            "username": username,
-            "email": email,
-            "credentials": [{"value": password, "type": "password"}],
-            "attributes": {
-                "is_confirmed": False,
-                "created_at": datetime.utcnow().isoformat(),
-                "is_admin": False,
-                "accept_cookie": False,
-                "organization_id": "",
-                "organization_name": "",
-            },
+        user = crud.user.create_user(
+            {
+                "username": username,
+                "email": email,
+                "credentials": [{"value": password, "type": "password"}],
+                "enabled": True,
+                "attributes": {
+                    "is_confirmed": False,
+                    "created_at": datetime.utcnow().isoformat(),
+                    "is_admin": False,
+                    "accept_cookie": False,
+                    "organization_id": "",
+                    "organization_name": "",
+                },
+            }
+        )
+
+        keycloak_mail_client = KeycloakMailClient()
+        keycloak_mail_client.send_create_user_me_email(user.id)
+        return {
+            "msg": "User created. First, please verify your email, then an admin must confirm the user."
         }
-    )
-    mailjet_client = MailjetClient()
-    mailjet_client.send_create_user_me_email(email)
-    mailjet_client.send_create_user_me_notify_admin_email(CONTACT_EMAIL, email)
-    return {"msg": "User created. An admin must confirm the user."}
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/user/me", response_model=schemas.User, tags=["user"])
@@ -75,48 +83,14 @@ def read_user_me(
     return current_user
 
 
-@router.post("/user/confirm", tags=["user"])
-def confirm_user(
-    form_data,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
-) -> dict[str, str]:
-    if not current_user.is_admin:
-        raise HTTPException(403, detail="Forbidden")
-
-    email = form_data.email
-    is_confirmed = form_data.is_confirmed
-
-    db_user = crud.user.get_user_by_email(db, email)
-    if not db_user:
-        raise HTTPException(404, detail="User not found")
-
-    if db_user.is_confirmed is not None:
-        raise HTTPException(400, detail="Account creation already accepted or declined")
-
-    crud.user.confirm_user(db, db_user, is_confirmed)
-    if is_confirmed:
-        mailjet_client = MailjetClient()
-        mailjet_client.send_confirm_user_email(email)
-    return {"msg": "Success"}
-
-
-@router.post("/user/contact", tags=["user"])
-def contact_user(
-    form_data,
-    current_user = Depends(get_current_user),
-) -> dict[str, str]:
-    mailjet_client = MailjetClient()
-    mailjet_client.send_contact_email(
-        current_user, form_data.subject, form_data.text, form_data.institution
-    )
-    return {"msg": "Contact form email sent"}
-
-
 @router.get("/user/token/refresh", tags=["user"])
-def create_user_token(request: Request):
+def create_user_token(
+    request: Request,
+    current_user = Depends(get_current_user),
+):
     headers = request.headers
-    refresh_token = headers.get("refresh_token")
-    if not refresh_token:
-        raise HTTPException(401, detail="Unauthorized")
+    refresh_token_bearer = headers.get("refresh_token")
+
+    refresh_token = refresh_token_bearer.split(" ")[1]
+
     return crud.user.refresh_user_token(refresh_token)

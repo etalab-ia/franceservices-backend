@@ -1,16 +1,14 @@
-import uuid
-from datetime import datetime, timedelta
-
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
 
+from api.app.clients.keycloak_mail_client import KeycloakMailClient
+from api.app.keycloak.clients import client_admin, client_openid
 from app import crud, schemas
-from app.clients.mailjet_client import MailjetClient
-from app.deps import get_db
-
-from pyalbert.config import PASSWORD_RESET_TOKEN_TTL
+from app.deps import get_current_user
 
 router = APIRouter()
+keycloak_admin = client_admin()
+keycloak_openid = client_openid()
+keycloak_mail_client = KeycloakMailClient()
 
 
 @router.post("/sign_in", tags=["public", "login"])
@@ -20,6 +18,13 @@ def sign_in(
     username = form_data.username
     password = form_data.password
 
+    # get user from keycloak
+    user = crud.user.get_user_by_username(username)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not user.is_confirmed:
+        raise HTTPException(status_code=400, detail="User not confirmed")
     # user needs to be enabled on keycloak
     token = crud.user.login_user(username, password)
 
@@ -32,12 +37,19 @@ def sign_in(
 @router.post("/sign_out", tags=["login"])
 def sign_out(
     req: Request,
+    current_user = Depends(get_current_user),
 ) -> dict[str, str]:
     try:
-        auth_header = req.headers.get("Authorization")
-        token = auth_header.split(" ")[1]
-        crud.user.logout_user(token)
-        return {"msg": "Success"}
+        bearer_refresh = req.headers.get("refresh_token")
+
+        if not bearer_refresh:
+            raise HTTPException(status_code=400, detail="Refresh token header must be provided")
+
+        refresh_token = bearer_refresh.split(" ")[1]
+
+        crud.user.logout_user(refresh_token)
+
+        return {"msg": "Logged out successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -45,48 +57,18 @@ def sign_out(
 @router.post("/send_reset_password_email", tags=["login"])
 def send_reset_password_email(
     form_data: schemas.SendResetPasswordEmailForm,
-    db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    email = form_data.email
-    app = form_data.app
-    user = crud.user.get_user_by_email(db, email)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        email = form_data.email
+        user = crud.user.get_user_by_email(email)
 
-    user_id = user.id
-    crud.login.delete_password_reset_token(db, user_id, commit=False)
-    token = uuid.uuid4().hex
-    crud.login.create_password_reset_token(db, token, user_id, commit=False)
-    db.commit()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        keycloak_mail_client.send_reset_password_email(user.id)
 
-    mailjet_client = MailjetClient()
-    mailjet_client.send_reset_password_email(email, token, app)
-    return {"msg": "Password recovery email sent"}
+        return {"msg": "Password recovery email sent"}
 
-
-@router.post("/reset_password", tags=["login"])
-def reset_password(
-    form_data: schemas.ResetPasswordForm,
-    db: Session = Depends(get_db),
-) -> dict[str, str]:
-    token = form_data.token
-    password = form_data.password
-    password_reset_token = crud.login.get_password_reset_token(db, token)
-    if not password_reset_token:
-        raise HTTPException(status_code=400, detail="Invalid token")
-
-    dt_ttl = datetime.utcnow() - timedelta(seconds=PASSWORD_RESET_TOKEN_TTL)
-    if password_reset_token.created_at < dt_ttl:
-        raise HTTPException(status_code=400, detail="Expired token")
-
-    user_id = password_reset_token.user_id
-    user = crud.user.get_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="Incorrect email or password")
-
-    if not user.is_confirmed:
-        raise HTTPException(400, detail="User not confirmed")
-
-    user.hashed_password = crud.user.get_hashed_password(password)
-    crud.login.delete_password_reset_token(db, user_id)
-    return {"msg": "Password updated successfully"}
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        raise HTTPException(status_code=400, detail=str(e))

@@ -12,6 +12,7 @@ def get_or_create_admin_user():
             {
                 "username": FIRST_ADMIN_USERNAME,
                 "email": FIRST_ADMIN_EMAIL,
+                "enabled": True,
                 "attributes": {
                     "is_admin": True,
                     "is_confirmed": True,

@@ -8,8 +8,6 @@ from app.db.base_class import Base
 from app.db.create_admin_user import get_or_create_admin_user
 from app.db.session import engine
 from app.main import app
-from app.mockups import install_mockups
-from app.mockups.mailjet_mockup import remove_mailjet_folder
 
 from pyalbert.clients import AlbertClient, LlmClient
 from pyalbert.config import API_PREFIX_V2, LLM_TABLE
@@ -79,13 +77,10 @@ class TestApi:
     def setup_method(self):
         Base.metadata.drop_all(bind=engine)
         Base.metadata.create_all(bind=engine)
-        install_mockups()
         get_or_create_admin_user()
 
         AlbertClient._fetch = _fetch
 
-    def teardown_method(self):
-        remove_mailjet_folder()
 
     def test_mockup(self, mock_server_es, mock_server_qdrant, mock_server_models):
         # Start the server

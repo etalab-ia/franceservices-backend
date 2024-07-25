@@ -15,7 +15,9 @@ def get_pending_users() -> List[schemas.User]:
         unconfirmed_users = list(
             userSerializer(user)
             for user in users
-            if user.get("attributes", {}).get("is_confirmed") == ["None"] and user.get("email")
+            if user.get("attributes", {}).get("is_confirmed") == ["None"]
+            and user.get("email")
+            and user.get("enabled")
         )
 
         sorted_users = sorted(unconfirmed_users, key=lambda x: x["id"])
@@ -110,7 +112,7 @@ def login_user(username: str, password: str) -> Optional[Dict[str, str]]:
 
 def logout_user(token: str) -> None:
     try:
-        keycloak_openid.logout(token)
+        return keycloak_openid.logout(token)
     except KeycloakError as e:
         print(f"An error occurred: {e}")
 

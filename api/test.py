@@ -4,25 +4,27 @@ import re
 
 import requests
 
-from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
+from pyalbert.config import FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
 
 url = "http://127.0.0.1:8000"
 
-# Sign In:
 response = requests.post(
-    f"{url}/sign_in", json={"email": FIRST_ADMIN_EMAIL, "password": FIRST_ADMIN_PASSWORD}
+    f"{url}/sign_in", json={"username": FIRST_ADMIN_USERNAME, "password": FIRST_ADMIN_PASSWORD}
 )
 try:
-    token = response.json()["token"]
-except Exception:
-    print(response, response.text)
+    token = response.json()
+    access_token = token["access_token"]
+    refresh_token = token["refresh_token"]
+except Exception as e:
+    print(f"Error: {response.json()} {e}")
     exit()
-
 
 # Create Stream:
 headers = {
-    "Authorization": f"Bearer {token}",
+    "access_token": f"Bearer {access_token}",
+    "refresh_token": f"Bearer {refresh_token}",
 }
+
 data = {
     "query": "Quelles sont les conditions pour obtenir les APL? Sur quels site web de puis je faire ma demande ?",
     # "query": "Quel est la limite d'age pour voter en france, et quelle sont les échances électorales ?",
@@ -37,9 +39,9 @@ data = {
 }
 # response = requests.post(f"{url}/stream/chat/1", json=data, headers=headers)
 response = requests.post(f"{url}/stream", json=data, headers=headers)
+print("Response:", response.json())
 if not response.ok:
     error_detail = response.json().get("detail")
-    print(f"Error: {error_detail}")
     response.raise_for_status()
 
 stream_id = response.json()["id"]
