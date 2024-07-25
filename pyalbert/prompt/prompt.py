@@ -2,7 +2,7 @@ import re
 from copy import deepcopy
 from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import yaml
 from huggingface_hub import hf_hub_download
@@ -21,8 +21,10 @@ logger = get_logger()
 def fetch_hf_file(
     hf_repo_id: str, filename: str, fail_if_notfound=False, local=False
 ) -> str | None:
+    """Fetch a HF or local file"""
     if local:
         return filename
+
     file_path = None
     try:
         file_path = hf_hub_download(
@@ -47,8 +49,9 @@ def fetch_hf_file(
 
 
 def fetch_hf_prompt_config(hf_repo_id: str, config_filename: str, local=False) -> dict | None:
-    """Return the parsed prompt_config from huggingface repo if the file is found in the repo
-    else, returns a empty dict.
+    """Return the parsed prompt_config yaml from huggingfacen repo if the file is found in the repo
+    else, returns a empty dict. If local is True read local file instead.
+    Return any linked template as string.
     """
     config = None
     config_file_path = fetch_hf_file(hf_repo_id, config_filename, local=local)
@@ -64,7 +67,7 @@ def fetch_hf_prompt_config(hf_repo_id: str, config_filename: str, local=False) -
             continue
         template_filename = prompt["template"]
         if local:
-            template_filename = Path(config_filename).parent / template_filename
+            template_filename = Path(config_filename).resolve().parent / template_filename
 
         template_path = fetch_hf_file(hf_repo_id, template_filename, local=local)
         if template_path is None:
@@ -76,21 +79,24 @@ def fetch_hf_prompt_config(hf_repo_id: str, config_filename: str, local=False) -
     return config
 
 
-SAMPLING_PARAMS_SUPPORTED = [
-    "temperature",
-    "max_tokens",
-    "top_p",
-    "top_k",
-    "min_p",
-    "presence_penalty",
-    "length_penalty",
-    "frequency_penalty",
-    "repetition_penalty",
-    "stop_token_ids",
-]
+class SamplingParams(BaseModel):
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+    min_p: Optional[float] = None
+    presence_penalty: Optional[float] = None
+    length_penalty: Optional[float] = None
+    frequency_penalty: Optional[float] = None
+    repetition_penalty: Optional[float] = None
+    stop_token_ids: Optional[list[int]] = None
 
 
-class PromptTemplate(BaseModel):
+class GlobalConfig(SamplingParams):
+    system_prompt: str | None = None
+
+
+class PromptTemplate(SamplingParams):
     mode: str
     template: str | None = None
     template_string: str | None = None
@@ -98,14 +104,31 @@ class PromptTemplate(BaseModel):
     default: dict | None = None
     # Overwrite the default config
     system_prompt: str | None = None
-    sampling_params: dict | None = None
+
+
+class ModelConfig(SamplingParams):
+    model_kind: str
+    prompt_format: str | None = None
 
 
 class PromptConfig(BaseModel):
+    # The sampling params precedence from higher to lower is
+    # 1) prompts, 2) models, 3) global_config.
+    # ---
     # Global prompt config
-    global_config: dict
+    global_config: GlobalConfig
+    # Specific model configuration
+    models: list[ModelConfig] | None = None
     # Specific prompt config (called "mode"), with optional template.
     prompts: list[PromptTemplate] | None = None
+
+    @staticmethod
+    def parse_config(config):
+        return {
+            "global_config": config,
+            "prompts": config.pop("prompts", []),
+            "models": config.pop("models", []),
+        }
 
     @classmethod
     def from_hf(cls, hf_repo_id):
@@ -113,49 +136,57 @@ class PromptConfig(BaseModel):
         for config_filename in config_files:
             config = fetch_hf_prompt_config(hf_repo_id, config_filename)
             if config:
-                config = {"global_config": config, "prompts": config.pop("prompts", [])}
+                config = cls.parse_config(config)
                 break
 
         if not config:
             logger.info(f"prompt_config configuration not found for repo {hf_repo_id}")
             config = {"global_config": {}}
 
-        return cls(**config)
+        return cls(**config, exclude_unset=True)
 
     @classmethod
     def from_file(cls, config_filename):
         config = fetch_hf_prompt_config("file://", config_filename, local=True)
-        config = {"global_config": config, "prompts": config.pop("prompts", [])}
+        config = cls.parse_config(config)
         return cls(**config)
 
     def set_defaults(self) -> dict:
         """Set default params and variables values for this prompt configuration.
+        Sampling params are moved into a 'sampling_params' attribute for clarity.
         Additionally, parse the template and prerender jinja Template.
         """
-        config = self.model_dump()
+        config = self.model_dump(exclude_unset=True)
         global_config = config["global_config"]
         prompts = config.get("prompts") or []
 
         # Default prompt system
         system_prompt = global_config.get("system_prompt")
 
-        # Default sampling paramerters
-        sampling_params = {}
-        for k in SAMPLING_PARAMS_SUPPORTED:
-            if k in global_config:
-                sampling_params[k] = global_config.pop(k)
+        # Extract default sampling parameters
+        sampling_params = {
+            k: global_config.pop(k) for k in list(global_config) if k in SamplingParams.model_fields
+        }
         global_config["sampling_params"] = sampling_params
+
+        # Extract model sampling params
+        if config.get("models"):
+            for model in config["models"]:
+                model_sampling_params = {
+                    k: model.pop(k) for k in list(model) if k in SamplingParams.model_fields
+                }
+                model["sampling_params"] = model_sampling_params
 
         # Parse templates
         for prompt in prompts:
             # Overwrite system prompt
             mode_system_prompt = prompt.get("system_prompt", system_prompt)
             prompt["system_prompt"] = mode_system_prompt
-            # Overwrite sampling params
+            # Extract and overwrite sampling params
             mode_sampling_params = deepcopy(sampling_params)
-            for param in SAMPLING_PARAMS_SUPPORTED:
-                if param in prompt:
-                    mode_sampling_params[param] = prompt[param]
+            mode_sampling_params.update(
+                {k: prompt.pop(k) for k in list(prompt) if k in SamplingParams.model_fields}
+            )
             prompt["sampling_params"] = mode_sampling_params
 
             # Template from file template
@@ -281,7 +312,7 @@ PROMPTS = {}
 class Prompter:
     # Default sampling params fo a given child class
     SAMPLING_PARAMS = {
-        "temperature": 0.2,
+        "temperature": 0.3,
         "max_tokens": 4096,
     }
 
@@ -680,6 +711,9 @@ def format_chatml_prompt(
 def get_prompter(
     model_name: str, mode: str | None = None, prompt_format: str | None = None
 ) -> Prompter:
+    """Return a Prompter class by building the configuration automatically given a  model name
+    from the LLM table en the yaml prompt config."""
+
     model = next((m for m in LLM_TABLE if m["model"] == model_name), None)
     if not model:
         raise ValueError("LLM model not found: %s" % model_name)
@@ -701,12 +735,24 @@ def get_prompter(
     config.update({k: prompt_config[k] for k in ["model", "type"]})
     template = None
 
+    # Model specific configuration if any
+    model_ = model_name.split("/")[-1]
+    model_config = next(
+        (d for d in prompt_config.get("models", []) if model_.startswith(d["model_kind"])), None
+    )
+
     # Find template according to mode
     templates = prompt_config.get("prompts", {})
     if templates.get(mode):
         template = templates[mode]
+
+        # Overwritesampling_params
+        if model_config and model_config.get("sampling_params"):
+            config["sampling_params"].update(model_config["sampling_params"])
         if "sampling_params" in template:
             config["sampling_params"].update(template["sampling_params"])
+
+        # Overwrite prompt_format
         if "prompt_format" in template:
             config["prompt_format"] = template["prompt_format"]
 

@@ -66,7 +66,7 @@ def _pop_time_ref(d):
 
 
 def _load_case(name, path="cases"):
-    local_dir = Path(__file__).resolve().parent
+    local_dir = Path(__file__).parent
     basename = local_dir / path / name
     payload = None
     with open(f"{basename}.json") as f:

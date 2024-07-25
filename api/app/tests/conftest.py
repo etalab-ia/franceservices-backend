@@ -15,16 +15,9 @@ from app.db.session import SessionLocal
 from app.main import app
 
 from pyalbert.config import ELASTIC_PORT, LLM_TABLE, QDRANT_REST_PORT
-from pyalbert.prompt import PROMPTS, PromptConfig
 
 if len(LLM_TABLE) > 0:
     LLM_HOST, LLM_PORT = urlparse(LLM_TABLE[0]["url"]).netloc.split(":")
-    LLM_MODEL = LLM_TABLE[0]["model"]
-    LLM_TYPE = LLM_TABLE[0]["type"]
-    PROMPTS[LLM_MODEL] = {"model": LLM_MODEL, "type": LLM_TYPE}
-    PROMPTS[LLM_MODEL].update(PromptConfig.from_file(
-        Path(__file__).parent / "mockups/prompt_config.yml"
-    ).set_defaults())
 
 
 def start_mock_server(
@@ -65,7 +58,7 @@ def start_mock_server(
 # API mockups
 #
 
-APP_FOLDER = Path(__file__).resolve().parents[2]
+APP_FOLDER = Path(__file__).parents[2]
 
 
 @pytest.fixture(scope="session")

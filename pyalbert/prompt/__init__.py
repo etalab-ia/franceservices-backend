@@ -8,9 +8,9 @@ from .postprocessing import (
 )
 from .prompt import (
     PROMPTS,
-    SAMPLING_PARAMS_SUPPORTED,
     PromptConfig,
     Prompter,
+    SamplingParams,
     format_chatml_prompt,
     format_llama2chat_prompt,
     format_llama3chat_prompt,
