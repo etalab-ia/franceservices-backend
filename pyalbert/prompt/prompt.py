@@ -113,7 +113,8 @@ class ModelConfig(SamplingParams):
 
 class PromptConfig(BaseModel):
     # The sampling params precedence from higher to lower is
-    # 1) prompts, 2) models, 3) global_config.
+    # 1) models,  2) prompts, 3) global_config.
+    # Remark: the precedence of models is actually implemented in get_prompter, not in set_defaults
     # ---
     # Global prompt config
     global_config: GlobalConfig
@@ -746,11 +747,11 @@ def get_prompter(
     if templates.get(mode):
         template = templates[mode]
 
-        # Overwritesampling_params
-        if model_config and model_config.get("sampling_params"):
-            config["sampling_params"].update(model_config["sampling_params"])
+        # Overwrite sampling_params
         if "sampling_params" in template:
             config["sampling_params"].update(template["sampling_params"])
+        if model_config and model_config.get("sampling_params"):
+            config["sampling_params"].update(model_config["sampling_params"])
 
         # Overwrite prompt_format
         if "prompt_format" in template:
