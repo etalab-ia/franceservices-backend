@@ -1,6 +1,6 @@
 [project]
 name = "pyalbert"
-version = "0.6.19"
+version = "0.6.20"
 description = "The Albert toolkit -- CLI, libraries and lexicons"
 authors = [
     {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
