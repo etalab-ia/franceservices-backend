@@ -10,6 +10,7 @@ from app import crud, models, schemas
 from app.core import auto_set_chat_name
 from app.deps import get_current_user, get_db
 
+from pyalbert import get_logger
 from pyalbert.clients import LlmClient
 from pyalbert.config import ACTIVATE_SSE_WRAPPER
 from pyalbert.prompt import (
@@ -20,22 +21,30 @@ from pyalbert.prompt import (
     correct_url,
     get_prompter,
 )
+from pyalbert.utils import sse_decode_chunk
 
 router = APIRouter()
+logger = get_logger()
 
 
 def de_sse_wrapper(generator):
-    """Fromat a raw stream to be SSE compatible (format used by openai stream)"""
+    """Wrap the generatoror to return the full raw reponse once the iterator ends."""
     raw_response = ""
-    for t in generator:
-        raw_response += t.decode("utf-8")
-        yield t
+    for chunk in generator:
+        try:
+            raw_response += sse_decode_chunk(chunk)
+        except Exception as err:
+            logger.error(f"Failed to decode chunk ({err}): {chunk}")
+
+        yield chunk
 
     return raw_response
 
 
 def sse_wrapper(generator):
-    """Fromat a raw stream to be SSE compatible (format used by openai stream)"""
+    """Fromat a raw stream to be SSE compatible (format used by openai stream).
+    Wrap the generatoror to return the full raw reponse once the iterator ends.
+    """
     acc = []
     raw_response = ""
     stream_activate = False
