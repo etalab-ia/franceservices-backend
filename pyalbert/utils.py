@@ -48,34 +48,45 @@ def log_and_raise_for_status(response: Response, msg_on_error: str = "API Error 
         response.raise_for_status()
 
 
+#
+# Openai stream SSE decoder
+#
+
+def sse_decode_chunk(chunk:bytes) -> str:
+    text = ""
+
+    decoded_line = chunk.decode("utf-8")
+    for data in decoded_line.split("\n\n"):
+        _, _, data = data.partition("data: ")
+        if not data:
+            continue
+        if data == "[DONE]":
+            break
+
+        event = json.loads(data)
+        if event == "[DONE]":
+            break
+        if (
+            not event.get("choices")
+            or not event["choices"][0].get("delta")
+            or not event["choices"][0]["delta"].get("content")
+        ):
+            continue
+
+        text += event["choices"][0]["delta"]["content"]
+
+    return text
+
 def sse_decoder(generator) -> Generator:
     for chunk in generator:
         if not chunk:
             continue
 
-        decoded_line = chunk.decode("utf-8")
-        for data in decoded_line.split("\n\n"):
-            _, _, data = data.partition("data: ")
-            if not data:
-                continue
-            if data == "[DONE]":
-                break
-
-            try:
-                event = json.loads(data)
-                if event == "[DONE]":
-                    break
-                if (
-                    not event.get("choices")
-                    or not event["choices"][0].get("delta")
-                    or not event["choices"][0]["delta"].get("content")
-                ):
-                    continue
-
-                data = {}
-                data["text"] = event["choices"][0]["delta"]["content"]
-                yield data
-            except (json.decoder.JSONDecodeError, KeyError) as e:
-                print(f"\nSSE decoder error: {e}")
-                print(f"  DATA: {data}\n")
-                raise e
+        try:
+            data = {}
+            data["text"] = sse_decode_chunk(chunk)
+            yield data
+        except (json.decoder.JSONDecodeError, KeyError) as e:
+            print(f"\nSSE decoder error: {e}")
+            print(f"  DATA: {data}\n")
+            raise e
