@@ -1,6 +1,6 @@
 import ast
 import os
-from urllib.parse import urlparse
+import tempfile
 
 import dotenv
 import requests
@@ -40,9 +40,12 @@ BACKEND_CORS_ORIGINS = os.getenv("BACKEND_CORS_ORIGINS", "").split(",")
 FIRST_ADMIN_USERNAME = os.getenv("FIRST_ADMIN_USERNAME", "changeme")
 FIRST_ADMIN_EMAIL = os.getenv("FIRST_ADMIN_EMAIL", "changeme@changeme.fr")
 FIRST_ADMIN_PASSWORD = os.getenv("FIRST_ADMIN_PASSWORD", "changeme")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "changeme")
+
+match ENV:
+    case "dev":
+        DATABASE_URI = os.getenv("POSTGRES_URI", "postgresql+psycopg2://postgres:changeme@localhost:5432/postgres_dev")
+    case _:
+        DATABASE_URI = os.getenv("POSTGRES_URI", "postgresql+psycopg2://postgres:changeme@localhost:5432/postgres")
 
 # Email
 MJ_API_KEY = os.getenv("MJ_API_KEY")
@@ -116,6 +119,7 @@ PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
 ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 
 if ENV == "unittest":
+    DATABASE_URI = "sqlite:///" + os.path.join(tempfile.gettempdir(), "albert-unittest-sqlite3.db")
     LLM_TABLE = [{"model": "albert", "type": "text-generation", "url": "http://127.0.0.1:8899"}]
     ELASTIC_HOST = "localhost"
     ELASTIC_PORT = "9211"
