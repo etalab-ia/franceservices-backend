@@ -52,14 +52,11 @@ match ENV:
         )
 
 # Email
-MJ_API_KEY = os.getenv("MJ_API_KEY")
-MJ_API_SECRET = os.getenv("MJ_API_SECRET")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL")
 
 # Public URLs
 # @TODO: build pyalbert with the public Albert API endpoint.
 API_URL = os.getenv("API_URL", "http://localhost:8000")
-FRONT_URL = os.getenv("FRONT_URL", "http://localhost:8000")
 API_PREFIX = "/api"
 API_ROUTE_VER = "v2"
 API_PREFIX_V2 = API_PREFIX.rstrip("/") + "/" + API_ROUTE_VER if API_ROUTE_VER else ""

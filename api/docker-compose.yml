@@ -18,12 +18,9 @@ services:
       - FIRST_ADMIN_USERNAME=admin
       - FIRST_ADMIN_EMAIL=admin@changeme.com
       - FIRST_ADMIN_PASSWORD=changeme
-      - MJ_API_KEY=changeme
-      - MJ_API_SECRET=changeme
       - CONTACT_EMAIL=contact@changeme.com
       - BACKEND_CORS_ORIGINS="*"
       - API_WHITELIST_FILE=pyalbert/config/whitelist_config.json
-      - FRONT_URL=http://localhost:3000
       - API_URL=http://localhost:8000
     ports:
       - 8000:8090
