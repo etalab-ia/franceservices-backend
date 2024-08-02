@@ -2,8 +2,8 @@ from fastapi.testclient import TestClient
 
 from pyalbert.config import API_PREFIX_V2 as ROOT_PATH
 
-def sign_in(client: TestClient, email, password):
-    return client.post(f"{ROOT_PATH}/sign_in", json={"email": email, "password": password})
+def sign_in(client: TestClient, username, password):
+    return client.post(f"{ROOT_PATH}/sign_in", json={"username": username, "password": password})
 
 
 def sign_out(client: TestClient, token):

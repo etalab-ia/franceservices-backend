@@ -8,7 +8,7 @@ import app.tests.utils.openai as openai
 from app.tests.test_api import TestApi, log_and_assert
 
 from pyalbert.clients import LlmClient
-from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD, LLM_TABLE
+from pyalbert.config import FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD, LLM_TABLE
 
 # Define multiple test cases for conversations
 conversation_testcases = [
@@ -81,7 +81,7 @@ class TestEndpointsUser(TestApi):
             conversation["rag"] = rag
 
         # Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
+        response = login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
         assert response.status_code == 200
         token = response.json()["token"]
 
@@ -111,7 +111,7 @@ class TestEndpointsUser(TestApi):
     @pytest.mark.parametrize("input", embedding_testcases)
     def test_create_embeddings(self, client: TestClient, input):
         # Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
+        response = login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
         assert response.status_code == 200
         token = response.json()["token"]
 

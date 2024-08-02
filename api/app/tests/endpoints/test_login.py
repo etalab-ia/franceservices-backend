@@ -11,6 +11,7 @@ from app.tests.test_api import TestApi
 from pyalbert.config import (
     ACCESS_TOKEN_TTL,
     FIRST_ADMIN_EMAIL,
+    FIRST_ADMIN_USERNAME,
     FIRST_ADMIN_PASSWORD,
     PASSWORD_RESET_TOKEN_TTL,
 )
@@ -20,7 +21,7 @@ class TestEndpointsLogin(TestApi):
     # TODO: add assert on response json
     def test_login(self, client: TestClient):
         # Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
+        response = login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
         assert response.status_code == 200
         token = response.json()["token"]
 
@@ -42,23 +43,23 @@ class TestEndpointsLogin(TestApi):
         assert response.status_code == 200
 
         # Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
+        response = login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
         assert response.status_code == 400
 
         # Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, "new_password123")
+        response = login.sign_in(client, FIRST_ADMIN_USERNAME, "new_password123")
         assert response.status_code == 200
 
     def test_purge_blacklist_tokens(self, client: TestClient, db: Session):
         # Sign In / Sign Out - Expired:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
+        response = login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
         token_1 = response.json()["token"]
         login.sign_out(client, token_1)
 
         time.sleep(ACCESS_TOKEN_TTL // 2 + 1)
 
         # Sign In / Sign Out - Not expired:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
+        response = login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
         token_2 = response.json()["token"]
         login.sign_out(client, token_2)
 
@@ -69,7 +70,7 @@ class TestEndpointsLogin(TestApi):
 
         time.sleep(ACCESS_TOKEN_TTL // 2 + 1)
 
-        login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
+        login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
         blacklist_tokens = db.query(models.BlacklistToken).all()
         assert len(blacklist_tokens) == 1
         assert blacklist_tokens[0].token == token_2

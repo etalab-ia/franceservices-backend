@@ -5,7 +5,7 @@ import app.tests.utils.login as login
 import app.tests.utils.misc as misc
 from app.tests.test_api import TestApi
 
-from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
+from pyalbert.config import FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD
 
 
 class TestEndpointsMisc(TestApi):
@@ -13,7 +13,7 @@ class TestEndpointsMisc(TestApi):
     @pytest.mark.asyncio
     def test_misc(self, client: TestClient):
         # Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
+        response = login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
         assert response.status_code == 200
         token = response.json()["token"]
 
