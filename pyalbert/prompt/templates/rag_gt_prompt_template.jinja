@@ -5,7 +5,7 @@ Les références doivent être citées de cette manière (échape les guillement
 Si les références ne permettent pas de répondre, spécifie juste qu'il n'y a pas de réponse.
 
 Les {{limit}} références disponibles :
-{% for chunk in sheet_chunks %}
+{% for chunk in chunks_collection %}
 url: {{chunk.url}}
 title: {{chunk.title}} {% if chunk.context %}({{chunk.context}}){% endif %}
 text: {{chunk.text}} {% if not loop.last %}{{"\n"}}{% endif %}

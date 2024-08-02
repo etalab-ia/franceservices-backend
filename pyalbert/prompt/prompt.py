@@ -455,7 +455,7 @@ class Prompter:
             system_prompt = kwargs.get("system_prompt") or self.config.get("system_prompt")
 
         messages = format_messages_prompt(
-            prompt, system_prompt=system_prompt, history=history, model=self.config["model"]
+            prompt, system_prompt=system_prompt, history=history, model=self.config.get("model")
         )
         return messages
 
@@ -479,8 +479,7 @@ class Prompter:
         links: str        # passed in the query
         institution: str  # passed in the query
         most_similar_experience: str
-        experience_chunks: list[dict]
-        sheet_chunks: list[dict]
+        {index-name}_collection: list[dict]
         """
         data = passed_data.copy()
         for k, v in default.items():
@@ -509,14 +508,12 @@ class Prompter:
             data["most_similar_experience"] = hits[0]["description"]
 
         # List of semantic similar value from query
-        chunks_allowed = ["experience_chunks", "sheet_chunks"]
-        chunks_matches = [v for v in variables if v.endswith("_chunks") and v in chunks_allowed]
-        for v in chunks_matches:
-            if v.split("_")[0] == "experience":
-                collection_name = "experience"
+        collection_matches = [v for v in variables if v.endswith("_collection")]
+        for v in collection_matches:
+            collection_name  = "_".join(v.split("_")[:-1])
+            if collection_name.startswith("spp_"):
                 id_key = "id_experience"
-            elif v.split("_")[0] == "sheet":
-                collection_name = "chunks"
+            elif collection_name == "chunks":
                 id_key = "hash"
             else:
                 raise ValueError("chunks identifier (%s) unknown in prompt template." % v)
@@ -712,7 +709,7 @@ def format_chatml_prompt(
 def get_prompter(
     model_name: str, mode: str | None = None, prompt_format: str | None = None
 ) -> Prompter:
-    """Return a Prompter class by building the configuration automatically given a  model name
+    """Return a Prompter class by building the configuration automatically given a model name
     from the LLM table en the yaml prompt config."""
 
     model = next((m for m in LLM_TABLE if m["model"] == model_name), None)
