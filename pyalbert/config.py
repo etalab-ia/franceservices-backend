@@ -114,17 +114,18 @@ for url in MODELS_URLS:
 
 
 # JWT token
-SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
 PASSWORD_PATTERN = r"^[A-Za-z\d$!%*+\-?&#_=.,:;@]{8,128}$"
 PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
 ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 
+# Keycloak
+KEYCLOAK_ADMIN_USERNAME = os.getenv("KEYCLOAK_ADMIN_USERNAME", "changeme")
+KEYCLOAK_ADMIN_EMAIL = os.getenv("KEYCLOAK_ADMIN_EMAIL", "changeme@changeme.fr")
+KEYCLOAK_ADMIN_PASSWORD = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "changeme")
 KEYCLOAK_API_URL=os.getenv("KEYCLOAK_API_URL")
 KEYCLOAK_CLIENT_ID=os.getenv("KEYCLOAK_CLIENT_ID")
 KEYCLOAK_SECRET_KEY=os.getenv("KEYCLAK_SECRET_KEY")
 KEYCLOAK_REALM=os.getenv("KEYCLOAK_REALM")
-KEYCLOAK_ADMIN_USERNAME=os.getenv("KEYCLOAK_ADMIN_USERNAME")
-KEYCLOAK_ADMIN_PASSWORD=os.getenv("KEYCLOAK_ADMIN_PASSWORD")
 
 if ENV == "unittest":
     DATABASE_URI = "sqlite:///" + os.path.join(tempfile.gettempdir(), "albert-unittest-sqlite3.db")

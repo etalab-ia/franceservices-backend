@@ -6,7 +6,7 @@ import app.tests.utils.login as login
 import app.tests.utils.user as user
 from app.tests.test_api import TestApi
 
-from pyalbert.config import FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD
+from pyalbert.config import KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD
 
 
 class TestEndpointsUser(TestApi):
@@ -21,7 +21,7 @@ class TestEndpointsUser(TestApi):
         assert response.status_code == 400
 
         # Admin - Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
+        response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
         assert response.status_code == 200
         admin_token = response.json()["token"]
 
@@ -92,7 +92,7 @@ class TestEndpointsUser(TestApi):
         assert response.status_code == 200
 
         # Admin - Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
+        response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
         assert response.status_code == 200
         admin_token = response.json()["token"]
 
@@ -122,7 +122,7 @@ class TestEndpointsUser(TestApi):
         assert response.status_code == 400
 
         # Admin - Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_USERNAME, FIRST_ADMIN_PASSWORD)
+        response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
         assert response.status_code == 200
         admin_token = response.json()["token"]
 

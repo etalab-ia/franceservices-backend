@@ -4,12 +4,12 @@ import re
 
 import requests
 
-from pyalbert.config import FIRST_ADMIN_PASSWORD, FIRST_ADMIN_USERNAME
+from pyalbert.config import KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_ADMIN_USERNAME
 
 url = "http://127.0.0.1:8000"
 
 response = requests.post(
-    f"{url}/sign_in", json={"username": FIRST_ADMIN_USERNAME, "password": FIRST_ADMIN_PASSWORD}
+    f"{url}/sign_in", json={"username": KEYCLOAK_ADMIN_USERNAME, "password": KEYCLOAK_ADMIN_PASSWORD}
 )
 try:
     token = response.json()

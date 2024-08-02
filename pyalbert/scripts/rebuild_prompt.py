@@ -10,8 +10,8 @@ from pyalbert.prompt import get_prompter
 if __name__ == "__main__":
     config = dict(
         base_url="https://franceservices.etalab.gouv.fr/",
-        username=os.getenv("FIRST_ADMIN_USERNAME"),
-        password=os.getenv("FIRST_ADMIN_PASSWORD"),
+        username=os.getenv("KEYCLOAK_ADMIN_USERNAME"),
+        password=os.getenv("KEYCLOAK_ADMIN_PASSWORD"),
     )
     stream_id = 3
     client = AlbertClient(**config)

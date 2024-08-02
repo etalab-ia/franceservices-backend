@@ -19,9 +19,9 @@ from pyalbert.config import (
     ELASTICSEARCH_CREDS,
     ELASTICSEARCH_IX_VER,
     ELASTICSEARCH_URL,
-    FIRST_ADMIN_PASSWORD,
-    FIRST_ADMIN_USERNAME,
     HYBRID_COLLECTIONS,
+    KEYCLOAK_ADMIN_PASSWORD,
+    KEYCLOAK_ADMIN_USERNAME,
     LLM_API_VER,
     LLM_TABLE,
     QDRANT_GRPC_PORT,
@@ -40,8 +40,8 @@ from pyalbert.utils import log_and_raise_for_status, retry, sse_decoder
 class AlbertClient:
     CONFIG = {
         "base_url": API_URL,
-        "username": FIRST_ADMIN_USERNAME,
-        "password": FIRST_ADMIN_PASSWORD,
+        "username": KEYCLOAK_ADMIN_USERNAME,
+        "password": KEYCLOAK_ADMIN_PASSWORD,
     }
 
     def __init__(self, api_key=None, **user_config):

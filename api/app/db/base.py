@@ -17,8 +17,3 @@ def create_database_if_not_exists(database_url: str = DATABASE_URI):
     engine = create_engine(database_url)
     if not database_exists(engine.url):
         create_database(engine.url)
-    # Does not work :(
-    # conn = engine.connect()
-    # conn.execute("commit")
-    # conn.execute("CREATE DATABASE IF NOT EXISTS mydatabase")
-    # conn.close()
