@@ -119,6 +119,13 @@ PASSWORD_PATTERN = r"^[A-Za-z\d$!%*+\-?&#_=.,:;@]{8,128}$"
 PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
 ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 
+KEYCLOAK_API_URL=os.getenv("KEYCLOAK_API_URL")
+KEYCLOAK_CLIENT_ID=os.getenv("KEYCLOAK_CLIENT_ID")
+KEYCLOAK_SECRET_KEY=os.getenv("KEYCLAK_SECRET_KEY")
+KEYCLOAK_REALM=os.getenv("KEYCLOAK_REALM")
+KEYCLOAK_ADMIN_USERNAME=os.getenv("KEYCLOAK_ADMIN_USERNAME")
+KEYCLOAK_ADMIN_PASSWORD=os.getenv("KEYCLOAK_ADMIN_PASSWORD")
+
 if ENV == "unittest":
     DATABASE_URI = "sqlite:///" + os.path.join(tempfile.gettempdir(), "albert-unittest-sqlite3.db")
     LLM_TABLE = [
@@ -138,7 +145,12 @@ if ENV == "unittest":
     ELASTICSEARCH_URL = f"http://{ELASTIC_HOST}:{ELASTIC_PORT}"
     PASSWORD_RESET_TOKEN_TTL = 3  # seconds
     ACCESS_TOKEN_TTL = 9  # seconds
-
+    LLM_API_VER = ""
+    KEYCLOAK_API_URL= # to be defined
+    KEYCLOAK_CLIENT_ID= # to be defined
+    KEYCLOAK_SECRET_KEY= # to be defined
+    KEYCLOAK_REALM= # to be defined
+    KEYCLOAK_ADMIN_USERNAME= # to be defined
+    KEYCLOAK_ADMIN_PASSWORD= # to be defined
     # @warning: prism mock does not support basepath prefix.
     # --
-    LLM_API_VER = ""
