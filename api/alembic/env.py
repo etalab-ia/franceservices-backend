@@ -15,12 +15,10 @@ fileConfig(config.config_file_name)
 # add your model's MetaData object here
 # for 'autogenerate' support
 
-from app.db.base import Base, create_database_if_not_exists, get_db_url
+from app.db.base import Base, create_database_if_not_exists
 
 target_metadata = Base.metadata
-
-db_url = get_db_url()
-create_database_if_not_exists(db_url)
+create_database_if_not_exists()
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
