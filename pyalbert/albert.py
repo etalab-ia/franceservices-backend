@@ -6,7 +6,7 @@ Usage:
     pyalbert create_whitelist [--config-file=<path>] [--storage-dir=<path>] [--debug]
     pyalbert download_rag_sources [--config-file=<path>] [--storage-dir=<path>] [--debug]
     pyalbert make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] [--storage-dir=<path>]
-    pyalbert index (experiences | sheets | chunks) [--index-type=<index_type>] [--recreate] [--storage-dir=<path>]
+    pyalbert index <index_name> [--index-type=<index_type>] [--batch-size N] [--recreate] [--storage-dir=<path>]
 
 Commands:
     create_whitelist           Create a whitelist file for postprocessing. By default, files are stored under /data/whitelist directory.
@@ -26,6 +26,7 @@ Options:
     --structured               Parse strategy that exploit the xml sheet structure.
     --chunk-size N             The maximum size of the chunks (token count...) [default: 1100]
     --chunk-overlap N          The size of the overlap between chunks [default: 200]
+    --batch-size N             The embedding batch size when creating a collection [default: 10]
     --index-type=<index_type>  The type of index to create (bm25, bucket, e5) [default: bm25]
     --recreate                 Force collection/index recreation
     --debug                    optional, print debug logs. By default, False.
@@ -50,8 +51,10 @@ local_parent_dir = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(local_parent_dir))
 
 
-from pyalbert import __version__
+from pyalbert import __version__, get_logger
 from pyalbert.config import SHEET_SOURCES
+
+logger = get_logger()
 
 
 def main():
@@ -108,15 +111,22 @@ def main():
         # if --storage-dir is not provided, use default path /data/sources
         storage_dir = "/data/sources" if args["--storage-dir"] is None else args["--storage-dir"]
 
-        indexes = ["experiences", "chunks", "sheets"]
-        for name in indexes:
-            if name in args and args[name]:
-                create_index(
-                    name,
-                    args["--index-type"],
-                    recreate=args["--recreate"],
-                    storage_dir=storage_dir,
-                )
+        known_indexes = [
+            "spp_experience_question",
+            "spp_experience_answer",
+            "chunks",
+            "sheets",
+        ]
+        if args["<index_name>"] not in known_indexes:
+            raise ValueError("Unknown index name. Index supportere are %s" % known_indexes)
+
+        create_index(
+            args["<index_name>"],
+            args["--index-type"],
+            recreate=args["--recreate"],
+            batch_size=int(args["--batch-size"]),
+            storage_dir=storage_dir,
+        )
     else:
         raise NotImplementedError
 

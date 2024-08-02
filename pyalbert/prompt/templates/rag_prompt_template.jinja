@@ -4,7 +4,7 @@ Lors de la réponse à l'utilisateur :
 - Évitez de mentionner que vous avez obtenu les informations du contexte.
 
 <context>
-{% for chunk in sheet_chunks %}
+{% for chunk in chunks_collection %}
 url: {{chunk.url}}
 title: {{chunk.title}} {% if chunk.context %}({{chunk.context}}){% endif %}
 text: {{chunk.text}} {% if not loop.last %}{{"\n"}}{% endif %}
