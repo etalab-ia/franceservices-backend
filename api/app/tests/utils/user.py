@@ -21,40 +21,19 @@ def create_user_me(client: TestClient, username, email, password, **kwargs):
     return client.post(f"{ROOT_PATH}/user/me", json=data)
 
 
-def read_user_me(client: TestClient, token):
-    return client.get(f"{ROOT_PATH}/user/me", headers={"Authorization": f"Bearer {token}"})
+def read_user_me(client: TestClient, access_token, refresh_token):
+    return client.get(
+        f"{ROOT_PATH}/user/me",
+        headers={"access_token": access_token, "refresh_token": refresh_token},
+    )
 
 
-def confirm_user(client: TestClient, token, email, is_confirmed):
+def confirm_user(client: TestClient, access_token, refresh_token, email, is_confirmed):
     return client.post(
         f"{ROOT_PATH}/user/confirm",
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"access_token": access_token, "refresh_token": refresh_token},
         json={
             "email": email,
             "is_confirmed": is_confirmed,
         },
-    )
-
-
-def create_token(client: TestClient, token, name):
-    return client.post(
-        f"{ROOT_PATH}/user/token/new",
-        headers={"Authorization": f"Bearer {token}"},
-        json={
-            "name": name,
-        },
-    )
-
-
-def read_tokens(client: TestClient, token):
-    return client.get(
-        f"{ROOT_PATH}/user/token",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-
-
-def delete_token(client: TestClient, token, hash):
-    return client.delete(
-        f"{ROOT_PATH}/user/token/{hash}",
-        headers={"Authorization": f"Bearer {token}"},
     )

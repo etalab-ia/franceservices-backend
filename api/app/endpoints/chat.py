@@ -13,7 +13,7 @@ router = APIRouter()
 def read_chat(
     chat_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user: schemas.User = Depends(get_current_user),
 ) -> models.Chat:
     db_chat = crud.chat.get_chat(db, chat_id=chat_id)
     if db_chat is None:
@@ -31,7 +31,7 @@ def read_chats(
     limit: int = 100,
     desc: bool = False,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> list[models.Chat]:
     chats = crud.chat.get_chats(db, user_id=current_user.id, skip=skip, limit=limit, desc=desc)
     return chats
@@ -41,7 +41,7 @@ def read_chats(
 def create_chat(
     chat: schemas.ChatCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> models.Chat:
     return crud.chat.create_chat(db, chat, user_id=current_user.id)
 
@@ -50,7 +50,7 @@ def create_chat(
 def read_chat(
     chat_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> models.Chat:
     db_chat = crud.chat.get_chat(db, chat_id=chat_id)
     if db_chat is None:
@@ -67,7 +67,7 @@ def update_chat(
     chat_id: int,
     chat_updates: schemas.ChatUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> models.Chat:
     db_chat = crud.chat.get_chat(db, chat_id=chat_id)
     if db_chat is None:
@@ -84,7 +84,7 @@ def update_chat(
 def read_chat_archive(
     chat_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> schemas.ChatArchive:
     db_chat = crud.chat.get_chat_archive(db, chat_id=chat_id)
     if db_chat is None:
@@ -100,7 +100,7 @@ def read_chat_archive(
 def delete_chat(
     chat_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> models.Chat:
     db_chat = crud.chat.get_chat(db, chat_id=chat_id)
     if db_chat is None:

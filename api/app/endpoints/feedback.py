@@ -13,7 +13,7 @@ router = APIRouter()
 def read_feedback(
     feedback_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ) -> models.Feedback:
     db_feedback = crud.feedback.get_feedback(db, feedback_id=feedback_id)
     if db_feedback is None:

@@ -17,8 +17,8 @@ router = APIRouter()
 
 @router.get("/user/me", response_model=schemas.User, tags=["user"])
 def read_user_me(
-    current_user: models.User = Depends(get_current_user),
-) -> models.User:
+    current_user=Depends(get_current_user),
+) -> schemas.User:
     return current_user
 
 

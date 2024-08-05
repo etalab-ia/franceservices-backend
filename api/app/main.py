@@ -9,7 +9,6 @@ from starlette.requests import Request
 
 from app.db.init_db import init_db
 from app.endpoints import chat, feedback, login, misc, openai, search, stream, user
-from app.mockups import install_mockups
 
 from pyalbert import get_logger
 from pyalbert.config import (
@@ -26,9 +25,6 @@ from pyalbert.config import (
 )
 
 logger = get_logger()
-
-if ENV in ("unittest", "dev"):
-    install_mockups()
 
 init_db()
 

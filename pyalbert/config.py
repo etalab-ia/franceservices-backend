@@ -122,10 +122,10 @@ ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 KEYCLOAK_ADMIN_USERNAME = os.getenv("KEYCLOAK_ADMIN_USERNAME", "changeme")
 KEYCLOAK_ADMIN_EMAIL = os.getenv("KEYCLOAK_ADMIN_EMAIL", "changeme@changeme.fr")
 KEYCLOAK_ADMIN_PASSWORD = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "changeme")
-KEYCLOAK_API_URL=os.getenv("KEYCLOAK_API_URL")
-KEYCLOAK_CLIENT_ID=os.getenv("KEYCLOAK_CLIENT_ID")
-KEYCLOAK_SECRET_KEY=os.getenv("KEYCLAK_SECRET_KEY")
-KEYCLOAK_REALM=os.getenv("KEYCLOAK_REALM")
+KEYCLOAK_API_URL = os.getenv("KEYCLOAK_API_URL", "http://localhost:8080/auth")
+KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "changeme")
+KEYCLOAK_SECRET_KEY = os.getenv("KEYCLOAK_SECRET_KEY", "changeme")
+KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "changeme")
 
 if ENV == "unittest":
     DATABASE_URI = "sqlite:///" + os.path.join(tempfile.gettempdir(), "albert-unittest-sqlite3.db")
@@ -147,11 +147,11 @@ if ENV == "unittest":
     PASSWORD_RESET_TOKEN_TTL = 3  # seconds
     ACCESS_TOKEN_TTL = 9  # seconds
     LLM_API_VER = ""
-    KEYCLOAK_API_URL= # to be defined
-    KEYCLOAK_CLIENT_ID= # to be defined
-    KEYCLOAK_SECRET_KEY= # to be defined
-    KEYCLOAK_REALM= # to be defined
-    KEYCLOAK_ADMIN_USERNAME= # to be defined
-    KEYCLOAK_ADMIN_PASSWORD= # to be defined
+    KEYCLOAK_API_URL = os.getenv("KEYCLOAK_API_URL", "http://localhost:8080/auth")
+    KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "changeme")
+    KEYCLOAK_SECRET_KEY = os.getenv("KEYCLOAK_SECRET_KEY", "changeme")
+    KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "changeme")
+    KEYCLOAK_ADMIN_USERNAME = os.getenv("KEYCLOAK_ADMIN_USERNAME", "changeme")
+    KEYCLOAK_ADMIN_PASSWORD = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "changeme")
     # @warning: prism mock does not support basepath prefix.
     # --

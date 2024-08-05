@@ -17,8 +17,7 @@ def sign_in(
 ):
     username = form_data.username
     password = form_data.password
-
-    # get user from keycloak
+    
     user = crud.user.get_user_by_username(username)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -60,8 +59,8 @@ def send_reset_password_email(
 ) -> dict[str, str]:
     try:
         email = form_data.email
+        
         user = crud.user.get_user_by_email(email)
-
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         

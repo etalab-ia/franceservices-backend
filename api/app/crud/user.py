@@ -54,7 +54,8 @@ def get_user_by_username(username: str) -> Optional[schemas.User]:
             return user
         else:
             return None
-    except Exception:
+    except Exception as e:
+        print("An error occurred while getting user by username", e)
         return None
 
 

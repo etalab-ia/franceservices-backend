@@ -123,3 +123,17 @@ def db() -> Generator:
     finally:
         session.close()
     print("Teardown session.")
+
+
+# keycloak
+
+@pytest.fixture(scope="session")
+def mock_server_keycloak():
+    process = start_mock_server(
+        ["prism", "mock", "app/tests/mockups/keycloak-openapi.yml", "-p", 4010],
+        health_route="/admin/realms/asperiores/users",
+        # health_headers={"Authorization": "Bearer IAM_HERE"},
+        cwd=APP_FOLDER,
+    )
+    yield
+    process.kill()
