@@ -17,8 +17,11 @@ fileConfig(config.config_file_name)
 
 from app.db.base import Base, create_database_if_not_exists
 
+from pyalbert.config import DATABASE_URI
+
 target_metadata = Base.metadata
 create_database_if_not_exists()
+db_url = DATABASE_URI
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
