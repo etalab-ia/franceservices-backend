@@ -1,4 +1,3 @@
-import re
 from copy import deepcopy
 from functools import wraps
 from pathlib import Path
@@ -11,9 +10,9 @@ from jinja2 import BaseLoader, Environment, Template, meta
 from pydantic import BaseModel
 
 from pyalbert import get_logger
-from pyalbert.clients import AlbertClient
+from pyalbert.clients import SearchEngineClient
 from pyalbert.config import DO_ENCODE_PROMPT, HF_TOKEN, LLM_TABLE
-from pyalbert.lexicon import ACRONYMS
+from pyalbert.lexicon import expand_acronyms
 
 logger = get_logger()
 
@@ -211,9 +210,7 @@ def prompt_encoder(func):
 
         # Format messages
         # --
-        do_encode_prompt = (
-            kwargs["do_encode_prompt"] if "do_encode_prompt" in kwargs else DO_ENCODE_PROMPT
-        )
+        do_encode_prompt = kwargs.get("do_encode_prompt") or self.config.get("do_encode_prompt")
         prompt_format = kwargs.get("prompt_format") or self.config.get("prompt_format")
         if do_encode_prompt and prompt_format and prompt_format != "openai":
             if prompt_format in ["llama-chat", "llama2-chat"]:
@@ -303,9 +300,6 @@ def prompts_from_llm_table(table: list[dict]) -> dict[str, dict]:
     return templates
 
 
-# Preload all acronyms to be faster
-ACRONYMS_KEYS = [acronym["symbol"].lower() for acronym in ACRONYMS]
-
 # Cache prompts templates to be faster
 PROMPTS = {}
 
@@ -321,15 +315,16 @@ class Prompter:
         self,
         config: dict | None = None,
         template: PromptTemplate | str | None = None,
-        api_key=None,
     ):
-        self.api_key = api_key
         # The prompt config
         self.config = config or {}
         # The sampling params to pass to LLM generate function for inference.
         self.sampling_params = self.SAMPLING_PARAMS
         if "sampling_params" in self.config:
             self.sampling_params.update(self.config["sampling_params"])
+
+        if "do_encode_prompt" not in self.config:
+            self.config["do_encode_prompt"] = DO_ENCODE_PROMPT
 
         # Load or set the prompt template
         self.template = None
@@ -357,6 +352,8 @@ class Prompter:
                 raise ValueError("Template format unknown: %s" % template)
         elif isinstance(template, dict):
             self.template = template
+        elif template is not None:
+            raise ValueError("Template format unknown: %s" % type(template))
 
         if self.template:
             self.template["default"] = self.template.get("default") or {}
@@ -364,56 +361,15 @@ class Prompter:
         # Eventually stores the sources returned by the last RAG prompt built
         self.sources = None
 
-    @classmethod
-    def preprocess_prompt(cls, prompt: str) -> str:
-        new_prompt = cls._expand_acronyms(prompt)
-        return new_prompt
-
-    @staticmethod
-    def _expand_acronyms(prompt: str) -> str:
-        # Match potential acronyms
-        # --
-        # Terms that start by a number or maj, that contains at least 3 character, and that can be
-        # preceded by a space, but not if the first non-space character encountered backwards is a dot.
-        pattern = r"(?<!\S\. )[A-Z0-9][A-Za-z0-9]{2,}\b"
-        matches = [
-            (match.group(), match.start(), match.end()) for match in re.finditer(pattern, prompt)
-        ]
-
-        # Prevent extreme case (caps lock, list of items, etc)
-        if len(matches) > 10:
-            return prompt
-
-        # Expand acronyms
-        for match, start, end in matches[::-1]:
-            try:
-                i = ACRONYMS_KEYS.index(match.lower())
-            except ValueError:
-                continue
-
-            acronym = ACRONYMS[i]
-            look_around = 100
-            text_span = (
-                prompt[max(0, start - look_around) : start] + " " + prompt[end : end + look_around]
-            )
-            if acronym["text"].lower() not in text_span.lower():
-                # I suppose we go here most of the time...
-                # but I also suppose the test should be fast enough to be negligible.
-                expanded = " (" + acronym["text"] + ")"
-                prompt = prompt[:end] + expanded + prompt[end:]
-
-        return prompt
-
     @prompt_encoder
     @sources_length_checker
     @conversation_length_checker
     def make_prompt(
         self,
-        expand_acronyms: bool = True,
         system_prompt: str | None = None,
         prompt_format: str | None = None,
         add_generation_prompt: bool = False,
-        do_encode_prompt: bool = False,
+        do_expand_acronyms: bool = True,
         **kwargs,
     ) -> list[dict]:
         """Render simple to RAG prompt from template.
@@ -433,8 +389,8 @@ class Prompter:
                 raise ValueError("Either history or query must be set")
             kwargs["query"] = history[-1]["content"]
 
-        if expand_acronyms and "query" in kwargs:
-            kwargs["query"] = self.preprocess_prompt(kwargs["query"])
+        if do_expand_acronyms and "query" in kwargs:
+            kwargs["query"] = expand_acronyms(kwargs["query"])
 
         # Set search query
         kwargs["seach_query"] = kwargs["query"]
@@ -447,7 +403,11 @@ class Prompter:
 
         # Build template and render prompt with RAG variables if any
         if self.template:
-            data = self.make_variables(kwargs, self.template["variables"], self.template["default"])
+            data = self.make_variables(
+                passed_data=kwargs,
+                variables=self.template["variables"],
+                default=self.template["default"],
+            )
             prompt = self.template["_template"].render(**data)
             system_prompt = kwargs.get("system_prompt") or self.template.get("system_prompt") or self.config.get("system_prompt")  # fmt: skip
         else:
@@ -473,13 +433,12 @@ class Prompter:
 
         Available Variables in Prompt Templates
         ===
-        query: str        # passed in the query
-        search_query: str # passed in the query
-        context: str      # passed in the query
-        links: str        # passed in the query
-        institution: str  # passed in the query
-        most_similar_experience: str
+        query: str        # collection query search.
+        search_query: str # overwrite {query} if given.
+        limit: int        # max number in colection search.
+        skip_first: int   # skip the first result in collection search.
         {index-name}_collection: list[dict]
+        {var}: str        # anything else in passed_data.
         """
         data = passed_data.copy()
         for k, v in default.items():
@@ -487,30 +446,12 @@ class Prompter:
                 data[k] = v
 
         search_query = data.get("search_query", data["query"])
-        client = AlbertClient(api_key=self.api_key)
+        se_client = SearchEngineClient()
 
-        # Extract one similar value in a collection from query
-        if "most_similar_experience" in variables:
-            # Using similar experience
-            skip_first = data.get("skip_first")
-            n_exp = 1
-            if skip_first:
-                n_exp = 2
-            hits = client.search(
-                "experiences",
-                search_query,
-                limit=n_exp,
-                similarity="e5",
-                institution=data.get("institution"),
-            )
-            if skip_first:
-                hits = hits[1:]
-            data["most_similar_experience"] = hits[0]["description"]
-
-        # List of semantic similar value from query
+        # List of collections search variables asked in the template.
         collection_matches = [v for v in variables if v.endswith("_collection")]
         for v in collection_matches:
-            collection_name  = "_".join(v.split("_")[:-1])
+            collection_name = "_".join(v.split("_")[:-1])
             if collection_name.startswith("spp_"):
                 id_key = "id_experience"
             elif collection_name == "chunks":
@@ -522,15 +463,16 @@ class Prompter:
             skip_first = data.get("skip_first")
             if skip_first:
                 limit += 1
-            hits = client.search(
+            hits = se_client.search(
                 collection_name,
                 search_query,
-                institution=data.get("institution"),
                 limit=limit,
-                similarity="e5",
-                sources=data.get("sources"),
-                should_sids=data.get("should_sids"),
-                must_not_sids=data.get("must_not_sids"),
+                filters=dict(
+                    institution=data.get("institution"),
+                    sources=data.get("sources"),
+                    should_sids=data.get("should_sids"),
+                    must_not_sids=data.get("must_not_sids"),
+                ),
             )
             if skip_first:
                 hits = hits[1:]

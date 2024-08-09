@@ -7,7 +7,6 @@ from app.core.indexes import get_document, search_indexes
 from app.deps import get_current_user, get_db
 
 from pyalbert import get_logger
-from pyalbert.prompt import Prompter
 
 logger = get_logger()
 
@@ -36,10 +35,6 @@ def search(
 ):
     query = index.query
 
-    if index.expand_acronyms:
-        # Detect and expand implicit acronyms
-        query = Prompter._expand_acronyms(index.query)
-
     hits = search_indexes(
         index.name,
         query,
@@ -49,6 +44,7 @@ def search(
         index.sources,
         index.should_sids,
         index.must_not_sids,
+        do_expand_acronyms=index.expand_acronyms
     )
 
     if index.stream_id:

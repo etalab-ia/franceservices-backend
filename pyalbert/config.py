@@ -43,9 +43,13 @@ FIRST_ADMIN_PASSWORD = os.getenv("FIRST_ADMIN_PASSWORD", "changeme")
 
 match ENV:
     case "dev":
-        DATABASE_URI = os.getenv("POSTGRES_URI", "postgresql+psycopg2://postgres:changeme@localhost:5432/postgres_dev")
+        DATABASE_URI = os.getenv(
+            "POSTGRES_URI", "postgresql+psycopg2://postgres:changeme@localhost:5432/postgres_dev"
+        )
     case _:
-        DATABASE_URI = os.getenv("POSTGRES_URI", "postgresql+psycopg2://postgres:changeme@localhost:5432/postgres")
+        DATABASE_URI = os.getenv(
+            "POSTGRES_URI", "postgresql+psycopg2://postgres:changeme@localhost:5432/postgres"
+        )
 
 # Email
 MJ_API_KEY = os.getenv("MJ_API_KEY")
@@ -62,7 +66,7 @@ API_PREFIX_V2 = API_PREFIX.rstrip("/") + "/" + API_ROUTE_VER if API_ROUTE_VER el
 API_PREFIX_V1 = API_PREFIX.rstrip("/") + "/v1"
 
 # Elasticsearch
-ELASTICSEARCH_IX_VER = "v4"
+ELASTICSEARCH_IX_VER = "v5"
 ELASTIC_HOST = os.environ.get("ELASTIC_HOST", "localhost")
 ELASTIC_PORT = os.environ.get("ELASTIC_PORT", "9200")
 ELASTICSEARCH_URL = f"http://{ELASTIC_HOST}:{ELASTIC_PORT}"
@@ -80,12 +84,12 @@ QDRANT_USE_GRPC = True
 # LLM/RAG
 # --
 DO_ENCODE_PROMPT = False  # if True, the Prompter class will encode the prompt according the "prompt_format" given in prompt config.
-HF_TOKEN = os.getenv("HF_TOKEN")
+HF_TOKEN = os.getenv("HF_TOKEN")  # @deprecated
 # The sources that will be parsed, chunked, indexed and embeded for the RAG.
 SHEET_SOURCES = ["service-public", "travail-emploi"]
 # Default embedding model
-# RAG_EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
 RAG_EMBEDDING_MODEL = "BAAI/bge-m3"
+HYBRID_COLLECTIONS = ["spp_experiences", "chunks"]
 
 # Build the LLM table and from the LLM API endpoints
 ALBERT_MODELS_API_KEY = os.getenv("ALBERT_MODELS_API_KEY", "changeme")
@@ -120,7 +124,14 @@ ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 
 if ENV == "unittest":
     DATABASE_URI = "sqlite:///" + os.path.join(tempfile.gettempdir(), "albert-unittest-sqlite3.db")
-    LLM_TABLE = [{"model": "albert", "type": "text-generation", "url": "http://127.0.0.1:8899"}]
+    LLM_TABLE = [
+        {"model": "albert", "type": "text-generation", "url": "http://127.0.0.1:8899"},
+        {
+            "model": RAG_EMBEDDING_MODEL,
+            "type": "feature-extraction",
+            "url": "http://127.0.0.1:8899",
+        },
+    ]
     ELASTIC_HOST = "localhost"
     ELASTIC_PORT = "9211"
     QDRANT_HOST = "localhost"
