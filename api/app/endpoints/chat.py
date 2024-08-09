@@ -43,6 +43,7 @@ def create_chat(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ) -> models.Chat:
+    print("current_user", current_user)
     return crud.chat.create_chat(db, chat, user_id=current_user.id)
 
 

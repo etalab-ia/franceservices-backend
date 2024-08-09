@@ -118,3 +118,7 @@ class UserCreate(UserBase):
 
 class UserWithRelationships(User):
     streams: list["Stream"] | None
+
+class UserConfirm(BaseModel):
+    email: EmailStr
+    is_confirmed: bool

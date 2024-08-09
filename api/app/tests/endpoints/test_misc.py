@@ -15,16 +15,18 @@ class TestEndpointsMisc(TestApi):
         # Sign In:
         response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
         assert response.status_code == 200
-        token = response.json()["token"]
+        access_token = "Bearer " + response.json()["access_token"]
+        refresh_token = "Bearer " + response.json()["refresh_token"]
+
 
         # Read models:
-        response = misc.get_models(client, token)
+        response = misc.get_models(client, access_token, refresh_token)
         assert response.status_code == 200
 
         # Read institutions:
-        response = misc.get_institutions(client, token)
+        response = misc.get_institutions(client, access_token, refresh_token)
         assert response.status_code == 200
 
         # Read mfs organization:
-        response = misc.get_mfs_organizations(client, token)
+        response = misc.get_mfs_organizations(client, access_token, refresh_token)
         assert response.status_code == 200

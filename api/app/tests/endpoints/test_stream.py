@@ -20,29 +20,34 @@ class TestEndpointsStream(TestApi):
         # Sign In:
         response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
         assert response.status_code == 200
-        token = response.json()["token"]
+        access_token = "Bearer " + response.json()["access_token"]
+        refresh_token = "Bearer " + response.json()["refresh_token"]
 
         # Read Streams:
-        response = stream.read_streams(client, token)
+        response = stream.read_streams(client, access_token, refresh_token)
         assert response.status_code == 200
 
         # Create User Stream:
         response = stream.create_user_stream(
-            client, token, model_name=self.model_name, query="Bonjour, comment allez-vous ?"
+            client,
+            access_token,
+            refresh_token,
+            model_name=self.model_name,
+            query="Bonjour, comment allez-vous ?",
         )
         log_and_assert(response, 200)
         stream_id = response.json()["id"]
 
         # Read Stream:
-        response = stream.read_stream(client, token, stream_id)
+        response = stream.read_stream(client, access_token, refresh_token, stream_id)
         assert response.status_code == 200
 
         # Start Stream:
-        response = asyncio.run(stream.start_stream(client, token, stream_id))
+        response = asyncio.run(stream.start_stream(client, access_token, refresh_token, stream_id))
         assert response.status_code == 200
 
         # Stop Stream:
-        response = stream.stop_stream(client, token, stream_id)
+        response = stream.stop_stream(client, access_token, refresh_token, stream_id)
         assert response.status_code == 200
 
     # TODO: add assert on response json
@@ -51,21 +56,23 @@ class TestEndpointsStream(TestApi):
         # Sign In:
         response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
         assert response.status_code == 200
-        token = response.json()["token"]
+        access_token = "Bearer " + response.json()["access_token"]
+        refresh_token = "Bearer " + response.json()["refresh_token"]
 
         # Read Streams:
-        response = stream.read_streams(client, token)
+        response = stream.read_streams(client, access_token, refresh_token)
         assert response.status_code == 200
 
         # Create Chat:
-        response = chat.create_chat(client, token, "meeting")
+        response = chat.create_chat(client, access_token, refresh_token, "meeting")
         assert response.status_code == 200
         chat_id = response.json()["id"]
 
         # Create Chat Stream:
         response = stream.create_chat_stream(
             client,
-            token,
+            access_token,
+            refresh_token,
             chat_id,
             model_name=self.model_name,
             query="Bonjour, comment allez-vous ?\ntest@test.test 0000000000",
@@ -74,23 +81,25 @@ class TestEndpointsStream(TestApi):
         stream_id = response.json()["id"]
 
         # Read Stream:
-        response = stream.read_stream(client, token, stream_id)
+        response = stream.read_stream(client, access_token, refresh_token, stream_id)
         assert response.status_code == 200
 
         # Start Stream:
-        response = asyncio.run(stream.start_stream(client, token, stream_id))
+        response = asyncio.run(stream.start_stream(client, access_token, refresh_token, stream_id))
         assert response.status_code == 200
 
         # Stop Stream:
-        response = stream.stop_stream(client, token, stream_id)
+        response = stream.stop_stream(client, access_token, refresh_token, stream_id)
         assert response.status_code == 200
 
         # Send feedbacks
-        response = feedback.create_feedback(client, token, stream_id, {"is_good": True})
+        response = feedback.create_feedback(
+            client, access_token, refresh_token, stream_id, {"is_good": True}
+        )
         assert response.status_code == 200
 
         response = feedback.create_feedback(
-            client, token, stream_id, {"message": "that is excelent !"}
+            client, access_token, refresh_token, stream_id, {"message": "that is excelent !"}
         )
         assert response.status_code == 200
         feedback_id = response.json()["id"]
@@ -100,7 +109,8 @@ class TestEndpointsStream(TestApi):
         # Create Chat Stream:
         response = stream.create_chat_stream(
             client,
-            token,
+            access_token,
+            refresh_token,
             chat_id,
             model_name=self.model_name,
             query="Bonjour, comment allez-vous ?\ntest@test.test 0000000000",
@@ -111,11 +121,11 @@ class TestEndpointsStream(TestApi):
         stream_id = response.json()["id"]
 
         # Start Stream:
-        response = asyncio.run(stream.start_stream(client, token, stream_id))
+        response = asyncio.run(stream.start_stream(client, access_token, refresh_token, stream_id))
         assert response.status_code == 200
 
         # Read Archive:
-        response = chat.read_archive(client, token, chat_id)
+        response = chat.read_archive(client, access_token, refresh_token, chat_id)
         assert response.status_code == 200
         d = response.json()
 
@@ -143,5 +153,5 @@ class TestEndpointsStream(TestApi):
         assert archive == archive_true
 
         # Delete feedback:
-        response = feedback.delete_feedback(client, token, feedback_id)
+        response = feedback.delete_feedback(client, access_token, refresh_token, feedback_id)
         assert response.status_code == 200

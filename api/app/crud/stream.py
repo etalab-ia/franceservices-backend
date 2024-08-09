@@ -32,7 +32,7 @@ def get_streams(
 def create_stream(
     db: Session,
     stream: schemas.StreamCreate,
-    user_id: int,
+    user_id: str,
     chat_id: int | None = None,
     commit=True,
 ) -> models.Stream:

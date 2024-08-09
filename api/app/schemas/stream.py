@@ -76,7 +76,7 @@ class Stream(StreamBase):
     created_at: datetime
     updated_at: datetime
     is_streaming: bool
-    user_id: int | None
+    user_id: str | None
     chat_id: int | None
     prompt: bytes | None = Field(
         default=None,

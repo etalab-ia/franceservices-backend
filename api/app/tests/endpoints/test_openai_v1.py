@@ -69,7 +69,7 @@ class TestEndpointsUser(TestApi):
         }
 
         # Unauthenticated user
-        response = openai.chat_completions(client, None, conversation)
+        response = openai.chat_completions(client, None, None, conversation)
         assert response.status_code in [400, 401, 403]
 
     @pytest.mark.parametrize("conversation", conversation_testcases)
@@ -83,13 +83,17 @@ class TestEndpointsUser(TestApi):
         # Sign In:
         response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
         assert response.status_code == 200
-        token = response.json()["token"]
+        access_token = "Bearer " + response.json()["access_token"]
+        refresh_token = "Bearer " + response.json()["refresh_token"]
+        
 
         # Authenticated user
         if stream:
-            response, _ = asyncio.run(openai.chat_completion_stream(client, token, conversation))
+            response, _ = asyncio.run(
+                openai.chat_completion_stream(client, access_token, refresh_token, conversation)
+            )
         else:
-            response = openai.chat_completions(client, token, conversation)
+            response = openai.chat_completions(client, access_token, refresh_token, conversation)
 
         log_and_assert(response, 200)
 
@@ -104,8 +108,21 @@ class TestEndpointsUser(TestApi):
         model_ = LLM_TABLE[0]
         model_name = model_["model"]
         model_url = model_["url"]
-        aclient = LlmClient(model_name, base_url=model_url, api_key="something")
-        result = aclient.generate(messages=conversation["messages"], rag=rag)
+        aclient = LlmClient(model_name, model_url, access_token, refresh_token)
+        print("aclient", aclient)
+        try:
+            result = aclient.generate(messages=conversation["messages"], rag=rag)
+        except Exception as e:
+            print("Exception occurred:", e)
+            result = None
+
+        if result is None:
+            print("Result is None. Likely due to an authentication error or an issue with the request.")
+        else:
+            print("Result:", result)
+
+        assert result is not None, "Result should not be None"
+        assert hasattr(result, 'choices'), "Result should have 'choices' attribute"
         assert len(result.choices[0].message.content) > 0
 
     @pytest.mark.parametrize("input", embedding_testcases)
@@ -113,10 +130,9 @@ class TestEndpointsUser(TestApi):
         # Sign In:
         response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
         assert response.status_code == 200
-        token = response.json()["token"]
 
         # Authenticated user
-        response = openai.create_embeddings(client, token, input)
+        response = openai.create_embeddings(client, data=input)
 
         log_and_assert(response, 200)
 

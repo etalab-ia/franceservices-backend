@@ -105,7 +105,7 @@ async def openai_api_proxy(
     else:
         raise NotImplementedError
 
-    headers_to_keep = ["Authorization"]
+    headers_to_keep = ["access_token", "refresh_token"]
     headers = {h: request.headers[h] for h in headers_to_keep if h in request.headers}
 
     try:

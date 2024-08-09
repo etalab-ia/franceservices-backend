@@ -14,6 +14,7 @@ class TestEndpointsLogin(TestApi):
         username = KEYCLOAK_ADMIN_USERNAME
         password = KEYCLOAK_ADMIN_PASSWORD
         response = login.sign_in(client, username, password)
+        print("response", response.json())
         assert response.status_code == 200
         response_json = response.json()
         assert "access_token" in response_json

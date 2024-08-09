@@ -15,12 +15,12 @@ def get_pending_users() -> List[schemas.User]:
         unconfirmed_users = list(
             userSerializer(user)
             for user in users
-            if user.get("attributes", {}).get("is_confirmed") == ["None"]
+            if user.get("attributes", {}).get("is_confirmed") == ["false"]
             and user.get("email")
             and user.get("enabled")
         )
 
-        sorted_users = sorted(unconfirmed_users, key=lambda x: x["id"])
+        sorted_users = sorted(unconfirmed_users, key=lambda x: x.id)
         return sorted_users
     except KeycloakError as e:
         print(f"An error occurred: {e}")
@@ -76,9 +76,19 @@ def confirm_user(user_id: str, is_confirmed: bool) -> None:
         user = keycloak_admin.get_user(user_id)
 
         attributes = user.get("attributes", {})
-        attributes["is_confirmed"] = str(is_confirmed)
+        attributes["is_confirmed"] = [str(is_confirmed).lower()]
 
-        keycloak_admin.update_user(user_id=user_id, payload={"attributes": attributes})
+        try:
+            keycloak_admin.update_user(
+                user_id=user_id,
+                payload={
+                    "username": user.get("username", ""),
+                    "email": user.get("email", ""),
+                    "attributes": attributes,
+                },
+            )
+        except Exception as e:
+            print("An error occurred while updating user", e)
     except Exception:
         return None
 

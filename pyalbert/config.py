@@ -151,7 +151,7 @@ if ENV == "unittest":
     KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "changeme")
     KEYCLOAK_SECRET_KEY = os.getenv("KEYCLOAK_SECRET_KEY", "changeme")
     KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "changeme")
-    KEYCLOAK_ADMIN_USERNAME = os.getenv("KEYCLOAK_ADMIN_USERNAME", "changeme")
-    KEYCLOAK_ADMIN_PASSWORD = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "changeme")
+    KEYCLOAK_ADMIN_USERNAME = os.getenv("KEYCLOAK_ADMIN_USERNAME", "admin")
+    KEYCLOAK_ADMIN_PASSWORD = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
     # @warning: prism mock does not support basepath prefix.
     # --

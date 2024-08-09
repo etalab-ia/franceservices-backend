@@ -26,7 +26,7 @@ class Chat(ChatBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    user_id: int
+    user_id: str
     chat_name: str | None
     stream_count: int | None = None
 
