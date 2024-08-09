@@ -11,7 +11,7 @@ async def healtcheck():
 
 @app.post("/collections/{collection_name}/points/search")
 async def search(collection_name: str):
-    # @DEBG: see id encoding for qdrant in ir/qdrant.py
+    # @DEBG: see ID encoding for qdrant in ir/qdrant.py
     data = [
         {
             "id": "1".encode("utf8").hex(),

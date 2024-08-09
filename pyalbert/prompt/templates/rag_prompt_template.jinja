@@ -1,7 +1,4 @@
 Utilisez le contexte suivant comme votre base de connaissances, à l'intérieur des balises XML <context></context>.
-Lors de la réponse à l'utilisateur :
-- Si vous ne savez pas ou si vous n'êtes pas sûr, demandez une clarification.
-- Évitez de mentionner que vous avez obtenu les informations du contexte.
 
 <context>
 {% for chunk in chunks_collection %}
@@ -10,6 +7,11 @@ title: {{chunk.title}} {% if chunk.context %}({{chunk.context}}){% endif %}
 text: {{chunk.text}} {% if not loop.last %}{{"\n"}}{% endif %}
 {% endfor %}
 </context>
+
+
+Lors de la réponse à l'utilisateur :
+- Si vous ne savez pas ou si vous n'êtes pas sûr, demandez une clarification.
+- Évitez de mentionner que vous avez obtenu les informations du contexte.
 
 Étant donné les sources d'informations du contexte, répondez à la question.
 Question : {{query}}

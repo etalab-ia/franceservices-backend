@@ -7,6 +7,7 @@ Usage:
     pyalbert download_rag_sources [--config-file=<path>] [--storage-dir=<path>] [--debug]
     pyalbert make_chunks [--structured] [--chunk-size N] [--chunk-overlap N] [--storage-dir=<path>]
     pyalbert index <index_name> [--index-type=<index_type>] [--batch-size N] [--recreate] [--storage-dir=<path>]
+    pyalbert show_indexes
 
 Commands:
     create_whitelist           Create a whitelist file for postprocessing. By default, files are stored under /data/whitelist directory.
@@ -19,6 +20,7 @@ Commands:
 
     index                      Create the given index to search relevant document given a query, loading data from <path>. Each index is created using a specific sourcs as ground-truth.
                                See the docs to see which sources are used by which index.
+    show_indexes               Show search engines indexes.
 
 Options:
     --storage-dir=<path>       Storage path for downloaded ressources.
@@ -27,7 +29,7 @@ Options:
     --chunk-size N             The maximum size of the chunks (token count...) [default: 1100]
     --chunk-overlap N          The size of the overlap between chunks [default: 200]
     --batch-size N             The embedding batch size when creating a collection [default: 10]
-    --index-type=<index_type>  The type of index to create (bm25, bucket, e5) [default: bm25]
+    --index-type=<index_type>  The type of index to create (elasticsearch, qdrant) [default: elasticsearch]
     --recreate                 Force collection/index recreation
     --debug                    optional, print debug logs. By default, False.
 
@@ -112,8 +114,7 @@ def main():
         storage_dir = "/data/sources" if args["--storage-dir"] is None else args["--storage-dir"]
 
         known_indexes = [
-            "spp_experience_question",
-            "spp_experience_answer",
+            "spp_experiences",
             "chunks",
             "sheets",
         ]
@@ -127,6 +128,10 @@ def main():
             batch_size=int(args["--batch-size"]),
             storage_dir=storage_dir,
         )
+    elif args["show_indexes"]:
+        from pyalbert.index import list_indexes
+
+        list_indexes()
     else:
         raise NotImplementedError
 

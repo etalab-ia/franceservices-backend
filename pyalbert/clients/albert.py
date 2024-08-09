@@ -1,27 +1,42 @@
 import json
+from collections import namedtuple
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import Generator
 
 import lz4.frame
 import requests
+from elasticsearch import Elasticsearch
+from qdrant_client import QdrantClient
+from qdrant_client import models as QdrantModels
 
+from pyalbert import collate_ix_name
 from pyalbert.config import (
     ACCESS_TOKEN_TTL,
     ALBERT_MODELS_API_KEY,
-    API_PREFIX_V1,
     API_PREFIX_V2,
-    API_ROUTE_VER,
     API_URL,
+    ELASTICSEARCH_CREDS,
+    ELASTICSEARCH_IX_VER,
+    ELASTICSEARCH_URL,
     FIRST_ADMIN_PASSWORD,
     FIRST_ADMIN_USERNAME,
+    HYBRID_COLLECTIONS,
     LLM_API_VER,
     LLM_TABLE,
+    QDRANT_GRPC_PORT,
+    QDRANT_IX_VER,
+    QDRANT_REST_PORT,
+    QDRANT_URL,
+    QDRANT_USE_GRPC,
     RAG_EMBEDDING_MODEL,
 )
+from pyalbert.lexicon import expand_acronyms
 from pyalbert.schemas import RagChatCompletionResponse, RagParams
 from pyalbert.utils import log_and_raise_for_status, retry, sse_decoder
 
 
+# @TODO: Will be renamed as MfsClient ?
 class AlbertClient:
     CONFIG = {
         "base_url": API_URL,
@@ -165,6 +180,7 @@ class LlmClient:
                 raise ValueError("LLM model not found: %s" % model)
 
             self.url = model_["url"]
+            self.url = f"{self.url}/{LLM_API_VER}" if LLM_API_VER else self.url
         else:
             self.url = base_url
 
@@ -181,7 +197,7 @@ class LlmClient:
         self,
         messages: str | list[dict] | None = None,
         stream: bool = False,
-        path: str = "chat/completions",
+        path: str = "/chat/completions",
         rag: dict | None = None,
         **sampling_params,
     ) -> RagChatCompletionResponse | Generator:
@@ -205,14 +221,15 @@ class LlmClient:
             headers = {"Authorization": f"Bearer {self.api_key}"}
         elif ALBERT_MODELS_API_KEY:
             headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
-        url = f"{self.url}/{LLM_API_VER}/{path}" if LLM_API_VER else f"{self.url}/{path}"
+        url = f"{self.url}{path}"
         response = requests.post(url, headers=headers, json=json_data, stream=stream)
         log_and_raise_for_status(response, "Albert API error")
+
         if stream:
             return self._get_streaming_response(response)
-        else:
-            r = response.json()
-            return RagChatCompletionResponse(**r)
+
+        r = response.json()
+        return RagChatCompletionResponse(**r)
 
     # TODO: turn into async
     @classmethod
@@ -222,17 +239,19 @@ class LlmClient:
         texts: str | list[str],
         doc_type: str | None = None,
         model: str | None = None,
-        path: str = "embeddings",
+        path: str = "/embeddings",
         openai_format: bool = False,
         api_key=None,
     ) -> list[float] | list[list[float]] | dict:
         """Simple interface to create an embedding vector from a text input or a list of texd inputs."""
         model = model or RAG_EMBEDDING_MODEL
-        default_model, default_url = LLM_TABLE[0]["model"], LLM_TABLE[0]["url"]
         model, url = next(
             ((d["model"], d["url"]) for d in LLM_TABLE if d["model"] == model),
-            (default_model, default_url),
+            (None, None),
         )
+
+        if not model:
+            raise ValueError("Embedgging model unknown. Please use an available embedding model.")
 
         json_data = {"input": texts}
         if doc_type:
@@ -245,7 +264,7 @@ class LlmClient:
             headers = {"Authorization": f"Bearer {api_key}"}
         elif ALBERT_MODELS_API_KEY:
             headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
-        url = f"{url}/{LLM_API_VER}/{path}" if LLM_API_VER else f"{url}/{path}"
+        url = f"{url}/{LLM_API_VER}{path}" if LLM_API_VER else f"{url}{path}"
         response = requests.post(url, headers=headers, json=json_data)
         log_and_raise_for_status(response, "LLM API error")
         results = response.json()
@@ -258,3 +277,196 @@ class LlmClient:
             results = [x["embedding"] for x in results["data"]]
 
         return results
+
+
+class SearchEngineClient:
+    # Global config
+    CONFIG = {
+        "default_engine": "elasticsearch",
+        "hybrid_collections": HYBRID_COLLECTIONS,
+        # Elastic config
+        "es_url": ELASTICSEARCH_URL,
+        "es_creds": ELASTICSEARCH_CREDS,
+        "es_col_version": ELASTICSEARCH_IX_VER,
+        # Qdrant config
+        "qdrant_url": QDRANT_URL,
+        "qdrant_grpc_port": QDRANT_GRPC_PORT,
+        "qdrant_rest_port": QDRANT_REST_PORT,
+        "qdrant_use_grpc": QDRANT_USE_GRPC,
+        "qdrant_col_version": QDRANT_IX_VER,
+    }
+
+    def __init__(self, **config):
+        self.config = self.CONFIG.copy()
+        if config:
+            self.config.update(config)
+
+        self.config = namedtuple("Config", self.config.keys())(**self.config)
+
+    def search(
+        self,
+        collection: str,
+        query: str,
+        limit: int = 5,
+        engine: str = None,
+        do_expand_acronyms: bool = False,
+        filters=None,
+    ) -> list[dict]:
+        engine = engine if engine else self.config.default_engine
+
+        if do_expand_acronyms:
+            query = expand_acronyms(query)
+
+        match engine:
+            case "elasticsearch":
+                results = self._search_es(collection, query, limit=limit, filters=filters)
+            case "qdrant":
+                results = self._search_qdrant(collection, query, limit=limit, filters=filters)
+
+        return results
+
+    def _rrf_ranker(self, group_results, limit: int, k: int = 20):
+        """
+        Combine search results using Reciprocal Rank Fusion (RRF)
+        :param group_results: A list of result lists from different searches
+        :param k: The constant k in the RRF formula
+        :return: A combined list of results with updated scores
+        """
+        combined_scores = {}
+        doc_map = {}
+        for results in group_results:
+            for rank, result in enumerate(results):
+                doc_id = result["_id"]
+                if doc_id not in combined_scores:
+                    combined_scores[doc_id] = 0
+                    doc_map[doc_id] = result
+                combined_scores[doc_id] += 1 / (k + rank + 1)
+
+        # Sort combined results by their RRF scores in descending order
+        ranked_results = sorted(combined_scores.items(), key=lambda item: item[1], reverse=True)
+
+        reranked_results = []
+        for doc_id, rrf_score in ranked_results:
+            document = doc_map[doc_id]
+            document["_rff_score"] = rrf_score
+            reranked_results.append(document)
+
+        return reranked_results[:limit]
+
+    #
+    # Elasticsearch related methods
+    #
+    def _search_es(
+        self,
+        collection: str,
+        query: str,
+        limit: int,
+        filters: dict | None = None,
+        hybrid_limit_factor: float = 1.5,
+    ) -> list[dict]:
+        index = collate_ix_name(collection, ELASTICSEARCH_IX_VER)
+        client = Elasticsearch(self.config.es_url, basic_auth=self.config.es_creds)
+
+        # No ranking filters
+        must_not_filter = []
+        should_filter = []
+        query_filter = []
+        filters = filters if filters else {}
+        if filters.get("institution"):
+            query_filter.append({"term": {"intitule_typologie_1": filters["institution"]}})
+        if filters.get("sources"):
+            query_filter.append({"terms": {"source": filters["sources"]}})
+        if filters.get("should_sids"):
+            should_filter.append({"ids": {"values": filters["should_sids"], "boost": 100}})
+        if filters.get("must_not_sids"):
+            must_not_filter.append({"ids": {"values": filters["must_not_sids"]}})
+
+        # Lexical search
+        fuzziness = {}
+        if len(query.split()) < 25:
+            fuzziness =  {"fuzziness": "AUTO"}
+        lexical_query = {
+            "multi_match": {
+                "query": query,
+                "type": "best_fields",
+                "tie_breaker": 0.3,
+                **fuzziness
+            }
+        }
+
+        lexical_query = {
+            "bool": {
+                "must": [lexical_query],
+                "must_not": must_not_filter,
+                "should": should_filter,
+                "filter": query_filter,
+            }
+        }
+
+        if collection not in self.config.hybrid_collections:
+            body = {"query": lexical_query, "size": limit}
+            res = client.search(index=index, body=body)
+            hits = [x.get("_source") for x in res["hits"]["hits"] if x]
+            return hits
+
+        # Semantic search
+        embedding = LlmClient.create_embeddings(query)
+        semantic_query = {
+            "field": "embedding",
+            "query_vector": embedding,
+            "k": int(limit * hybrid_limit_factor),
+            "num_candidates": 200,
+            "filter": query_filter,
+        }
+
+        # RRF is not available in the free license.
+        # body = {
+        #    "query": lexical_query,
+        #    "knn": semantic_query,
+        #     "rank": {"rrf": {}},
+        #    "size": limit,
+        #    "_source": {"excludes": ["embedding"]},
+        # }
+        # res = client.search(index=index, body=body)
+        # hits = [x.get("_source") for x in res["hits"]["hits"] if x]
+        hits = self._hybrid_search_es(
+            index, lexical_query, semantic_query, limit, hybrid_limit_factor
+        )
+
+        return hits
+
+    def _hybrid_search_es(
+        self, index, lexical_query, semantic_query, limit: int, hybrid_limit_factor: float
+    ):
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            lexical_query_body = {
+                "query": lexical_query,
+                "size": int(limit * hybrid_limit_factor),
+                "_source": {"excludes": ["embedding"]},
+            }
+            semantic_query_body = {
+                "knn": semantic_query,
+                "size": int(limit * hybrid_limit_factor),
+                "_source": {"excludes": ["embedding"]},
+            }
+
+            lexical_future = executor.submit(self._search_lowlevel_es, index, lexical_query_body)
+            semantic_future = executor.submit(self._search_lowlevel_es, index, semantic_query_body)
+
+            lexical_results = [x for x in lexical_future.result()["hits"]["hits"] if x]
+            semantic_results = [x for x in semantic_future.result()["hits"]["hits"] if x]
+
+        results = self._rrf_ranker([lexical_results, semantic_results], limit=limit)
+        hits = [x.get("_source") for x in results]
+        return hits
+
+    def _search_lowlevel_es(self, index, query):
+        client = Elasticsearch(self.config.es_url, basic_auth=self.config.es_creds)
+        return client.search(index=index, body=query)
+
+    #
+    # Qdrant related methods
+    #
+
+    def _search_qdrant(self, collection: str, query: str, limit: int, **kwargs) -> list[dict]:
+        raise NotImplementedError
