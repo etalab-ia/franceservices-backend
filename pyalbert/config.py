@@ -115,8 +115,6 @@ for url in MODELS_URLS:
 
 # JWT token
 PASSWORD_PATTERN = r"^[A-Za-z\d$!%*+\-?&#_=.,:;@]{8,128}$"
-PASSWORD_RESET_TOKEN_TTL = 3600  # seconds
-ACCESS_TOKEN_TTL = 3600 * 24  # seconds
 
 # Keycloak
 KEYCLOAK_ADMIN_USERNAME = os.getenv("KEYCLOAK_ADMIN_USERNAME", "changeme")

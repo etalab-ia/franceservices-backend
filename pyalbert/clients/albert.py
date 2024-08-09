@@ -66,10 +66,20 @@ class AlbertClient:
         self.token_dt = None
         self.token_ttl = ACCESS_TOKEN_TTL - 2
         self.api_key = api_key
+        
+        self.access_token = None
+        self.refresh_token = None
+
+    def _is_token_expired(self):
+        if self.token is None or self.token_dt is None:
+            return True
+        dt_ttl = datetime.utcnow() - timedelta(seconds=self.token_ttl)
+        return self.token_dt < dt_ttl
 
     def _sign_in(self):
         json_data = {"username": self.username, "password": self.password}
         response = self._fetch("POST", "/sign_in", json_data=json_data)
+
         self.access_token = response.json()["access_token"]
         self.refresh_token = response.json()["refresh_token"]
         self.token_dt = datetime.utcnow()
@@ -81,6 +91,7 @@ class AlbertClient:
             "PUT": requests.put,
             "DELETE": requests.delete,
         }
+        print("headers in _fetch", headers)
         response = d[method](f"{self.url}{route}", headers=headers, json=json_data, stream=stream)
         log_and_raise_for_status(response, "Albert API error")
         return response
@@ -210,8 +221,6 @@ class LlmClient:
         headers = None
         if self.api_key:
             headers = {"Authorization": f"Bearer {self.api_key}"}
-        if self.access_token and self.refresh_token:
-            headers = {"access_token": self.access_token, "refresh_token": self.refresh_token}
         elif ALBERT_MODELS_API_KEY:
             headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
         url = f"{self.url}{path}"
