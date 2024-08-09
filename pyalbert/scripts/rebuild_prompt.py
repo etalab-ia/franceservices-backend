@@ -13,12 +13,11 @@ if __name__ == "__main__":
         username=os.getenv("FIRST_ADMIN_USERNAME"),
         password=os.getenv("FIRST_ADMIN_PASSWORD"),
     )
-
+    stream_id = 3
     client = AlbertClient(**config)
 
     # Rebuild a single rag prompt
     # Note: retroactive, sensitive to changes in prompt template
-    stream_id = 3
     stream = client.get_stream(stream_id)
     prompter = get_prompter(stream["model_name"], stream["mode"])
     prompt = prompter.make_prompt(**stream)
@@ -26,6 +25,5 @@ if __name__ == "__main__":
 
     # Rebuild the full raw prompt (with potenial history/coversation)
     # Note: no retroactive, insensitive to changes in prompt template
-    stream_id = 3
     full_prompt = client.review_prompt(stream_id)
     print(full_prompt)
