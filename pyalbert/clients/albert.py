@@ -373,9 +373,9 @@ class SearchEngineClient:
         query_filter = []
         filters = filters if filters else {}
         if filters.get("institution"):
-            query_filter.append({"term": {"intitule_typologie_1": filters["institution"]}})
+            query_filter.append({"term": {"intitule_typologie_1.keyword": filters["institution"]}})
         if filters.get("sources"):
-            query_filter.append({"terms": {"source": filters["sources"]}})
+            query_filter.append({"terms": {"source.keyword": filters["sources"]}})
         if filters.get("should_sids"):
             should_filter.append({"ids": {"values": filters["should_sids"], "boost": 100}})
         if filters.get("must_not_sids"):
@@ -438,6 +438,7 @@ class SearchEngineClient:
     def _hybrid_search_es(
         self, index, lexical_query, semantic_query, limit: int, hybrid_limit_factor: float
     ):
+        # See also: https://elasticsearch-py.readthedocs.io/en/v8.14.0/async.html
         with ThreadPoolExecutor(max_workers=2) as executor:
             lexical_query_body = {
                 "query": lexical_query,
