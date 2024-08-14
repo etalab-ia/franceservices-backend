@@ -14,7 +14,7 @@ if __name__ == "__main__":
     api_mode = "rag"
     with_history = False
 
-    client = AlbertClient(api_key=api_key)
+    client = AlbertClient()
 
     # Create Stream:
     # --

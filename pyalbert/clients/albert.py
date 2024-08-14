@@ -45,12 +45,6 @@ class AlbertClient:
     }
 
     def __init__(self, api_key=None, **user_config):
-        if api_key is not None and (user_config.get("username") or user_config.get("password")):
-            print(
-                "Error: You need to either set the api_key or the username/password couple, but not both at the same time."
-            )
-            exit(2)
-
         config = self.CONFIG
         if user_config:
             config.update(user_config)
@@ -66,7 +60,7 @@ class AlbertClient:
         self.token_dt = None
         self.token_ttl = ACCESS_TOKEN_TTL - 2
         self.api_key = api_key
-        
+
         self.access_token = None
         self.refresh_token = None
 
@@ -91,7 +85,7 @@ class AlbertClient:
             "PUT": requests.put,
             "DELETE": requests.delete,
         }
-        print("headers in _fetch", headers)
+
         response = d[method](f"{self.url}{route}", headers=headers, json=json_data, stream=stream)
         log_and_raise_for_status(response, "Albert API error")
         return response
@@ -173,7 +167,7 @@ class AlbertClient:
 
 
 class LlmClient:
-    def __init__(self, model: str, api_key=None, base_url=None):
+    def __init__(self, model: str, base_url=None, api_key=None):
         self.model = model
         self.api_key = api_key
         if not base_url:
@@ -219,11 +213,13 @@ class LlmClient:
             json_data["rag"] = RagParams(**rag).model_dump()
 
         headers = None
+       
         if self.api_key:
             headers = {"Authorization": f"Bearer {self.api_key}"}
         elif ALBERT_MODELS_API_KEY:
             headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
         url = f"{self.url}{path}"
+        
         response = requests.post(url, headers=headers, json=json_data, stream=stream)
         log_and_raise_for_status(response, "Albert API error")
 
@@ -386,14 +382,9 @@ class SearchEngineClient:
         # Lexical search
         fuzziness = {}
         if len(query.split()) < 25:
-            fuzziness =  {"fuzziness": "AUTO"}
+            fuzziness = {"fuzziness": "AUTO"}
         lexical_query = {
-            "multi_match": {
-                "query": query,
-                "type": "best_fields",
-                "tie_breaker": 0.3,
-                **fuzziness
-            }
+            "multi_match": {"query": query, "type": "best_fields", "tie_breaker": 0.3, **fuzziness}
         }
 
         lexical_query = {

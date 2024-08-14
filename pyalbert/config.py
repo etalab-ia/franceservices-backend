@@ -36,11 +36,6 @@ VERBOSE_LEVEL = "INFO"
 # WARNINF! We shouldn't use "*" as we get the error response "Credential is not supported if the CORS header ‘Access-Control-Allow-Origin’ is ‘*’"
 BACKEND_CORS_ORIGINS = os.getenv("BACKEND_CORS_ORIGINS", "").split(",")
 
-# API / Database
-FIRST_ADMIN_USERNAME = os.getenv("FIRST_ADMIN_USERNAME", "changeme")
-FIRST_ADMIN_EMAIL = os.getenv("FIRST_ADMIN_EMAIL", "changeme@changeme.fr")
-FIRST_ADMIN_PASSWORD = os.getenv("FIRST_ADMIN_PASSWORD", "changeme")
-
 match ENV:
     case "dev":
         DATABASE_URI = os.getenv(
