@@ -1,14 +1,14 @@
 import json
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Generator
+from typing import Callable, Generator
 
-import lz4.frame
+import lz4.frame  # type: ignore
 import requests
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
+from elasticsearch import Elasticsearch  # type: ignore
+from qdrant_client import QdrantClient  # type: ignore
+from qdrant_client import models as QdrantModels  # type: ignore
 
 from pyalbert import collate_ix_name
 from pyalbert.config import (
@@ -79,7 +79,7 @@ class AlbertClient:
         self.token_dt = datetime.utcnow()
 
     def _fetch(self, method, route, headers=None, json_data=None, stream=None):
-        d = {
+        d: dict[str, Callable] = {
             "POST": requests.post,
             "GET": requests.get,
             "PUT": requests.put,
@@ -137,7 +137,7 @@ class AlbertClient:
             return None
         return lz4.frame.decompress(bytes.fromhex(stream["prompt"])).decode("utf-8")
 
-    def review_chat(self, chat_id: int) -> str | None:
+    def review_chat(self, chat_id: int) -> dict | None:
         """Get the raw prompt used for the given stream id"""
         chat = self.get_full_chat(chat_id)
         return chat
@@ -213,13 +213,13 @@ class LlmClient:
             json_data["rag"] = RagParams(**rag).model_dump()
 
         headers = None
-       
+
         if self.api_key:
             headers = {"Authorization": f"Bearer {self.api_key}"}
         elif ALBERT_MODELS_API_KEY:
             headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
         url = f"{self.url}{path}"
-        
+
         response = requests.post(url, headers=headers, json=json_data, stream=stream)
         log_and_raise_for_status(response, "Albert API error")
 
@@ -277,29 +277,30 @@ class LlmClient:
         return results
 
 
+@dataclass
+class SearchEngineConfig:
+    default_engine: str = "elasticsearch"
+    hybrid_collections: list[str] = HYBRID_COLLECTIONS
+    es_url: str = ELASTICSEARCH_URL
+    es_creds: tuple[str, str] = ELASTICSEARCH_CREDS
+    es_col_version: str = ELASTICSEARCH_IX_VER
+    qdrant_url: str = QDRANT_URL
+    qdrant_grpc_port: str = QDRANT_GRPC_PORT
+    qdrant_rest_port: str = QDRANT_REST_PORT
+    qdrant_use_grpc: bool = QDRANT_USE_GRPC
+    qdrant_col_version: str = QDRANT_IX_VER
+
+
 class SearchEngineClient:
-    # Global config
-    CONFIG = {
-        "default_engine": "elasticsearch",
-        "hybrid_collections": HYBRID_COLLECTIONS,
-        # Elastic config
-        "es_url": ELASTICSEARCH_URL,
-        "es_creds": ELASTICSEARCH_CREDS,
-        "es_col_version": ELASTICSEARCH_IX_VER,
-        # Qdrant config
-        "qdrant_url": QDRANT_URL,
-        "qdrant_grpc_port": QDRANT_GRPC_PORT,
-        "qdrant_rest_port": QDRANT_REST_PORT,
-        "qdrant_use_grpc": QDRANT_USE_GRPC,
-        "qdrant_col_version": QDRANT_IX_VER,
-    }
-
     def __init__(self, **config):
-        self.config = self.CONFIG.copy()
+        default_config = SearchEngineConfig()
         if config:
-            self.config.update(config)
-
-        self.config = namedtuple("Config", self.config.keys())(**self.config)
+            for key, value in config.items():
+                if hasattr(default_config, key):
+                    setattr(default_config, key, value)
+                else:
+                    raise KeyError(f"Invalid config key: {key}")
+        self.config = default_config
 
     def search(
         self,
@@ -330,7 +331,7 @@ class SearchEngineClient:
         :param k: The constant k in the RRF formula
         :return: A combined list of results with updated scores
         """
-        combined_scores = {}
+        combined_scores: dict[str, float] = {}
         doc_map = {}
         for results in group_results:
             for rank, result in enumerate(results):

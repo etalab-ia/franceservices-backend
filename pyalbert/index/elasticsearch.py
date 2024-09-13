@@ -1,7 +1,7 @@
 import logging
 from pprint import pprint
 
-from elasticsearch import Elasticsearch, helpers
+from elasticsearch import Elasticsearch, helpers  # type: ignore
 
 from pyalbert import collate_ix_name
 from pyalbert.config import (

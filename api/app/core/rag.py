@@ -1,5 +1,3 @@
-from typing import Generator
-
 from pyalbert.prompt import Prompter, get_prompter
 from pyalbert.schemas import RagChatCompletionRequest
 
