@@ -21,7 +21,9 @@ def chat_completions(client: TestClient, access_token, refresh_token, data):
 
 
 async def chat_completion_stream(client: TestClient, access_token, refresh_token, data):
-    headers = {"Authorization": f"Bearer {access_token}"}
+    headers = None
+    if access_token and refresh_token:
+        headers = {"access_token": access_token, "refresh_token": refresh_token}
     # async with TestClient(app) as client:
     async with httpx.AsyncClient(app=app, base_url="http://test") as client:
         async with client.stream(
