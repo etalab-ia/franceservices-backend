@@ -280,7 +280,7 @@ class LlmClient:
 @dataclass
 class SearchEngineConfig:
     default_engine: str = "elasticsearch"
-    hybrid_collections: list[str] = HYBRID_COLLECTIONS
+    hybrid_collections: list[str] = field(default_factory=lambda: HYBRID_COLLECTIONS.copy())
     es_url: str = ELASTICSEARCH_URL
     es_creds: tuple[str, str] = ELASTICSEARCH_CREDS
     es_col_version: str = ELASTICSEARCH_IX_VER

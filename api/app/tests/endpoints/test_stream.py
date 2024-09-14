@@ -10,7 +10,7 @@ import app.tests.utils.login as login
 import app.tests.utils.stream as stream
 from app.tests.test_api import TestApi, _load_case, _pop_time_ref, log_and_assert
 
-from pyalbert.config import KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD
+from pyalbert.config import KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_ADMIN_USERNAME
 
 
 class TestEndpointsStream(TestApi):
@@ -134,21 +134,21 @@ class TestEndpointsStream(TestApi):
 
         # Utility code to inspecthe the true and got archive response
         # ---
-        # def sort_recursively(d):
-        #     if isinstance(d, dict):
-        #         return {k: sort_recursively(v) for k, v in sorted(d.items())}
-        #     elif isinstance(d, list):
-        #         return [sort_recursively(i) for i in d]
-        #     else:
-        #         return d
-        # archive_true = sort_recursively(archive_true)
-        # archive = sort_recursively(archive)
-        # with open("archive_got.json", "w") as f:
-        #     json.dump(archive, f)
-        # print("==== Achive True ====")
-        # print(json.dumps(archive_true, indent=2))
-        # print("==== Achive GOT ====")
-        # print(json.dumps(archive, indent=2))
+        def sort_recursively(d):
+            if isinstance(d, dict):
+                return {k: sort_recursively(v) for k, v in sorted(d.items())}
+            elif isinstance(d, list):
+                return [sort_recursively(i) for i in d]
+            else:
+                return d
+        archive_true = sort_recursively(archive_true)
+        archive = sort_recursively(archive)
+        with open("archive_got.json", "w") as f:
+            json.dump(archive, f)
+        print("==== Achive True ====")
+        print(json.dumps(archive_true, indent=2))
+        print("==== Achive GOT ====")
+        print(json.dumps(archive, indent=2))
         # WARNING: change file to adapt API change...
         assert archive == archive_true
 

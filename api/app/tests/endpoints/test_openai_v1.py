@@ -8,7 +8,7 @@ import app.tests.utils.openai as openai
 from app.tests.test_api import TestApi, log_and_assert
 
 from pyalbert.clients import LlmClient
-from pyalbert.config import KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD, LLM_TABLE
+from pyalbert.config import KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_ADMIN_USERNAME, LLM_TABLE
 
 # Define multiple test cases for conversations
 conversation_testcases = [
@@ -69,7 +69,7 @@ class TestEndpointsUser(TestApi):
         }
 
         # Unauthenticated user
-        response = openai.chat_completions(client, None, None, conversation)
+        response = openai.chat_completions(client, conversation, with_auth=False)
         assert response.status_code in [400, 401, 403]
 
     @pytest.mark.parametrize("conversation", conversation_testcases)
@@ -83,17 +83,14 @@ class TestEndpointsUser(TestApi):
         # Sign In:
         response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
         assert response.status_code == 200
-        access_token = "Bearer " + response.json()["access_token"]
-        refresh_token = "Bearer " + response.json()["refresh_token"]
-        
 
         # Authenticated user
         if stream:
             response, _ = asyncio.run(
-                openai.chat_completion_stream(client, access_token, refresh_token, conversation)
+                openai.chat_completion_stream(client, conversation)
             )
         else:
-            response = openai.chat_completions(client, access_token, refresh_token, conversation)
+            response = openai.chat_completions(client, conversation)
 
         log_and_assert(response, 200)
 
@@ -108,7 +105,7 @@ class TestEndpointsUser(TestApi):
         model_ = LLM_TABLE[0]
         model_name = model_["model"]
         model_url = model_["url"]
-        aclient = LlmClient(model_name, model_url, access_token, refresh_token)
+        aclient = LlmClient(model_name, model_url)
         print("aclient", aclient)
         try:
             result = aclient.generate(messages=conversation["messages"], rag=rag)

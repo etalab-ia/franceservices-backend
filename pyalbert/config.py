@@ -84,7 +84,7 @@ RAG_EMBEDDING_MODEL = "BAAI/bge-m3"
 HYBRID_COLLECTIONS = ["spp_experiences", "chunks"]
 
 # Build the LLM table and from the LLM API endpoints
-ALBERT_MODELS_API_KEY = os.getenv("ALBERT_MODELS_API_KEY", "changeme")
+ALBERT_MODELS_API_KEY = os.getenv("ALBERT_MODELS_API_KEY", "5a47e1e2bab42bf9a362279d3155a7296e22")
 LLM_API_VER = "v1"
 ACTIVATE_SSE_WRAPPER = False
 MODELS_URLS = ast.literal_eval(os.environ.get("MODELS_URLS", "[]"))

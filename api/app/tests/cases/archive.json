@@ -14,7 +14,7 @@
         "message": "that is excelent !",
         "reason": null,
         "stream_id": 1,
-        "user_id": 1
+        "user_id": "5069ae86-8d30-4e25-bb62-e6207a40fb64"
       },
       "id": 1,
       "institution": "",
@@ -33,7 +33,7 @@
       "should_sids": null,
       "sources": [],
       "temperature": 0.2,
-      "user_id": 1,
+      "user_id": "5069ae86-8d30-4e25-bb62-e6207a40fb64",
       "with_history": null
     },
     {
@@ -60,11 +60,11 @@
       "should_sids": null,
       "sources": [],
       "temperature": 0.2,
-      "user_id": 1,
+      "user_id": "5069ae86-8d30-4e25-bb62-e6207a40fb64",
       "with_history": true
     }
   ],
   "themes": null,
-  "user_id": 1
+  "user_id": "5069ae86-8d30-4e25-bb62-e6207a40fb64"
 }
 
