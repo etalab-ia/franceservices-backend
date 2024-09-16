@@ -13,7 +13,6 @@ from qdrant_client import models as QdrantModels  # type: ignore
 from pyalbert import collate_ix_name
 from pyalbert.config import (
     ACCESS_TOKEN_TTL,
-    ALBERT_MODELS_API_KEY,
     API_PREFIX_V2,
     API_URL,
     ELASTICSEARCH_CREDS,
@@ -169,7 +168,7 @@ class AlbertClient:
 class LlmClient:
     def __init__(self, model: str, base_url=None, api_key=None):
         self.model = model
-        self.api_key = api_key
+        self.key = None
         if not base_url:
             model_ = next((m for m in LLM_TABLE if m["model"] == model), None)
             if not model_:
@@ -177,10 +176,13 @@ class LlmClient:
 
             self.url = model_["url"]
             self.url = f"{self.url}/{LLM_API_VER}" if LLM_API_VER else self.url
+            self.key = model_["key"]
         else:
             self.url = base_url
 
         self.url = self.url.rstrip("/")
+        if api_key is not None:
+            self.key = api_key
 
     @staticmethod
     def _get_streaming_response(response: requests.Response) -> Generator[bytes, None, None]:
@@ -214,10 +216,8 @@ class LlmClient:
 
         headers = None
 
-        if self.api_key:
-            headers = {"Authorization": f"Bearer {self.api_key}"}
-        elif ALBERT_MODELS_API_KEY:
-            headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
+        if self.key:
+            headers = {"Authorization": f"Bearer {self.key}"}
         url = f"{self.url}{path}"
 
         response = requests.post(url, headers=headers, json=json_data, stream=stream)
@@ -243,9 +243,9 @@ class LlmClient:
     ) -> list[float] | list[list[float]] | dict:
         """Simple interface to create an embedding vector from a text input or a list of texd inputs."""
         model = model or RAG_EMBEDDING_MODEL
-        model, url = next(
-            ((d["model"], d["url"]) for d in LLM_TABLE if d["model"] == model),
-            (None, None),
+        model, url, key = next(
+            ((d["model"], d["url"], d["key"]) for d in LLM_TABLE if d["model"] == model),
+            (None, None, None),
         )
 
         if not model:
@@ -260,8 +260,8 @@ class LlmClient:
         headers = None
         if api_key:
             headers = {"Authorization": f"Bearer {api_key}"}
-        elif ALBERT_MODELS_API_KEY:
-            headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
+        elif key:
+            headers = {"Authorization": f"Bearer {key}"}
         url = f"{url}/{LLM_API_VER}{path}" if LLM_API_VER else f"{url}{path}"
         response = requests.post(url, headers=headers, json=json_data)
         log_and_raise_for_status(response, "LLM API error")

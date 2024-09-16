@@ -69,13 +69,16 @@ class TestEndpointsUser(TestApi):
         }
 
         # Unauthenticated user
-        response = openai.chat_completions(client, conversation, with_auth=False)
+        response = openai.chat_completions(client, conversation)
         assert response.status_code in [400, 401, 403]
 
     @pytest.mark.parametrize("conversation", conversation_testcases)
     @pytest.mark.parametrize("rag", rag_testcases)
     @pytest.mark.parametrize("stream", [True, False])
     def test_chat_completion(self, client: TestClient, conversation, rag, stream):
+        model_ = LLM_TABLE[0]
+        api_key = model_["key"]
+
         conversation["stream"] = stream
         if rag:
             conversation["rag"] = rag
@@ -87,10 +90,10 @@ class TestEndpointsUser(TestApi):
         # Authenticated user
         if stream:
             response, _ = asyncio.run(
-                openai.chat_completion_stream(client, conversation)
+                openai.chat_completion_stream(client, conversation, key=api_key)
             )
         else:
-            response = openai.chat_completions(client, conversation)
+            response = openai.chat_completions(client, conversation, key=api_key)
 
         log_and_assert(response, 200)
 
@@ -102,10 +105,8 @@ class TestEndpointsUser(TestApi):
             assert "content" in response_json["choices"][0]["message"]
 
         # Test LlmClient
-        model_ = LLM_TABLE[0]
         model_name = model_["model"]
-        model_url = model_["url"]
-        aclient = LlmClient(model_name, model_url)
+        aclient = LlmClient(model_name)
         print("aclient", aclient)
         try:
             result = aclient.generate(messages=conversation["messages"], rag=rag)
@@ -124,12 +125,15 @@ class TestEndpointsUser(TestApi):
 
     @pytest.mark.parametrize("input", embedding_testcases)
     def test_create_embeddings(self, client: TestClient, input):
+        model_ = LLM_TABLE[0]
+        api_key = model_["key"]
+
         # Sign In:
         response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
         assert response.status_code == 200
 
         # Authenticated user
-        response = openai.create_embeddings(client, data=input)
+        response = openai.create_embeddings(client, data=input, key=api_key)
 
         log_and_assert(response, 200)
 

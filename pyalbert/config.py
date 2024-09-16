@@ -84,15 +84,17 @@ RAG_EMBEDDING_MODEL = "BAAI/bge-m3"
 HYBRID_COLLECTIONS = ["spp_experiences", "chunks"]
 
 # Build the LLM table and from the LLM API endpoints
-ALBERT_MODELS_API_KEY = os.getenv("ALBERT_MODELS_API_KEY", "5a47e1e2bab42bf9a362279d3155a7296e22")
 LLM_API_VER = "v1"
 ACTIVATE_SSE_WRAPPER = False
-MODELS_URLS = ast.literal_eval(os.environ.get("MODELS_URLS", "[]"))
 LLM_TABLE = []
-for url in MODELS_URLS:
+ALBERT_API_URL = os.getenv("ALBERT_API_URL")
+ALBERT_API_KEY = os.getenv("ALBERT_API_KEY", "changeme")
+models_urls = [(ALBERT_API_URL, ALBERT_API_KEY)]
+for url, key in models_urls:
+    headers = {"Authorization": "Bearer " + key} if key else None
     endpoint = f"{url}/{LLM_API_VER}/models" if LLM_API_VER else f"{url}/models"
     try:
-        response = requests.get(endpoint)
+        response = requests.get(endpoint, headers=headers)
         response.raise_for_status()
         # Response body example:
         # {"object":"list","data":[{"object":"model","id":"intfloat/multilingual-e5-large"},{"object":"model","id":"AgentPublic/llama3-instruct-8b"}]}
@@ -100,7 +102,7 @@ for url in MODELS_URLS:
         for m in models:
             # Assume it is a text-generation model by default.
             LLM_TABLE.append(
-                {"model": m["id"], "type": m.get("type", "text-generation"), "url": url}
+                {"model": m["id"], "type": m.get("type", "text-generation"), "url": url, "key": key}
             )
     except Exception as err:
         # Do not block the API if an host is down. It could be one over multiple and not our responsability
@@ -123,11 +125,17 @@ KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "changeme")
 if ENV == "unittest":
     DATABASE_URI = "sqlite:///" + os.path.join(tempfile.gettempdir(), "albert-unittest-sqlite3.db")
     LLM_TABLE = [
-        {"model": "albert", "type": "text-generation", "url": "http://127.0.0.1:8899"},
+        {
+            "model": "albert",
+            "type": "text-generation",
+            "url": "http://127.0.0.1:8899",
+            "key": ALBERT_API_KEY,
+        },
         {
             "model": RAG_EMBEDDING_MODEL,
             "type": "feature-extraction",
             "url": "http://127.0.0.1:8899",
+            "key": ALBERT_API_KEY,
         },
     ]
     ELASTIC_HOST = "localhost"

@@ -3,18 +3,16 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-from pyalbert.config import ALBERT_MODELS_API_KEY, API_PREFIX_V1
+from pyalbert.config import API_PREFIX_V1
 
 ROOT_PATH = API_PREFIX_V1
 
 
-def chat_completions(client: TestClient, data, with_auth=True):
+def chat_completions(client: TestClient, data, key=None):
     headers = None
-    if with_auth:
-        headers = {"Authorization": "Bearer " + ALBERT_MODELS_API_KEY}
+    if key:
+        headers = {"Authorization": "Bearer " + key}
 
-    print(headers)
-    print(f"{ROOT_PATH}/chat/completions")
     return client.post(
         f"{ROOT_PATH}/chat/completions",
         headers=headers,
@@ -22,10 +20,10 @@ def chat_completions(client: TestClient, data, with_auth=True):
     )
 
 
-async def chat_completion_stream(client: TestClient, data, with_auth=True):
+async def chat_completion_stream(client: TestClient, data, key=None):
     headers = None
-    if with_auth:
-        headers = {"Authorization": "Bearer " + ALBERT_MODELS_API_KEY}
+    if key:
+        headers = {"Authorization": "Bearer " + key}
     # async with TestClient(app) as client:
     async with httpx.AsyncClient(app=app, base_url="http://test") as client:
         async with client.stream(
@@ -39,10 +37,10 @@ async def chat_completion_stream(client: TestClient, data, with_auth=True):
             return response, content
 
 
-def create_embeddings(client: TestClient, data, with_auth=True):
+def create_embeddings(client: TestClient, data, key=None):
     headers = None
-    if with_auth:
-        headers = {"Authorization": "Bearer " + ALBERT_MODELS_API_KEY}
+    if key:
+        headers = {"Authorization": "Bearer " + key}
     return client.post(
         f"{ROOT_PATH}/embeddings",
         headers=headers,

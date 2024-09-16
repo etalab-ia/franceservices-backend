@@ -3,7 +3,7 @@ import os
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from spacy.lang.fr import French
+from spacy.lang.fr import French  # type: ignore
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas

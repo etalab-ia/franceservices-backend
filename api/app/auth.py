@@ -5,7 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app import crud
 
-from pyalbert.config import ALBERT_MODELS_API_KEY
+from pyalbert.config import ALBERT_API_KEY
 
 
 def decode_api_token(token):
@@ -17,5 +17,5 @@ def check_api_key(
 ):
     if api_key.scheme != "Bearer":
         raise HTTPException(status_code=403, detail="Invalid authentication scheme")
-    if api_key.credentials != ALBERT_MODELS_API_KEY:
+    if api_key.credentials != ALBERT_API_KEY:
         raise HTTPException(status_code=403, detail="Invalid API key")
