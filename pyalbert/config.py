@@ -145,8 +145,6 @@ if ENV == "unittest":
     QDRANT_USE_GRPC = False
     QDRANT_URL = f"http://{QDRANT_HOST}:{QDRANT_REST_PORT}"
     ELASTICSEARCH_URL = f"http://{ELASTIC_HOST}:{ELASTIC_PORT}"
-    PASSWORD_RESET_TOKEN_TTL = 3  # seconds
-    ACCESS_TOKEN_TTL = 9  # seconds
     LLM_API_VER = ""
     KEYCLOAK_API_URL = os.getenv("KEYCLOAK_API_URL", "http://localhost:8080/auth")
     KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "changeme")

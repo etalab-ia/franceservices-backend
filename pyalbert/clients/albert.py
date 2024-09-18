@@ -12,7 +12,6 @@ from qdrant_client import models as QdrantModels  # type: ignore
 
 from pyalbert import collate_ix_name
 from pyalbert.config import (
-    ACCESS_TOKEN_TTL,
     API_PREFIX_V2,
     API_URL,
     ELASTICSEARCH_CREDS,
@@ -54,20 +53,11 @@ class AlbertClient:
         self.username = config["username"]
         self.password = config["password"]
 
-        # Token:
-        self.token = None
-        self.token_dt = None
-        self.token_ttl = ACCESS_TOKEN_TTL - 2
         self.api_key = api_key
 
         self.access_token = None
         self.refresh_token = None
 
-    def _is_token_expired(self):
-        if self.token is None or self.token_dt is None:
-            return True
-        dt_ttl = datetime.utcnow() - timedelta(seconds=self.token_ttl)
-        return self.token_dt < dt_ttl
 
     def _sign_in(self):
         json_data = {"username": self.username, "password": self.password}
@@ -75,7 +65,6 @@ class AlbertClient:
 
         self.access_token = response.json()["access_token"]
         self.refresh_token = response.json()["refresh_token"]
-        self.token_dt = datetime.utcnow()
 
     def _fetch(self, method, route, headers=None, json_data=None, stream=None):
         d: dict[str, Callable] = {
