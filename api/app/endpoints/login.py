@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from api.app.clients.keycloak_mail_client import KeycloakMailClient
-from api.app.keycloak.clients import client_admin, client_openid
 from app import crud, schemas
+from app.clients.keycloak_mail_client import KeycloakMailClient
 from app.deps import get_current_user
+from app.keycloak.clients import client_admin, client_openid
 
 router = APIRouter()
 keycloak_admin = client_admin()
@@ -17,9 +17,9 @@ def sign_in(
 ):
     username = form_data.username
     password = form_data.password
-    
+
     user = crud.user.get_user_by_username(username)
-  
+
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -60,11 +60,11 @@ def send_reset_password_email(
 ) -> dict[str, str]:
     try:
         email = form_data.email
-        
+
         user = crud.user.get_user_by_email(email)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        
+
         keycloak_mail_client.send_reset_password_email(user.id)
 
         return {"msg": "Password recovery email sent"}

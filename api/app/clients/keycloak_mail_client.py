@@ -1,4 +1,4 @@
-from api.app.keycloak.clients import client_admin
+from app.keycloak.clients import client_admin
 
 
 class KeycloakMailClient:
