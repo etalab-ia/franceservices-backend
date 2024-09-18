@@ -3,12 +3,10 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from app.clients.keycloak_mail_client import KeycloakMailClient
 from app import crud, models, schemas
-from app.keycloak.clients import client_admin
+from app.clients.keycloak_mail_client import KeycloakMailClient
 from app.deps import get_current_user, get_db
-
-from pyalbert.config import CONTACT_EMAIL
+from app.keycloak.clients import client_admin
 
 router = APIRouter()
 
@@ -100,7 +98,7 @@ def confirm_user(
 
     crud.user.confirm_user(user.id, is_confirmed)
     user = crud.user.get_user_by_email(email)
-  
+
     return {"msg": "User confirmed"}
 
 

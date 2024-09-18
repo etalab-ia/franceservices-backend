@@ -1,4 +1,3 @@
-from api.app import schemas
 from fastapi import HTTPException
 from starlette.requests import Request
 
@@ -16,7 +15,7 @@ def get_db():
 
 def get_current_user(request: Request):
     """Get keycloak authenticated user from the Bearer access token header"""
-    
+
     access_token_bearer = request.headers.get("access_token")
     refresh_token_bearer = request.headers.get("refresh_token")
 
