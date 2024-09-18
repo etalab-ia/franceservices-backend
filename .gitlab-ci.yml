@@ -65,6 +65,7 @@ test:api:
     source venv/bin/activate
     pip install --cache-dir .cache/pip api/.[test]
   script:
+    - cat $TEST_ENV_FILE > pyalbert/.env
     - cd api/ && pytest -W ignore
 
 ################## BUILD ###################
