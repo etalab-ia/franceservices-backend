@@ -74,13 +74,6 @@ def create_user_me(
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
-
-@router.get("/user/me", response_model=schemas.User, tags=["user"])
-def read_user_me(
-    current_user = Depends(get_current_user),
-):
-    return current_user
-
 # create confirm user endpoint
 @router.post("/user/confirm", tags=["user"])
 def confirm_user(
