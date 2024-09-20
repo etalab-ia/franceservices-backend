@@ -9,16 +9,33 @@ keycloak_admin = client_admin()
 keycloak_openid = client_openid()
 
 
+def userSerializer(user: dict) -> dict:
+    attributes = user.get("attributes", {})
+    
+    def get_bool_attribute(attr_name: str) -> bool:
+        attr_value = attributes.get(attr_name, ["false"])
+        return attr_value[0].lower() == "true" if attr_value else False
+
+    serialized_user = {
+        "id": user.get("id"),
+        "username": user.get("username"),
+        "email": user.get("email"),
+        "is_confirmed": user.get("emailVerified", False),
+        "is_admin": get_bool_attribute("is_admin"),
+        "created_at": user.get("createdTimestamp"),
+        "accept_cookie": get_bool_attribute("accept_cookie"),
+    }
+
+    serialized_user = {k: v for k, v in serialized_user.items() if v is not None}
+
+    user = schemas.User(**serialized_user)
+    return user
+
+
 def get_pending_users() -> List[schemas.User]:
     try:
         users = keycloak_admin.get_users({})
-        unconfirmed_users = list(
-            userSerializer(user)
-            for user in users
-            if user.get("attributes", {}).get("is_confirmed") == ["false"]
-            and user.get("email")
-            and user.get("enabled")
-        )
+        unconfirmed_users = [userSerializer(user) for user in users if not user.get("emailVerified")]
 
         sorted_users = sorted(unconfirmed_users, key=lambda x: x.id)
         return sorted_users
@@ -27,7 +44,6 @@ def get_pending_users() -> List[schemas.User]:
         return []
 
 
-# TODO: validate user data
 def create_user(user) -> Optional[schemas.User]:
     try:
         user_id = keycloak_admin.create_user(user)
@@ -71,31 +87,16 @@ def get_user_by_email(email: str) -> Optional[schemas.User]:
         return None
 
 
-def confirm_user(user_id: str, is_confirmed: bool) -> None:
+def confirm_user(email: str) -> None:
     try:
-        user = keycloak_admin.get_user(user_id)
-
-        attributes = user.get("attributes", {})
-        attributes["is_confirmed"] = [str(is_confirmed).lower()]
-
-        try:
-            keycloak_admin.update_user(
-                user_id=user_id,
-                payload={
-                    "username": user.get("username", ""),
-                    "email": user.get("email", ""),
-                    "attributes": attributes,
-                },
-            )
-        except Exception as e:
-            print("An error occurred while updating user", e)
-    except Exception:
+        user = get_user_by_email(email)
+        return keycloak_admin.update_user(user.id, {"emailVerified": True})
+    except KeycloakError as e:
+        print("An error occurred: %s", e)
         return None
-
-
-#
-# Tokens
-#
+    except Exception as e:
+        print("An unexpected error occurred: ", e)
+        return None
 
 
 def resolve_user_token(token: str) -> Optional[schemas.User]:
@@ -135,33 +136,3 @@ def refresh_user_token(refresh_token: str) -> Optional[Dict[str, str]]:
     except KeycloakError as e:
         print(f"An error occurred: {e}")
         return None
-
-
-def userSerializer(user) -> schemas.User:
-    attributes = user.pop("attributes", {})
-    user.update(attributes)
-    user = transform_dict(user)
-    user = schemas.User(**user)
-    return user
-
-
-def transform_value(key, value):
-    key_list = ["is_confirmed", "is_admin", "accept_cookie"]
-
-    if key not in key_list:
-        return value
-
-    value = value[0].lower()
-
-    if value == "true":
-        return True
-    elif value == "false":
-        return False
-    else:
-        return value
-
-
-def transform_dict(dictionary) -> Dict[str, str]:
-    for key, value in dictionary.items():
-        dictionary[key] = transform_value(key, value)
-    return dictionary

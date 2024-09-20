@@ -19,13 +19,13 @@ def sign_in(
     password = form_data.password
 
     user = crud.user.get_user_by_username(username)
-
+   
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     if not user.is_confirmed:
         raise HTTPException(status_code=400, detail="User not confirmed")
-    # user needs to be enabled on keycloak
+    
     token = crud.user.login_user(username, password)
 
     if not token:
