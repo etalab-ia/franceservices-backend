@@ -1,11 +1,13 @@
 from fastapi.testclient import TestClient
+
 import app.tests.utils.login as login
 import app.tests.utils.user as user
 from app.tests.test_api import TestApi
+
 from pyalbert.config import (
     KEYCLOAK_ADMIN_EMAIL,
-    KEYCLOAK_ADMIN_USERNAME,
     KEYCLOAK_ADMIN_PASSWORD,
+    KEYCLOAK_ADMIN_USERNAME,
 )
 
 
@@ -14,7 +16,6 @@ class TestEndpointsLogin(TestApi):
         username = KEYCLOAK_ADMIN_USERNAME
         password = KEYCLOAK_ADMIN_PASSWORD
         response = login.sign_in(client, username, password)
-        print("response", response.json())
         assert response.status_code == 200
         response_json = response.json()
         assert "access_token" in response_json
@@ -23,7 +24,7 @@ class TestEndpointsLogin(TestApi):
         self.refresh_token = "Bearer " + response_json["refresh_token"]
 
     def test_read_user_me(self, client: TestClient):
-        self.test_sign_in(client) 
+        self.test_sign_in(client)
         response = user.read_user_me(client, self.access_token, self.refresh_token)
         assert response.status_code == 200
         response_json = response.json()
@@ -39,6 +40,6 @@ class TestEndpointsLogin(TestApi):
         assert response.status_code == 400
 
     def test_sign_out(self, client: TestClient):
-        self.test_sign_in(client) 
+        self.test_sign_in(client)
         response = login.sign_out(client, self.access_token, self.refresh_token)
         assert response.status_code == 200

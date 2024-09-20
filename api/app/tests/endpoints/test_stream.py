@@ -141,14 +141,16 @@ class TestEndpointsStream(TestApi):
                 return [sort_recursively(i) for i in d]
             else:
                 return d
+
         archive_true = sort_recursively(archive_true)
         archive = sort_recursively(archive)
-        with open("archive_got.json", "w") as f:
-            json.dump(archive, f)
-        print("==== Achive True ====")
-        print(json.dumps(archive_true, indent=2))
-        print("==== Achive GOT ====")
-        print(json.dumps(archive, indent=2))
+        # Keep the folloing  commented code for debug purpose
+        # with open("archive_got.json", "w") as f:
+        #    json.dump(archive, f)
+        # print("==== Achive True ====")
+        # print(json.dumps(archive_true, indent=2))
+        # print("==== Achive GOT ====")
+        # print(json.dumps(archive, indent=2))
         # WARNING: change file to adapt API change...
         assert archive == archive_true
 

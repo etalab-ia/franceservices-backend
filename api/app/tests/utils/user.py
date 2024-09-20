@@ -29,14 +29,3 @@ def read_user_me(client: TestClient, access_token, refresh_token):
         f"{ROOT_PATH}/user/me",
         headers={"access_token": access_token, "refresh_token": refresh_token},
     )
-
-
-def confirm_user(client: TestClient, access_token, refresh_token, email, is_confirmed):
-    return client.post(
-        f"{ROOT_PATH}/user/confirm",
-        headers={"access_token": access_token, "refresh_token": refresh_token},
-        json={
-            "email": email,
-            "is_confirmed": is_confirmed,
-        },
-    )

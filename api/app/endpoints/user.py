@@ -74,27 +74,6 @@ def create_user_me(
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
-# create confirm user endpoint
-@router.post("/user/confirm", tags=["user"])
-def confirm_user(
-    form_data: schemas.UserConfirm,
-    current_user = Depends(get_current_user),
-):
-    if not current_user.is_admin:
-        raise HTTPException(403, detail="Forbidden")
-
-    email = form_data.email
-    is_confirmed = form_data.is_confirmed
-    user = crud.user.get_user_by_email(email)
-    if not user:
-        raise HTTPException(400, detail="User not found")
-
-    crud.user.confirm_user(user.id, is_confirmed)
-    user = crud.user.get_user_by_email(email)
-
-    return {"msg": "User confirmed"}
-
-
 @router.get("/user/token/refresh", tags=["user"])
 def create_user_token(
     request: Request,
