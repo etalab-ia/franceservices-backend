@@ -54,6 +54,7 @@ test:api:
       changes:
         - .gitlab-ci.yml
         - api/app/**/*.py
+        - api/alembic/versions/*.py
         - api/pyproject.toml
         - pyalbert/**/*.py
       when: always
