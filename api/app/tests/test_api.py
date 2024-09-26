@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 from pytest import fail
 
 from app.db.base_class import Base
-from app.db.create_admin_user import create_admin_user
 from app.db.session import engine
 from app.main import app
 
@@ -77,8 +76,6 @@ class TestApi:
     def setup_method(self):
         Base.metadata.drop_all(bind=engine)
         Base.metadata.create_all(bind=engine)
-        create_admin_user()
-
         AlbertClient._fetch = _fetch
 
 

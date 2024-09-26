@@ -1,12 +1,12 @@
 import asyncio
 import json
 
+from api.app.crud.user import login_user
 import pytest
 from fastapi.testclient import TestClient
 
 import app.tests.utils.chat as chat
 import app.tests.utils.feedback as feedback
-import app.tests.utils.login as login
 import app.tests.utils.stream as stream
 from app.tests.test_api import TestApi, _load_case, _pop_time_ref, log_and_assert
 
@@ -18,10 +18,11 @@ class TestEndpointsStream(TestApi):
     @pytest.mark.asyncio
     def test_user_stream(self, client: TestClient):
         # Sign In:
-        response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
-        assert response.status_code == 200
-        access_token = "Bearer " + response.json()["access_token"]
-        refresh_token = "Bearer " + response.json()["refresh_token"]
+        response = login_user(KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
+        assert response["access_token"]
+
+        access_token = "Bearer " + response["access_token"]
+        refresh_token = "Bearer " + response["refresh_token"]
 
         # Read Streams:
         response = stream.read_streams(client, access_token, refresh_token)
@@ -54,10 +55,11 @@ class TestEndpointsStream(TestApi):
     @pytest.mark.asyncio
     def test_chat_stream(self, client: TestClient, db):
         # Sign In:
-        response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
-        assert response.status_code == 200
-        access_token = "Bearer " + response.json()["access_token"]
-        refresh_token = "Bearer " + response.json()["refresh_token"]
+        response = login_user(KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
+        assert response["access_token"]
+
+        access_token = "Bearer " + response["access_token"]
+        refresh_token = "Bearer " + response["refresh_token"]
 
         # Read Streams:
         response = stream.read_streams(client, access_token, refresh_token)

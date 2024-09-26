@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from keycloak import KeycloakError
 
@@ -30,29 +30,6 @@ def userSerializer(user: dict) -> dict:
 
     user = schemas.User(**serialized_user)
     return user
-
-
-def get_pending_users() -> List[schemas.User]:
-    try:
-        users = keycloak_admin.get_users({})
-        unconfirmed_users = [userSerializer(user) for user in users if not user.get("emailVerified")]
-
-        sorted_users = sorted(unconfirmed_users, key=lambda x: x.id)
-        return sorted_users
-    except KeycloakError as e:
-        print(f"An error occurred: {e}")
-        return []
-
-
-def create_user(user) -> Optional[schemas.User]:
-    try:
-        user_id = keycloak_admin.create_user(user)
-        user = get_user(user_id)
-        return user
-    except Exception as e:
-        print("An error occurred while creating user", e)
-        return None
-
 
 def get_user(user_id: str) -> Optional[schemas.User]:
     try:
@@ -87,18 +64,6 @@ def get_user_by_email(email: str) -> Optional[schemas.User]:
         return None
 
 
-def confirm_user(email: str) -> None:
-    try:
-        user = get_user_by_email(email)
-        return keycloak_admin.update_user(user.id, {"emailVerified": True})
-    except KeycloakError as e:
-        print("An error occurred: %s", e)
-        return None
-    except Exception as e:
-        print("An unexpected error occurred: ", e)
-        return None
-
-
 def resolve_user_token(token: str) -> Optional[schemas.User]:
     try:
         userinfo = keycloak_openid.userinfo(token)
@@ -116,22 +81,6 @@ def resolve_user_token(token: str) -> Optional[schemas.User]:
 def login_user(username: str, password: str) -> Optional[Dict[str, str]]:
     try:
         token = keycloak_openid.token(username, password)
-        return token
-    except KeycloakError as e:
-        print(f"An error occurred: {e}")
-        return None
-
-
-def logout_user(token: str) -> None:
-    try:
-        return keycloak_openid.logout(token)
-    except KeycloakError as e:
-        print(f"An error occurred: {e}")
-
-
-def refresh_user_token(refresh_token: str) -> Optional[Dict[str, str]]:
-    try:
-        token = keycloak_openid.refresh_token(refresh_token)
         return token
     except KeycloakError as e:
         print(f"An error occurred: {e}")

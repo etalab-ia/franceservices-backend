@@ -1,8 +1,8 @@
+from api.app.crud.user import login_user
 import pytest
 from fastapi.testclient import TestClient
 
 import app.tests.utils.chat as chat
-import app.tests.utils.login as login
 from app.tests.test_api import TestApi
 
 from pyalbert.config import KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_ADMIN_USERNAME
@@ -13,10 +13,11 @@ class TestEndpointsChat(TestApi):
     @pytest.mark.asyncio
     def test_chat(self, client: TestClient):
         # Sign In:
-        response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
-        assert response.status_code == 200
-        access_token = "Bearer " + response.json()["access_token"]
-        refresh_token = "Bearer " + response.json()["refresh_token"]
+        response = login_user(KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
+        assert response["access_token"]
+
+        access_token = "Bearer " + response["access_token"]
+        refresh_token = "Bearer " + response["refresh_token"]
 
         # Read Chats:
         response = chat.read_chats(client, access_token, refresh_token)
