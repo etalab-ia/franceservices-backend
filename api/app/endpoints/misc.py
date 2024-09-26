@@ -51,7 +51,5 @@ def get_institutions(
 
 
 @router.get("/organizations/mfs", tags=["misc"])
-def get_mfs_organizations(
-    current_user = Depends(get_current_user), response_model=list[dict]
-) -> JSONResponse:
+def get_mfs_organizations() -> JSONResponse:
     return JSONResponse(MFS_ORGANIZATIONS)

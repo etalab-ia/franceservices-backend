@@ -8,7 +8,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 
 from app.db.init_db import init_db
-from app.endpoints import chat, feedback, login, misc, openai, search, stream, user
+from app.endpoints import chat, feedback, misc, openai, search, stream
 
 from pyalbert import get_logger
 from pyalbert.config import (
@@ -64,8 +64,6 @@ api_v1_router.include_router(openai.router)
 
 api_v2_router = APIRouter()
 api_v2_router.include_router(misc.router)
-api_v2_router.include_router(user.router)
-api_v2_router.include_router(login.router)
 api_v2_router.include_router(search.router)
 api_v2_router.include_router(stream.router)
 api_v2_router.include_router(chat.router)

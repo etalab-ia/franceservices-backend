@@ -3,12 +3,11 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
-import app.tests.utils.login as login
 import app.tests.utils.openai as openai
 from app.tests.test_api import TestApi, log_and_assert
 
 from pyalbert.clients import LlmClient
-from pyalbert.config import KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_ADMIN_USERNAME, LLM_TABLE
+from pyalbert.config import LLM_TABLE
 
 # Define multiple test cases for conversations
 conversation_testcases = [
@@ -82,11 +81,7 @@ class TestEndpointsUser(TestApi):
         conversation["stream"] = stream
         if rag:
             conversation["rag"] = rag
-
-        # Sign In:
-        response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
-        assert response.status_code == 200
-
+            
         # Authenticated user
         if stream:
             response, _ = asyncio.run(
@@ -127,10 +122,6 @@ class TestEndpointsUser(TestApi):
     def test_create_embeddings(self, client: TestClient, input):
         model_ = LLM_TABLE[0]
         api_key = model_["key"]
-
-        # Sign In:
-        response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
-        assert response.status_code == 200
 
         # Authenticated user
         response = openai.create_embeddings(client, data=input, key=api_key)

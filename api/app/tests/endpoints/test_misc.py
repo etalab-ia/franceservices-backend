@@ -1,7 +1,7 @@
+from api.app.crud.user import login_user
 import pytest
 from fastapi.testclient import TestClient
 
-import app.tests.utils.login as login
 import app.tests.utils.misc as misc
 from app.tests.test_api import TestApi
 
@@ -13,10 +13,11 @@ class TestEndpointsMisc(TestApi):
     @pytest.mark.asyncio
     def test_misc(self, client: TestClient):
         # Sign In:
-        response = login.sign_in(client, KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
-        assert response.status_code == 200
-        access_token = "Bearer " + response.json()["access_token"]
-        refresh_token = "Bearer " + response.json()["refresh_token"]
+        response = login_user(KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD)
+        assert response["access_token"]
+
+        access_token = "Bearer " + response["access_token"]
+        refresh_token = "Bearer " + response["refresh_token"]
 
 
         # Read models:
