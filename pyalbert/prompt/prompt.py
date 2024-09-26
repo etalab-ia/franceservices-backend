@@ -306,6 +306,9 @@ def prompts_from_llm_table(table: list[dict]) -> dict[str, dict]:
 # Cache prompts templates to be faster
 PROMPTS = {}
 
+def get_prompts():
+    return PROMPTS
+
 
 class Prompter:
     # Default sampling params fo a given child class

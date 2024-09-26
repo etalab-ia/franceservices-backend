@@ -268,6 +268,8 @@ class LlmClient:
 
 @dataclass
 class SearchEngineConfig:
+    # Hybrid search is activated by default in the current implementation
+    # for the cllection in {hybrid_collections}
     default_engine: str = "elasticsearch"
     hybrid_collections: list[str] = field(default_factory=lambda: HYBRID_COLLECTIONS.copy())
     es_url: str = ELASTICSEARCH_URL
@@ -290,6 +292,20 @@ class SearchEngineClient:
                 else:
                     raise KeyError(f"Invalid config key: {key}")
         self.config = default_config
+
+    # Get document from elasticsearch in the current implementation
+    def get_document(self, index_name: str, uid: str) -> dict:
+        index = collate_ix_name(index_name, ELASTICSEARCH_IX_VER)
+        client = Elasticsearch(self.config.es_url, basic_auth=self.config.es_creds)
+
+        if index_name == "sheets":
+            doc = client.get(index=index, id=uid)["_source"]
+        elif index_name == "chunks":
+            doc = client.get(index=index, id=uid)["_source"]
+        else:
+            raise NotImplementedError("Index unkown")
+
+        return doc
 
     def search(
         self,
