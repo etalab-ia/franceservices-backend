@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 from .stream import Stream
 
+
 class ChatType(str, Enum):
     qa = "qa"
     meeting = "meeting"
