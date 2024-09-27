@@ -1,5 +1,5 @@
-from api.app.crud.user import login_user
 import pytest
+from api.app.crud.user import login_user
 from fastapi.testclient import TestClient
 
 import app.tests.utils.chat as chat

@@ -1,12 +1,14 @@
 from keycloak import KeycloakAdmin, KeycloakOpenID, KeycloakOpenIDConnection
+
 from pyalbert.config import (
+    KEYCLOAK_ADMIN_PASSWORD,
+    KEYCLOAK_ADMIN_USERNAME,
     KEYCLOAK_API_URL,
     KEYCLOAK_CLIENT_ID,
-    KEYCLOAK_SECRET_KEY,
     KEYCLOAK_REALM,
-    KEYCLOAK_ADMIN_USERNAME,
-    KEYCLOAK_ADMIN_PASSWORD,
+    KEYCLOAK_SECRET_KEY,
 )
+
 
 def client_openid():
     return KeycloakOpenID(

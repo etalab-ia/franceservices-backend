@@ -1,11 +1,11 @@
-from api.app.crud.user import login_user
 import pytest
+from api.app.crud.user import login_user
 from fastapi.testclient import TestClient
 
 import app.tests.utils.misc as misc
 from app.tests.test_api import TestApi
 
-from pyalbert.config import KEYCLOAK_ADMIN_USERNAME, KEYCLOAK_ADMIN_PASSWORD
+from pyalbert.config import KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_ADMIN_USERNAME
 
 
 class TestEndpointsMisc(TestApi):
