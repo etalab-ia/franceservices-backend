@@ -141,19 +141,14 @@ deploy:llm:france services:
 build:api:
   rules:
     - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "main"
-      # changes:
-      #   - api/**/* # only build if api folder is changed
       when: manual
       allow_failure: true  # to avoid blocked state
-  stage: build
-  image: docker:latest
-  services:
-    - docker:dind
-  script:
-    - | # build and push api image to gitlab registry
-      docker login --username gitlab-ci-token --password $CI_JOB_TOKEN $CI_REGISTRY
-      docker build --rm --build-context pyalbert=./pyalbert --tag ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG} --file ./api/Dockerfile ./api
-      docker push ${CI_REGISTRY_IMAGE}/api:${CI_API_IMAGE_TAG}
+  variables:
+    IMAGE_TAG: "$CI_API_IMAGE_TAG"
+    IMAGE_NAME: "${CI_REGISTRY_IMAGE}/api"
+    BUILD_CONTEXT: "./api"
+    BUILD_ARGS: "--build-context pyalbert=./pyalbert --file ./api/Dockerfile"
+  extends: .build_template
 
 ################## DINUM ###################
 

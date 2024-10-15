@@ -13,7 +13,7 @@ class MailjetClient:
 
     def _send(self, to, subject, text):
         data = {
-            "FromEmail": CONTACT_EMAIL,
+            "FromEmail": "language_model@data.gouv.fr",
             "Recipients": [{"Email": to}],
             "Subject": subject,
             "Text-part": text,

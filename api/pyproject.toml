@@ -32,9 +32,6 @@ test = ["pytest==7.4.4"]
 [tool.ruff]
 line-length = 100
 exclude = ["alembic/versions/"]
-select = [
-    "I", # sort imports
-]
 
 [tool.ruff.lint]
 ignore-init-module-imports = true

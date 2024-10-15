@@ -23,6 +23,7 @@
       export CI_LLM_IMAGE_TAG=${CI_LLM_IMAGE_TAG}
       export MODELS_CACHE_DIR=/data/models
       export COMPOSE_FILE=./docker-compose.yml
+      export HF_API_TOKEN=${HF_API_TOKEN}
 
       bash ./deploy_llm.sh
       rm -r ~/${CI_JOB_ID}

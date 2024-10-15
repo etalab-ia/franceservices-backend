@@ -9,13 +9,10 @@ from typing import AsyncGenerator, Optional
 import torch
 import uvicorn
 import yaml
-from core import make_embeddings
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from huggingface_hub import hf_hub_download, snapshot_download
 from huggingface_hub.utils._errors import EntryNotFoundError
-from pyalbert import Logging
-from pyalbert.schemas import Embeddings, Generate
 from transformers import AutoModel, AutoTokenizer
 
 from vllm import __version__ as vllm_version
@@ -23,6 +20,11 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
+
+from pyalbert import Logging
+from pyalbert.schemas import Embeddings, Generate
+
+from core import make_embeddings
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--host", type=str, default="localhost", help="Host name.")
@@ -42,6 +44,7 @@ WITH_GPU = True if torch.cuda.is_available() else False
 WITH_EMBEDDINGS = True if args.embeddings_hf_repo_id else False
 BATCH_SIZE_MAX = 10
 MODELS = {}
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
 
 
 @asynccontextmanager
@@ -61,6 +64,7 @@ async def download_and_run_models(app: FastAPI):
             "local_dir": model_storage_dir,
             "force_download": args.force_download,
             "cache_dir": model_storage_dir,
+            "token": HF_API_TOKEN,
         }
 
         try:
@@ -80,6 +84,7 @@ async def download_and_run_models(app: FastAPI):
         "local_dir": model_storage_dir,
         "force_download": args.force_download,
         "cache_dir": model_storage_dir,
+        "token": HF_API_TOKEN,
     }
 
     try:
@@ -96,6 +101,7 @@ async def download_and_run_models(app: FastAPI):
             "pretrained_model_name_or_path": args.embeddings_hf_repo_id,
             "force_download": args.force_download,
             "cache_dir": os.path.join(args.models_dir, args.embeddings_hf_repo_id),
+            "token": HF_API_TOKEN,
         }
 
         tokenizer = AutoTokenizer.from_pretrained(**params)
