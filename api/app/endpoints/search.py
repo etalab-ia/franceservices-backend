@@ -6,34 +6,24 @@ from app import crud, models, schemas
 from app.core.indexes import get_document, search_indexes
 from app.deps import get_current_user, get_db
 
-from pyalbert.clients import LlmClient
-from pyalbert.prompt import Prompter
+from pyalbert import get_logger
+
+logger = get_logger()
 
 router = APIRouter()
-
-
-# **************
-# * Embeddings *
-# **************
-
-
-@router.post("/embeddings", tags=["search"])
-def create_embeddings(
-    embedding: schemas.Embedding, current_user: models.User = Depends(get_current_user)
-):
-    # This is juste an bridge to llm-embeddings, along with user auth.
-    embeddings = LlmClient.create_embeddings(
-        texts=embedding.input,
-        model=embedding.model,
-        doc_type=embedding.doc_type,
-        openai_format=True,
-    )
-    return JSONResponse(embeddings)
 
 
 # ***********
 # * Indexes *
 # ***********
+
+
+def get_document_safe(index_name: str, uid: str) -> dict:
+    try:
+        return get_document(index_name, uid)
+    except Exception as err:
+        logger.error(f"Chunk or document not found: {err}")
+        return {}
 
 
 # TODO: rename to /search !?
@@ -45,10 +35,6 @@ def search(
 ):
     query = index.query
 
-    if index.expand_acronyms:
-        # Detect and expand implicit acronyms
-        query = Prompter._expand_acronyms(index.query)
-
     hits = search_indexes(
         index.name,
         query,
@@ -58,6 +44,7 @@ def search(
         index.sources,
         index.should_sids,
         index.must_not_sids,
+        do_expand_acronyms=index.expand_acronyms
     )
 
     if index.stream_id:
@@ -80,7 +67,7 @@ def get_chunk(
     uid: str,
     current_user: models.User = Depends(get_current_user),  # noqa
 ):
-    hit = get_document("chunks", uid)
+    hit = get_document_safe("chunks", uid)
     return JSONResponse(hit)
 
 
@@ -89,7 +76,7 @@ def get_sheet(
     uid: str,
     current_user: models.User = Depends(get_current_user),  # noqa
 ):
-    hit = get_document("sheets", uid)
+    hit = get_document_safe("sheets", uid)
     return JSONResponse(hit)
 
 
@@ -100,7 +87,7 @@ def get_chunks(
 ):
     hits = []
     for uid in uids.uids:
-        hits.append(get_document("chunks", uid))
+        hits.append(get_document_safe("chunks", uid))
 
     return JSONResponse(hits)
 
@@ -112,6 +99,6 @@ def get_sheets(
 ):
     hits = []
     for uid in uids.uids:
-        hits.append(get_document("sheets", uid))
+        hits.append(get_document_safe("sheets", uid))
 
     return JSONResponse(hits)

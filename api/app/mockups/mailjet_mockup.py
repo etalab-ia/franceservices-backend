@@ -2,10 +2,10 @@ import json
 import os
 import shutil
 import uuid
+from pathlib import Path
 
-current_file_dir = os.path.dirname(os.path.abspath(__file__))
-currrent_parent_dir = os.path.dirname(current_file_dir)
-MAILJET_FOLDER = os.path.join(currrent_parent_dir, "tests/test_data/mailjet")
+local_parent_dir = Path(__file__).resolve().parents[1]
+MAILJET_FOLDER = local_parent_dir / "tests/test_data/mailjet"
 
 
 def create_mailjet_folder():
@@ -21,7 +21,7 @@ def remove_mailjet_folder():
 
 def _send_create_mockup(self, data):
     filename = str(len(os.listdir(MAILJET_FOLDER))) + "_" + uuid.uuid4().hex
-    filepath = os.path.join(MAILJET_FOLDER, filename)
+    filepath = MAILJET_FOLDER / filename
     with open(filepath, mode="w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 

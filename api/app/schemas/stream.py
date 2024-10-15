@@ -14,12 +14,18 @@ class StreamBase(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     model_name: str
-    mode: str | None = None
     query: str = Field(
         default="",
         description='The user query. It the query exceed a certain size wich depends on the contextual window of the model, the model will return an  HTTPException(413, detail="Prompt too large")',
     )
-    limit: int | None = None
+    mode: str | None = Field(
+        default=None,
+        description="A mode is a predefined prompt engineering settings (sampling params, system prompt and user prompt template). They are defined in the huggingface repo of the model, in the pompt_config.yml file.",
+    )
+    limit: int | None = Field(
+        default=None,
+        description="The max number of document to retrieves within the RAG. Use None to let the algorithm decides the best number.",
+    )
     with_history: bool | None = Field(
         default=None, description="Use the conversation history to generate a new response."
     )
@@ -28,7 +34,7 @@ class StreamBase(BaseModel):
     institution: str = ""
     links: str = ""
     # Sampling params
-    temperature: int = Field(20, ge=0, le=100)
+    temperature: float = Field(0.2, ge=0, le=2)
 
     # Optionnal RAG sources
     sources: list[IndexSource] | None = Field(
@@ -50,23 +56,10 @@ class StreamBase(BaseModel):
     # --
     @model_validator(mode="after")
     def validate_model(self):
-        # if self.model_name == ModelName.fabrique_miaou:
-        #     if self.mode is not None:
-        #         raise ValueError("Incompatible mode")
-
-        # elif self.model_name == ModelName.fabrique_reference:
-        #     if self.mode not in (None, "simple", "experience", "expert"):
-        #         raise ValueError("Incompatible mode")
-        #     if self.mode is None:
-        #         self.mode = "simple"  # default
-
-        # elif self.model_name == ModelName.albert_light:
-        #     if self.mode not in (None, "simple", "rag"):
-        #         raise ValueError("Incompatible mode")
-        #     if self.mode is None:
-        #         self.mode = "rag"  # default
-        if self.model_name not in [m[0] for m in LLM_TABLE]:
-            raise ValueError("Unknown model: %s" % self.model_name)
+        # Do not apply this check as it break review of old stream where models
+        # are not deployed anymoren, and so missing from the LLM_TABLE
+        # if self.model_name not in [m["model"] for m in LLM_TABLE]:
+        #     raise ValueError("Unknown model: %s" % self.model_name)
 
         # For SQLAlchemy relationship compatibility
         if not self.sources:

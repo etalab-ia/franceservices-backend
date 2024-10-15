@@ -1,7 +1,34 @@
-.PHONY: help
+.PHONY: help version build push clean publish
 
 help:
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+#
+# Build
+#
+
+version: pyproject.toml
+	@version=$$(grep -Po '(?<=version = ")[^"]*' pyproject.toml); \
+		if [ -z "$$version" ]; then \
+		echo "Version not found in pyproject.toml"; \
+		exit 1; \
+	fi; \
+	echo "__version__ = \"$$version\"" > pyalbert/_version.py
+
+build: version
+	python -m build
+
+push: build
+	twine upload dist/*
+
+publish: push clean
+
+clean:
+	rm -rf dist build *.egg-info version.py
+
+#
+# Utils
+#
 
 format_code_black:
 	@# Format all python files
@@ -23,6 +50,9 @@ info:
 	@echo
 	@cat _data/chunks.info
 
+fetch_openai_openapi:
+	wget https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml
+
 fetch_colab_notebooks:
 	wget 'https://colab.research.google.com/drive/1_FQw20VjpKaE-Al-dh4jfVRtPawbD0fe' -O notebooks/llama-finetuning-7b-4bit.ipynb
 	wget 'https://colab.research.google.com/drive/148aZEs2-3hkCeTya1h4YPdfpqGIL5A4p' -O notebooks/llama-inference-7b-4bit.ipynb
@@ -42,6 +72,11 @@ download_travailemploie_sheets:
 institutions:
 	cat _data/export-expa-c-riences.json  | jq  'map(.intitule_typologie_1) | unique | map(select(. != null))' > _data/institutions.json
 
+mfs_organizations:
+	wget https://www.data.gouv.fr/fr/datasets/r/afc3f97f-0ef5-429b-bf16-7b7876d27cd4 -O _data/liste-mfs.csv
+	cat _data/liste-mfs.csv | grep '^"[0-9]*"' | awk -v FPAT='([^,]+)|(\"[^\"]+\")' '{print "{\"id\":"$$1", \"name\":"$$3"}"}' | jq -s > _data/liste-mfs.json
+	rm -f _data/liste-mfs.csv
+
 acronyms_directory:
 	@# ->  acronyms_directory.text
 	@rg '"nom"'  _data/directory/national_data_directory.json | grep ')",$$' | cut -d: -f 2 | grep -oP '(?<=\").*(?=\")' | grep -E '\([A-Z0-9][0-9a-zA-Z]{2,}\)' | sort | uniq
@@ -50,7 +85,7 @@ acronyms_sp:
 	@# ->  acronyms_sp.text
 	@find -iname "*.xml" | xargs xmllint --xpath "//*[name()='OuSAdresser']/Titre/text() | //Fiche//Titre/text()" 2>/dev/null | grep -oE '.*\([A-Z0-9][0-9a-zA-Z]{2,}\)' | sort | uniq
 
-acronyms: #acronyms_directory acronyms_sp
+acronyms: acronyms_directory acronyms_sp
 	# filter lines with more than one acronym
 	cat acronyms_sp.txt acronyms_directory.txt > acronyms.txt
 	cat acronyms.txt | sort | uniq > acronyms.1.txt
@@ -63,6 +98,11 @@ acronyms: #acronyms_directory acronyms_sp
 	# @todo:delete: CES, BUDGET, Sacem, CIO, Inee, CDC
 	# @todo:add: CNI
 	# ./script/acronyms_to_json.py
+
+update_lexicon: acronyms institutions mfs_organizations
+	python pyalbert/utils/acronyms_to_json.py
+	pyalbert/utils/create_python_file.sh "# DO NOT EDIT" "INSTITUTIONS" _data/liste-mfs.json pyalbert/lexicon/institutions.py
+	pyalbert/utils/create_python_file.sh "# DO NOT EDIT" "MFS_ORGANIZATIONS" _data/liste-mfs.json pyalbert/lexicon/mfs_organizations.py
 
 build_llama.cpp:
 	git clone https://github.com/ggerganov/llama.cpp
@@ -100,8 +140,15 @@ clean_all_indexex: # not embeddings
 list_indexes:
 	# elasticsearch
 	curl -X GET "http://localhost:9202/_cat/indices?v"
+	# Show a doc payload
+	# curl -X GET "http://localhost:9202/index_name/_doc/{doc_id}
+	# 
 	# qdrant
 	curl -X GET "http://localhost:6333/collections" | jq 
+	# count point in a collection
+	# curl -X GET "http://localhost:6333/collections/{collection_name}"  | jq "{count:.result.points_count}"
+	# Show a point payload
+	# curl -X GET "http://localhost:6333/collections/{collection_name}/points/{point_id}" | jq ".result.payload"
 
 OSC_PROFILE="default" # Usage: make list_vms OSC_PROFILE="cloudgouv"
 VMID="i-3fcd96ff" # Usage: make get_vm VMID=i-bb5568c0

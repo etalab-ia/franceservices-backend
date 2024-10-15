@@ -1,7 +1,5 @@
-import os
-import sys
-
-from ._logging import Logging
+from ._logging import Logging, get_logger
+from ._version import __version__
 from .config import LLM_TABLE
 
 
@@ -12,6 +10,7 @@ def collate_ix_name(name: str, version: str):
     return name
 
 
-def set_llm_table(llm_table: list[tuple]):
+def set_llm_table(llm_table: list[dict]):
+    # Used by external script to declare custom LLM_TABLE
     LLM_TABLE.clear()
     LLM_TABLE.extend(llm_table)

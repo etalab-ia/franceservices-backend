@@ -385,6 +385,14 @@ def _parse_xml_text(xml_file, structured=False) -> dict:
         if soup.find("ListeSituations") is not None:
             current.append("Liste des situations :")
             for i, situation in enumerate(soup.find("ListeSituations").find_all("Situation")):
+                if not situation.find("Titre"):
+                    print("warning: Situation > Titre, not found")
+                    continue
+
+                if not situation.find("Texte"):
+                    print("warning: Situation > Texte, not found")
+                    continue
+
                 situation_title = normalize(situation.find("Titre").get_text(" ", strip=True))
                 situation_texte = normalize(situation.find("Texte").get_text(" ", strip=True))
                 current.append(f"Cas n°{i+1} : {situation_title} : {situation_texte}")
@@ -666,5 +674,16 @@ class RagSource:
                 sheets.extend(_parse_travailEmploi(target_dir, structured=structured))
             else:
                 raise NotImplementedError("Rag source unknown")
+
+        # Remove duplicate
+        sids = [x["sid"] for x in sheets]
+        seen = set()
+        to_remove = [i for i, sid in enumerate(sids) if sid in seen or seen.add(sid)]
+        n_dup = len(to_remove)
+        if n_dup > 0:
+            print(f"Dropping {n_dup} duplicated sheets")
+            print([sheets[i]["sid"] for i in to_remove])
+        for ix in sorted(to_remove, reverse=True):
+            sheets.pop(ix)
 
         return sheets

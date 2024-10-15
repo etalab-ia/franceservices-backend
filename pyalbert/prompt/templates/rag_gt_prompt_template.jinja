@@ -1,0 +1,12 @@
+Ecris un texte référencé en réponse à cette question : {{query}}
+
+Les références doivent être citées de cette manière (échape les guillements avec \", s'il y en a, dans les attributs de <ref>) : texte rédigé <ref title="[titre de la source]" text="[passage pertinent dans la référence]">[URL de la source]</ref>
+
+Si les références ne permettent pas de répondre, spécifie juste qu'il n'y a pas de réponse.
+
+Les {{limit}} références disponibles :
+{% for chunk in chunks_collection %}
+url: {{chunk.url}}
+title: {{chunk.title}} {% if chunk.context %}({{chunk.context}}){% endif %}
+text: {{chunk.text}} {% if not loop.last %}{{"\n"}}{% endif %}
+{% endfor %}

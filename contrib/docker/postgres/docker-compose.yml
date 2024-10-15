@@ -2,12 +2,13 @@ version: '3.8'
 services:
   db:
     image: postgres:16.0-alpine
-    restart: no
+    container_name: albert-postgres-db-dev
+    restart: "no"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
     ports:
-      - '5439:5432'
+      - '5432:5432'
     volumes: 
       - db:/var/lib/postgresql/data
 volumes:

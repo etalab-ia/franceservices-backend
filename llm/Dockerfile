@@ -15,4 +15,3 @@ RUN pip install --upgrade pip && pip install --no-cache-dir .
 
 # add the rest of the code
 ADD . .
-COPY --from=pyalbert . ./pyalbert

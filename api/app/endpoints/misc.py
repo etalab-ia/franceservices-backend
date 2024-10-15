@@ -6,6 +6,7 @@ from app.deps import get_current_user
 
 from pyalbert.config import APP_VERSION, LLM_TABLE
 from pyalbert.lexicon.institutions import INSTITUTIONS
+from pyalbert.lexicon.mfs_organizations import MFS_ORGANIZATIONS
 from pyalbert.prompt import prompts_from_llm_table
 
 router = APIRouter()
@@ -24,7 +25,11 @@ def get_models(
     current_user: models.User = Depends(get_current_user), response_model=dict[str, list[str]]
 ) -> JSONResponse:
     model_prompts = prompts_from_llm_table(LLM_TABLE)
-    model_prompts = {k: v for k, v in model_prompts.items() if [v.pop("templates")]}
+    prompt_purge = ["template_string", "_template"]
+    for k, v in model_prompts.items():
+        if "prompts" in v:
+            v["prompts"] = list(v["prompts"].values())
+            [prompt.pop(pu) for prompt in v["prompts"] for pu in prompt_purge if pu in prompt]
     return JSONResponse(model_prompts)
 
 
@@ -38,3 +43,15 @@ def get_institutions(
     current_user: models.User = Depends(get_current_user), response_model=list[str]
 ) -> JSONResponse:
     return JSONResponse(INSTITUTIONS)
+
+
+# *****************
+# * Organizations *
+# *****************
+
+
+@router.get("/organizations/mfs", tags=["misc"])
+def get_mfs_organizations(
+    current_user: models.User = Depends(get_current_user), response_model=list[dict]
+) -> JSONResponse:
+    return JSONResponse(MFS_ORGANIZATIONS)

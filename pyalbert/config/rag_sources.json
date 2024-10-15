@@ -4,9 +4,15 @@
         "output": "export-expa-c-riences.json",
         "force_download": false
     },
-    "vdd": {
-        "url": "https://lecomarquage.service-public.fr/vdd/3.3/part/zip/vosdroits-latest.zip",
-        "output": "data.gouv/",
+    "vdd-part": {
+        "url": "https://lecomarquage.service-public.fr/vdd/3.4/part/zip/vosdroits-latest.zip",
+        "output": "data.gouv/part",
+        "format": "zip",
+        "force_download": true
+    },
+    "vdd-pro": {
+        "url": "https://lecomarquage.service-public.fr/vdd/3.4/pro/zip/vosdroits-latest.zip",
+        "output": "data.gouv/pro",
         "format": "zip",
         "force_download": true
     },

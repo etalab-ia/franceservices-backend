@@ -1,7 +1,7 @@
 """Initial migration
 
 Revision ID: 7e8bb3003468
-Revises: 
+Revises:
 Create Date: 2024-03-22 17:34:33.454522
 
 """
@@ -10,6 +10,7 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 
 from alembic import op
+from sqlalchemy import func
 
 # revision identifiers, used by Alembic.
 revision: str = '7e8bb3003468'
@@ -23,8 +24,8 @@ def upgrade() -> None:
     op.create_table('blacklist_tokens',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('token', sa.String(length=500), nullable=False),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=func.now(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=func.now(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('token')
     )
@@ -41,8 +42,8 @@ def upgrade() -> None:
     sa.Column('hashed_password', sa.String(), nullable=False),
     sa.Column('is_confirmed', sa.Boolean(), nullable=True),
     sa.Column('is_admin', sa.Boolean(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=func.now(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=func.now(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
@@ -50,8 +51,8 @@ def upgrade() -> None:
     op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
     op.create_table('chats',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=func.now(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=func.now(), nullable=True),
     sa.Column('chat_name', sa.Text(), nullable=True),
     sa.Column('chat_type', sa.Text(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),
@@ -63,8 +64,8 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('token', sa.String(length=500), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=func.now(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=func.now(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('token')
@@ -83,8 +84,8 @@ def upgrade() -> None:
     sa.Column('institution', sa.Text(), nullable=True),
     sa.Column('links', sa.Text(), nullable=True),
     sa.Column('temperature', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=func.now(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=func.now(), nullable=True),
     sa.Column('response', sa.Text(), nullable=True),
     sa.Column('rag_sources', sa.JSON(), nullable=True),
     sa.Column('should_sids', sa.JSON(), nullable=True),
@@ -100,8 +101,8 @@ def upgrade() -> None:
     op.create_index(op.f('ix_streams_id'), 'streams', ['id'], unique=False)
     op.create_table('feedbacks',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=func.now(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=func.now(), nullable=True),
     sa.Column('is_good', sa.Boolean(), nullable=True),
     sa.Column('message', sa.Text(), nullable=True),
     sa.Column('reason', sa.Text(), nullable=True),

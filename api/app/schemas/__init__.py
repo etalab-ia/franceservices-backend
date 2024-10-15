@@ -1,7 +1,7 @@
 from .chat import Chat, ChatArchive, ChatCreate, ChatUpdate, ChatWithRelationships
 from .feedback import Feedback, FeedbackCreate, FeedbackWithRelationships
 from .login import ResetPasswordForm, SendResetPasswordEmailForm, SignInForm
-from .search import Embedding, Index, QueryDocs
+from .search import Index, QueryDocs
 from .stream import Stream, StreamCreate, StreamWithRelationships
 from .user import (
     ApiToken,

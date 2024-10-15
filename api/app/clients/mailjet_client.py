@@ -39,8 +39,8 @@ class MailjetClient:
         return self._send(to, subject, text)
 
     def send_create_user_me_notify_admin_email(self, to, email):
-        subject = "New user"
-        text = f"Account email: {email}\n"
+        subject = f"New user: {email}"
+        text = f"Account email to validate: {email}\n"
         text += f"Server: {FRONT_URL}\n"
         return self._send(to, subject, text)
 

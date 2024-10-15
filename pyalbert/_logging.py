@@ -1,5 +1,7 @@
 import logging
 
+from .config import VERBOSE_LEVEL
+
 
 class Logging:
     def __init__(self, level: str = "INFO"):
@@ -21,3 +23,7 @@ class Logging:
 
     def get_logger(self):
         return self.logger
+
+
+def get_logger():
+    return Logging(VERBOSE_LEVEL).logger

@@ -12,6 +12,13 @@ router = APIRouter()
 # TODO: add update / delete endpoints
 
 
+@router.get("/user/me", response_model=schemas.User, tags=["user"])
+def read_user_me(
+    current_user: models.User = Depends(get_current_user),
+) -> models.User:
+    return current_user
+
+
 @router.get("/users/pending", response_model=list[schemas.User], tags=["user"])
 def read_pending_users(
     db: Session = Depends(get_db),
@@ -41,13 +48,6 @@ def create_user_me(
     mailjet_client.send_create_user_me_email(email)
     mailjet_client.send_create_user_me_notify_admin_email(CONTACT_EMAIL, email)
     return {"msg": "User created. An admin must confirm the user."}
-
-
-@router.get("/user/me", response_model=schemas.User, tags=["user"])
-def read_user_me(
-    current_user: models.User = Depends(get_current_user),
-) -> models.User:
-    return current_user
 
 
 @router.post("/user/confirm", tags=["user"])

@@ -55,6 +55,37 @@ class TestEndpointsUser(TestApi):
         )
         assert response.status_code == 200
 
+    def test_form_errors(self, client: TestClient):
+        response = user.create_user_me(
+            client,
+            "jean.dupont",
+            "jean.dupont@test.fr",
+            "Abcdef123456#+=._-@",
+            organization_id="",
+            organization_name="",
+        )
+        assert response.status_code == 422
+
+        response = user.create_user_me(
+            client,
+            "jean.dupont",
+            "jean.dupont@test.fr",
+            "Abcdef123456#+=._-@",
+            organization_id="2",
+            organization_name="2",
+        )
+        assert response.status_code == 422
+
+        response = user.create_user_me(
+            client,
+            "jean.dupont",
+            "jean.dupont@test.fr",
+            "Abcdef123456#+=._-@",
+            organization_id="2",
+            organization_name="France services La Poste de Saint-Trivier-de-Courtes",
+        )
+        assert response.status_code == 200
+
     def test_confirm_user(self, client: TestClient):
         # Create User Me:
         response = user.create_user_me(client, "jean.dupont", "jean.dupont@test.fr", "abcde12345")

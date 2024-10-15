@@ -9,10 +9,13 @@ from typing import AsyncGenerator, Optional
 import torch
 import uvicorn
 import yaml
+from core import make_embeddings
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from huggingface_hub import hf_hub_download, snapshot_download
 from huggingface_hub.utils._errors import EntryNotFoundError
+from pyalbert import Logging
+from pyalbert.schemas.llm import Embeddings, Generate
 from transformers import AutoModel, AutoTokenizer
 
 from vllm import __version__ as vllm_version
@@ -20,11 +23,6 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
-
-from pyalbert import Logging
-from pyalbert.schemas import Embeddings, Generate
-
-from core import make_embeddings
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--host", type=str, default="localhost", help="Host name.")
@@ -34,17 +32,20 @@ parser.add_argument("--embeddings-hf-repo-id", type=str, default=None, nargs='?'
 parser.add_argument("--llm-hf-repo-id", type=str, required=True, help="Hugging Face repository ID for llm model.")  # fmt: off
 parser.add_argument("--root-path", type=str, default=None, help="FastAPI root_path when app is behind a path based routing proxy.")  # fmt: off
 parser.add_argument("--force-download", action="store_true", default=False, help="Force download of model files when API startups.")  # fmt: off
+parser.add_argument("--local-files-only", action="store_true", default=False, help="Use only local files for model files.")  # fmt: off
+parser.add_argument("--max-workers", type=int, default=8, help="Number of workers for the API.")
 parser.add_argument("--debug", action="store_true", default=False, help="Print debug logs.")
 
 parser = AsyncEngineArgs.add_cli_args(parser)
 args = parser.parse_args()
 
 TIMEOUT_KEEP_ALIVE = 10  # seconds.
+TIMEOUT_DOWNLOAD = 60  # seconds.
 WITH_GPU = True if torch.cuda.is_available() else False
 WITH_EMBEDDINGS = True if args.embeddings_hf_repo_id else False
 BATCH_SIZE_MAX = 10
 MODELS = {}
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 
 @asynccontextmanager
@@ -64,16 +65,14 @@ async def download_and_run_models(app: FastAPI):
             "local_dir": model_storage_dir,
             "force_download": args.force_download,
             "cache_dir": model_storage_dir,
-            "token": HF_API_TOKEN,
+            "etag_timeout": TIMEOUT_DOWNLOAD,
+            "local_files_only": args.local_files_only,
+            "max_workers": args.max_workers,
+            "token": HF_TOKEN,
         }
 
-        try:
-            logger.info(f"downloading {args.embeddings_hf_repo_id} in {model_storage_dir}...")
-            snapshot_download(**params)
-        except Exception:
-            shutil.rmtree(model_storage_dir)
-            logger.error(traceback.print_exc())
-            exit(1)
+        logger.info(f"downloading {args.embeddings_hf_repo_id} in {model_storage_dir}...")
+        snapshot_download(**params)
 
     # download llm model
     model_storage_dir = os.path.join(args.models_dir, args.llm_hf_repo_id)
@@ -84,16 +83,14 @@ async def download_and_run_models(app: FastAPI):
         "local_dir": model_storage_dir,
         "force_download": args.force_download,
         "cache_dir": model_storage_dir,
-        "token": HF_API_TOKEN,
+        "etag_timeout": TIMEOUT_DOWNLOAD,
+        "local_files_only": args.local_files_only,
+        "max_workers": args.max_workers,
+        "token": HF_TOKEN,
     }
 
-    try:
-        logger.info(f"downloading {args.llm_hf_repo_id}... in {model_storage_dir}")
-        snapshot_download(**params)
-    except Exception:
-        shutil.rmtree(model_storage_dir)
-        logger.error(traceback.print_exc())
-        exit(1)
+    logger.info(f"downloading {args.llm_hf_repo_id}... in {model_storage_dir}")
+    snapshot_download(**params)
 
     if WITH_EMBEDDINGS:
         # run the embeddings model
@@ -101,7 +98,7 @@ async def download_and_run_models(app: FastAPI):
             "pretrained_model_name_or_path": args.embeddings_hf_repo_id,
             "force_download": args.force_download,
             "cache_dir": os.path.join(args.models_dir, args.embeddings_hf_repo_id),
-            "token": HF_API_TOKEN,
+            "token": HF_TOKEN,
         }
 
         tokenizer = AutoTokenizer.from_pretrained(**params)
@@ -276,7 +273,7 @@ async def get_prompt_config(
                     filename=file,
                     local_dir=args.model,
                     cache_dir=args.model,
-                    token=HF_API_TOKEN,
+                    token=HF_TOKEN,
                 )
             except EntryNotFoundError:
                 logger.debug(f"{file} not found in remote model repository.")

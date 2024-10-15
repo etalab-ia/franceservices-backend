@@ -21,7 +21,9 @@ def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | Iter
 
         # Generate
         llm_client = LlmClient(model_name)
-        chat_name = llm_client.generate(prompt, temperature=20)
+        result = llm_client.generate(prompt, temperature=0.2)
+        chat_name = result.choices[0].message.content
+        chat_name = chat_name.strip("\"' ")
 
         # Update db_chat
         db_chat = crud.chat.get_chat(db, chat_id)

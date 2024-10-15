@@ -2,20 +2,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-# **************
-# * Embeddings *
-# **************
-
-
-class Embedding(BaseModel):
-    input: str | list[str]
-    # ignored for now, but keep it for openai-api compatibility
-    model: str | None = None
-    # Certain embedding model support asymetric queries.
-    doc_type: str | None = None
-    # ignored for now, but keep it for openai-api compatibility
-    encoding_format: str = "float"  # only float is supported.
-
+from pyalbert.schemas import IndexSource
 
 # ***********
 # * Indexes *
@@ -31,11 +18,6 @@ class IndexName(str, Enum):
 class IndexSimilarity(str, Enum):
     bm25 = "bm25"
     e5 = "e5"
-
-
-class IndexSource(str, Enum):
-    service_public = "service-public"
-    travail_emploi = "travail-emploi"
 
 
 class Index(BaseModel):

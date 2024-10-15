@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 from typing import Generator
 
 from fastapi import BackgroundTasks, FastAPI, Request
@@ -51,8 +52,8 @@ async def generate(request: Request) -> Response:
 
 @app.get("/get_prompt_config")
 async def get_prompt_config(request: Request, config_file: str | None = None) -> Response:
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(script_dir, "rag_prompt_template.jinja")) as f:
+    local_dir = Path(__file__).resolve().parent
+    with open(local_dir / "rag_prompt_template.jinja") as f:
         rag_template = f.read()
 
     data = {

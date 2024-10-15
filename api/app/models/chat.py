@@ -1,6 +1,9 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, select
+
+from .stream import Stream
 
 from app import schemas
 from app.db.base_class import Base
@@ -15,13 +18,28 @@ class Chat(Base):
 
     chat_name = Column(Text, nullable=True)
     chat_type = Column(Text)
+    operator = Column(Text, nullable=True)
+    themes = Column(JSON, nullable=True)
 
     user = relationship("User", back_populates="chats")
     user_id = Column(Integer, ForeignKey("users.id"))
 
     streams = relationship("Stream", back_populates="chat")
 
-    def to_dict(self):
+    @hybrid_property
+    def stream_count(self):
+        return len(self.streams)
+
+    @stream_count.expression
+    def stream_count(cls):
+        return (
+            select([func.count(Stream.id)])
+            .where(Stream.chat_id == cls.id)
+            .correlate(cls)
+            .label("stream_count")
+        )
+
+    def to_dict(self, with_streams=True):
         # For serialisation purpose
         # @DEBUG/HELP1: AttributeError: 'str' object has no attribute '_sa_instance_state'
 
@@ -34,6 +52,9 @@ class Chat(Base):
         result = schemas.ChatArchive(**{k: getattr(self, k) for k in column_names})
 
         # Relations
-        result.streams = [stream.to_dict() for stream in self.streams]
+        streams = [stream.to_dict() for stream in self.streams]
+        result.stream_count = len(streams)
+        if with_streams:
+            result.streams = sorted(streams, key=lambda x: x.id)
 
         return result

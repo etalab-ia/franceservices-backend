@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python
 
 import sys
 
@@ -7,7 +7,8 @@ sys.path.append(".")
 from pyalbert.clients import LlmClient
 from pyalbert.prompt import get_prompter
 
-model = "AgentPublic/albertlight-7b"
+model = "AgentPublic/llama3-instruct-8b"
+
 query = """
 Une usagère ne comprend par le montant d’allocations sociales qu’elle touche ce mois-ci. En effet, le montant a été divisé par deux par rapport aux mois précédents et elle n’a plus que 150€. Elle cherche à comprendre pourquoi le montant a ainsi diminué.
 
@@ -25,5 +26,6 @@ prompt = prompter.make_prompt(query=query)
 
 # Generate
 llm_client = LlmClient(model)
-chat_name = llm_client.generate(prompt, temperature=20)
+result = llm_client.generate(prompt)
+chat_name = result.choices[0].message.content
 print(chat_name)

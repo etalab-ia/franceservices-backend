@@ -1,0 +1,85 @@
+[project]
+name = "pyalbert"
+version = "0.7.4"
+description = "The Albert toolkit -- CLI, libraries and lexicons"
+authors = [
+    {name = "Etalab", email = "etalab@modernisation.gouv.fr"},
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["IA", "LLM"]
+dependencies = [
+    "pydantic==2.8.2",
+    "docopt-ng==0.9.0",
+    "wget==3.2",
+    "elasticsearch==8.14.0",
+    "qdrant-client==1.10.1",
+    "requests==2.32.3",
+    "beautifulsoup4==4.12.3",
+    "lxml==5.2.2",
+    "numpy==1.26.4",
+    "pandas==2.2.1",
+    "langchain-text-splitters==0.0.1",
+    "python-dotenv==1.0.1",
+    "jinja2==3.1.4",
+    "lz4==4.3.3",
+    "huggingface-hub==0.23.4",
+    "tqdm==4.66.5",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/etalab-ia/albert"
+Source = "https://github.com/etalab-ia/albert"
+Tracker = "https://github.com/etalab-ia/albert/issues"
+Documentation = "https://github.com/etalab-ia/albert/tree/main/docs"
+
+# Tests
+
+[project.optional-dependencies]
+test = ["pytest==8.2.2"]
+devops = [
+    "prompt_toolkit==3.0.39",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["pyalbert/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Packaging
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+pyalbert = "pyalbert.albert:main"
+
+[tool.setuptools]
+packages = [
+    "pyalbert", 
+    "pyalbert.clients", 
+    "pyalbert.corpus", 
+    "pyalbert.index",
+    "pyalbert.lexicon",
+    "pyalbert.prompt",
+    "pyalbert.schemas",
+    "pyalbert.schemas.openai",
+    "pyalbert.whitelist",
+]
+include-package-data = true
+
+[tool.setuptools.package-data]
+pyalbert = ["config/*", "prompt/templates/*"]
+
+# Linter
+
+[tool.ruff]
+line-length = 100
+exclude = [ "lexicon/" ]
+
+[tool.ruff.lint]
+ignore-init-module-imports = true

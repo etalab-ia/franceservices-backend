@@ -1,6 +1,6 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine, engine_from_config, pool
 
 from alembic import context
 
@@ -15,9 +15,13 @@ fileConfig(config.config_file_name)
 # add your model's MetaData object here
 # for 'autogenerate' support
 
-from app.db.base import Base, get_db_url  # noqa
+from app.db.base import Base, create_database_if_not_exists
+
+from pyalbert.config import DATABASE_URI
 
 target_metadata = Base.metadata
+create_database_if_not_exists()
+db_url = DATABASE_URI
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -37,9 +41,8 @@ def run_migrations_offline():
     script output.
 
     """
-    url: str = get_db_url()
     context.configure(
-        url=url, target_metadata=target_metadata, literal_binds=True, compare_type=True
+        url=db_url, target_metadata=target_metadata, literal_binds=True, compare_type=True
     )
 
     with context.begin_transaction():
@@ -54,7 +57,7 @@ def run_migrations_online():
 
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = get_db_url()
+    configuration["sqlalchemy.url"] = db_url
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",

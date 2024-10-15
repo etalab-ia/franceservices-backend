@@ -9,6 +9,22 @@ router = APIRouter()
 # TODO: add update / delete endpoints
 
 
+@router.get("/chat/{chat_id}", response_model=schemas.Chat, tags=["chat"])
+def read_chat(
+    chat_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> models.Chat:
+    db_chat = crud.chat.get_chat(db, chat_id=chat_id)
+    if db_chat is None:
+        raise HTTPException(404, detail="Chat not found")
+
+    if not (db_chat.user_id == current_user.id or current_user.is_admin):
+        raise HTTPException(403, detail="Forbidden")
+
+    return db_chat
+
+
 @router.get("/chats", response_model=list[schemas.Chat], tags=["chat"])
 def read_chats(
     skip: int = 0,
@@ -28,22 +44,6 @@ def create_chat(
     current_user: models.User = Depends(get_current_user),
 ) -> models.Chat:
     return crud.chat.create_chat(db, chat, user_id=current_user.id)
-
-
-@router.get("/chat/{chat_id}", response_model=schemas.Chat, tags=["chat"])
-def read_chat(
-    chat_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-) -> models.Chat:
-    db_chat = crud.chat.get_chat(db, chat_id=chat_id)
-    if db_chat is None:
-        raise HTTPException(404, detail="Chat not found")
-
-    if not (db_chat.user_id == current_user.id or current_user.is_admin):
-        raise HTTPException(403, detail="Forbidden")
-
-    return db_chat
 
 
 @router.post("/chat/{chat_id}", response_model=schemas.Chat, tags=["chat"])
@@ -78,3 +78,24 @@ def read_chat_archive(
         raise HTTPException(403, detail="Forbidden")
 
     return db_chat.to_dict()
+
+
+@router.delete("/chat/delete/{chat_id}", response_model=schemas.Chat, tags=["chat"])
+def delete_chat(
+    chat_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> models.Chat:
+    db_chat = crud.chat.get_chat(db, chat_id=chat_id)
+    if db_chat is None:
+        raise HTTPException(404, detail="Chat not found")
+
+    if db_chat.user_id != current_user.id:
+        raise HTTPException(403, detail="Forbidden")
+
+    # Prevent a DetachedInstanceError error if the hybrid attribute stream_count is accessed after the object is deleted.
+    c = db_chat.to_dict(with_streams=False)
+
+    crud.chat.delete_chat(db, chat_id)
+
+    return c

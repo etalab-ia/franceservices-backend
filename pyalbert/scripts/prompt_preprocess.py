@@ -1,9 +1,10 @@
-#!/bin/python
+#!/usr/bin/env python
 
 import sys
 
 sys.path.append(".")
 
+from pyalbert.lexicon import expand_acronyms
 from pyalbert.prompt import Prompter
 
 if __name__ == "__main__":
@@ -16,6 +17,6 @@ if __name__ == "__main__":
     ]
 
     for prompt in prompt_tests:
-        d = p._expand_acronyms(prompt)
+        d = expand_acronyms(prompt)
         print(d)
         print()

@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python
 
 import sys
 
@@ -9,6 +9,7 @@ from prompt_toolkit import PromptSession
 from pyalbert import set_llm_table
 from pyalbert.clients import LlmClient
 from pyalbert.prompt import get_prompter
+from pyalbert.utils import sse_decoder
 
 ################################################################################
 ### The Albert REPL chat
@@ -23,19 +24,15 @@ from pyalbert.prompt import get_prompter
 ################################################################################
 
 # Custom LLM_TABLE
-set_llm_table(
-    [
-        ("AgentPublic/albertlight-7b", "http://localhost:8082"),
-        ("AgentPublic/albertlight-8b", "http://localhost:8088"),
-    ]
-)
-default_model = "AgentPublic/albertlight-8b"
+# set_llm_table([{"model": "AgentPublic/llama3-instruct-8b", "url": "http://localhost:8083"}])
+default_model = "AgentPublic/llama3-instruct-8b"
 
 WELCOME = """Welcome to Albert chat
 type ".help" for more information.
 """
 
 HELP = {
+    ".conversation": "Toggle the conversation mode.",
     ".mode": 'Change the mode (e.g ".mode rag", ".mode analysis"). Enter ".mode" to unset it.',
     ".format": 'Change the format of the prompt (e.g ".format chatml", ".format llama-chat"). Enter ".format" to unset it.',
     ".system": 'Change the system prompt. Enter ".system" to unset it.',
@@ -48,7 +45,7 @@ HELP = {
 model = default_model
 with_history = True
 mode = "rag"
-limit = 7
+limit = None
 history = []
 llm_client = LlmClient(model)
 debug_prompt = False
@@ -80,10 +77,11 @@ def custom_input(prompt, multiline_pattern=":::"):
 
 while True:
     # REPL
+    conv_sym = "c" if with_history else ">"
     if debug_prompt:
-        query = custom_input("(debug)>>> ")
+        query = custom_input(f"(debug){conv_sym}>> ")
     else:
-        query = custom_input(">>> ")
+        query = custom_input(f"{conv_sym}>> ")
     query = query.strip()
 
     if query == ".clear":
@@ -114,15 +112,16 @@ while True:
             print(f"{command:<{max_length*3}} {description}")
         print()
         continue
+    elif query.strip() == ".conversation":
+        with_history = not with_history
+        continue
 
-    # Make prompt replace the last user query by the prompt provided
-    # @DEBUG: this logic is due to the create/start stream double call...to fix!
+    # Push the history/messages
     history.append({"role": "user", "content": query})
 
     # Build prompt
     prompter = get_prompter(model, mode)
     prompt = prompter.make_prompt(
-        query=query,
         limit=limit,
         history=history,
         prompt_format=prompt_format,
@@ -135,12 +134,13 @@ while True:
         continue
 
     # Generate
-    sampling_params = prompter.sampling_params
+    sampling_params = prompter.get_upstream_sampling_params()
     stream = llm_client.generate(prompt, stream=True, **sampling_params)
     raw_response = ""
-    for c in stream:
-        print(c, end="", flush=True)
-        raw_response += c
+    for c in sse_decoder(stream):
+        text = c["text"]
+        print(text, end="", flush=True)
+        raw_response += text
 
     history.extend(
         [

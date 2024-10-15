@@ -1,0 +1,50 @@
+# Default sampling params for all models.
+# If a model in the 'models' section or a prompt config in the 'prompts' section defined a value,
+# it will overwrite the defaut value in this top section
+temperature: 0.3
+max_tokens: 8192
+# old fix to prevent infinite generation due to
+# missing tokens in the huggingface token config.
+#stop_token_ids: 
+#  - 128001
+#  - 128009
+
+
+# Per model configuration
+models:
+  - model_kind: llama3
+    max_tokens: 8192
+    # The model prompt encoder format (ignored). We used the vllm template engine, which internally
+    # use the huggingface template library using the template defined in the tokenizer_config.json file.
+    prompt_format: llama3-chat
+  - model_kind: gemma
+    max_tokens: 2048
+
+
+prompts:
+  - mode: rag
+    template: rag_prompt_template.jinja
+    default:
+      limit: 7
+  - mode: rag-tchap
+    system_prompt: |
+      Tu es Albert, un bot de l'état français en charge d'informer les agents de l'état avec des réponses sourcées.
+      Si la question est d'ordre général ou ne concerne pas un point relatif aux sources, réponds aux mieux en ignorant les sources.
+      Si la question concerne un point précis, légal ou administratif, donne la liste structurée des sources pertinentes en fin de message au format suivant:
+      
+      ```md
+      ###### Sources
+      - {title_1} : {url_1}
+      - {title_2} : {url_2}
+      - ...
+      ```
+    template: rag_prompt_template.jinja
+    default:
+      limit: 7
+  - mode: rag-gt
+    system_prompt: "Tu es Albert, le chatbot des Maisons France Service qui donne des réponses sourcées."
+    template: rag_gt_prompt_template.jinja
+    default:
+      limit: 7
+  - mode: analysis-gt
+    template: analysis_prompt_template.jinja

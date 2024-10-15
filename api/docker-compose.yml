@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:  
+  api:
+    image: albert/api:latest
+    restart: always
+    environment:
+      - APP_VERSION=1.0.0
+      - MODELS_URLS="['http://localhost:8080']"
+      - SECRET_KEY=changeme
+      - ELASTIC_HOST=elasticsearch
+      - ELASTIC_PORT=9200
+      - ELASTIC_PASSWORD=changeme
+      - QDRANT_HOST=qdrant
+      - QDRANT_GRPC_PORT=6334
+      - QDRANT_REST_PORT=6333
+      - POSTGRES_URI=postgresql://postgres:changeme@postgres:5432/postgres
+      - FIRST_ADMIN_USERNAME=admin
+      - FIRST_ADMIN_EMAIL=admin@changeme.com
+      - FIRST_ADMIN_PASSWORD=changeme
+      - MJ_API_KEY=changeme
+      - MJ_API_SECRET=changeme
+      - CONTACT_EMAIL=contact@changeme.com
+      - BACKEND_CORS_ORIGINS="*"
+      - API_WHITELIST_FILE=pyalbert/config/whitelist_config.json
+      - FRONT_URL=http://localhost:3000
+      - API_URL=http://localhost:8000
+    ports:
+      - 8000:8090
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+
+  postgres:
+    image: postgres:16.0-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=changeme
+    ports:
+      - 5432:5432
+    volumes: 
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-U", "postgres"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s

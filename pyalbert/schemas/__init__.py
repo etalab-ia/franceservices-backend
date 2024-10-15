@@ -1,1 +1,6 @@
-from .llm import Embeddings, Generate
+from .openai.api_rag import (
+    IndexSource,
+    RagChatCompletionRequest,
+    RagChatCompletionResponse,
+    RagParams,
+)
