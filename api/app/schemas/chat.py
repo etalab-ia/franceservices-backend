@@ -4,7 +4,6 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict
 
 from .stream import Stream
-from .user import User
 
 
 class ChatType(str, Enum):
@@ -28,7 +27,7 @@ class Chat(ChatBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    user_id: int
+    user_id: str
     chat_name: str | None
     stream_count: int | None = None
 
@@ -44,5 +43,5 @@ class ChatArchive(Chat):
     streams: list[Stream] | None = None
 
 
-class ChatWithRelationships(Chat):
-    user: User | None
+# class ChatWithRelationships(Chat):
+#     user: User | None

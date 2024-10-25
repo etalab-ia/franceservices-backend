@@ -8,10 +8,10 @@ from pyalbert.config import API_PREFIX_V1
 ROOT_PATH = API_PREFIX_V1
 
 
-def chat_completions(client: TestClient, token, data):
+def chat_completions(client: TestClient, data, key=None):
     headers = None
-    if token:
-        headers = {"Authorization": f"Bearer {token}"}
+    if key:
+        headers = {"Authorization": "Bearer " + key}
 
     return client.post(
         f"{ROOT_PATH}/chat/completions",
@@ -20,11 +20,10 @@ def chat_completions(client: TestClient, token, data):
     )
 
 
-async def chat_completion_stream(client: TestClient, token, data):
+async def chat_completion_stream(client: TestClient, data, key=None):
     headers = None
-    if token:
-        headers = {"Authorization": f"Bearer {token}"}
-
+    if key:
+        headers = {"Authorization": "Bearer " + key}
     # async with TestClient(app) as client:
     async with httpx.AsyncClient(app=app, base_url="http://test") as client:
         async with client.stream(
@@ -38,11 +37,10 @@ async def chat_completion_stream(client: TestClient, token, data):
             return response, content
 
 
-def create_embeddings(client: TestClient, token, data):
+def create_embeddings(client: TestClient, data, key=None):
     headers = None
-    if token:
-        headers = {"Authorization": f"Bearer {token}"}
-
+    if key:
+        headers = {"Authorization": "Bearer " + key}
     return client.post(
         f"{ROOT_PATH}/embeddings",
         headers=headers,

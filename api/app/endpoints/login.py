@@ -1,101 +1,114 @@
-import uuid
-from datetime import datetime, timedelta
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import RedirectResponse, JSONResponse
+from helpers.redis.redis_session_middleware import redis_client
+from authlib.integrations.starlette_client import OAuth, OAuthError
+from authlib.integrations.httpx_client import AsyncOAuth2Client
+import urllib.parse
+import secrets
+import jwt
+import httpx
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
+from pyalbert.config import BASE_URL, CLIENT_ID, CLIENT_SECRET, FRONTEND_BASE_URL, FRONTEND_LOGGED_IN_URL, PROCONNECT_OAUTH_ROOT_URL
 
-from app import crud, models, schemas
-from app.auth import encode_token
-from app.clients.mailjet_client import MailjetClient
-from app.deps import get_current_user, get_db
-
-from pyalbert.config import PASSWORD_RESET_TOKEN_TTL
-
+oauth = OAuth()
+oauth.register(
+    name="fca",
+    server_metadata_url=f"{PROCONNECT_OAUTH_ROOT_URL}/.well-known/openid-configuration",
+    client_id=CLIENT_ID,
+    client_secret=CLIENT_SECRET,
+    client_kwargs={
+        "scope": "openid profile email given_name usual_name",
+    },
+)
 router = APIRouter()
 
 
-@router.post("/sign_in", tags=["public", "login"])
-def sign_in(
-    form_data: schemas.SignInForm,
-    db: Session = Depends(get_db),
-) -> dict[str, str]:
-    username = form_data.username
-    email = form_data.email
-    password = form_data.password
-    if username:
-        user = crud.user.get_user_by_username(db, username)
-    else:
-        user = crud.user.get_user_by_email(db, email)
-
-    if not user or not crud.user.verify_password(password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
-
-    if not user.is_confirmed:
-        raise HTTPException(400, detail="User not confirmed")
-
-    crud.login.delete_expired_blacklist_tokens(db)
-
-    token = encode_token(user.id)
-    return {"token": token}
+@router.get("/login", tags=["login"])
+async def login(request: Request):
+    redirect_uri = f"{BASE_URL}/api/v2/callback"
+    state = secrets.token_urlsafe(32)
+    nonce = secrets.token_urlsafe(32)
+    request.session["state"] = state
+    request.session["nonce"] = nonce
+    return await oauth.fca.authorize_redirect(request, redirect_uri, state=state, nonce=nonce)
 
 
-@router.post("/sign_out", tags=["login"])
-def sign_out(
-    req: Request,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),  # noqa
-) -> dict[str, str]:
-    auth_header = req.headers.get("Authorization")
-    token = auth_header.split(" ")[1]
-    crud.login.create_blacklist_token(db, token)
-    return {"msg": "Success"}
+@router.get("/callback", tags=["login"])
+async def auth(request: Request):
+    try:
+        stored_state = request.session.get("state")
+        stored_nonce = request.session.get("nonce")
+        client_state = request.query_params.get("state")
+        client_code = request.query_params.get("code")
+
+        if not client_state or client_state != stored_state:
+            raise HTTPException(status_code=400, detail="Invalid state")
+
+        async with AsyncOAuth2Client(
+            client_id=CLIENT_ID, client_secret=CLIENT_SECRET, token_endpoint=oauth.fca.server_metadata["token_endpoint"]
+        ) as client:
+            token_response = await client.fetch_token(
+                oauth.fca.server_metadata["token_endpoint"], grant_type="authorization_code", code=client_code, redirect_uri=f"{BASE_URL}/api/v2/callback"
+            )
+
+        id_token = token_response.get("id_token")
+        if id_token:
+            id_token_claims = await oauth.fca.parse_id_token(token_response, nonce=stored_nonce)
+            if id_token_claims.get("nonce") != stored_nonce:
+                raise HTTPException(status_code=400, detail="Invalid nonce")
+            request.session["id_token"] = id_token
+
+        userinfo_endpoint = oauth.fca.server_metadata["userinfo_endpoint"]
+        async with httpx.AsyncClient() as client:
+            userinfo_response = await client.get(userinfo_endpoint, headers={"Authorization": f"Bearer {token_response['access_token']}"})
+            userinfo_response.raise_for_status()
+            if not userinfo_response.text:
+                raise ValueError("Empty response from userinfo endpoint")
+
+            user = jwt.decode(userinfo_response.text, options={"verify_signature": False})
+        if user:
+            request.session["user"] = user
+        else:
+            raise ValueError("No user info received")
+
+        return RedirectResponse(url=FRONTEND_LOGGED_IN_URL)
+    except (OAuthError, httpx.HTTPError, ValueError) as error:
+        return {"error": str(error)}
 
 
-@router.post("/send_reset_password_email", tags=["login"])
-def send_reset_password_email(
-    form_data: schemas.SendResetPasswordEmailForm,
-    db: Session = Depends(get_db),
-) -> dict[str, str]:
-    email = form_data.email
-    app = form_data.app
-    user = crud.user.get_user_by_email(db, email)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+@router.get("/prepare-logout", tags=["login"])
+async def prepare_logout(request: Request):
+    logout_state = secrets.token_urlsafe(32)
+    request.session["logout_state"] = logout_state
 
-    user_id = user.id
-    crud.login.delete_password_reset_token(db, user_id, commit=False)
-    token = uuid.uuid4().hex
-    crud.login.create_password_reset_token(db, token, user_id, commit=False)
-    db.commit()
+    id_token = request.session.get("id_token")
+    if not id_token:
+        return JSONResponse({"error": "No active session"}, status_code=400)
 
-    mailjet_client = MailjetClient()
-    mailjet_client.send_reset_password_email(email, token, app)
-    return {"msg": "Password recovery email sent"}
+    post_logout_redirect_uri = f"{BASE_URL}/api/v2/logout"
+    logout_params = {"id_token_hint": id_token, "state": logout_state, "post_logout_redirect_uri": post_logout_redirect_uri}
+
+    session_id = request.cookies.get("session")
+    if session_id:
+        redis_client.set(name=f"logout_state:{session_id}", value=logout_state, ex=3600)
+
+    logout_url = f"{PROCONNECT_OAUTH_ROOT_URL}/session/end?{urllib.parse.urlencode(logout_params)}"
+    return RedirectResponse(url=logout_url)
 
 
-@router.post("/reset_password", tags=["login"])
-def reset_password(
-    form_data: schemas.ResetPasswordForm,
-    db: Session = Depends(get_db),
-) -> dict[str, str]:
-    token = form_data.token
-    password = form_data.password
-    password_reset_token = crud.login.get_password_reset_token(db, token)
-    if not password_reset_token:
-        raise HTTPException(status_code=400, detail="Invalid token")
+@router.get("/logout", tags=["login"])
+async def logout(request: Request, state: str = None):
+    session_id = request.cookies.get("session")
+    stored_state = redis_client.get(f"logout_state:{session_id}") if session_id else None
 
-    dt_ttl = datetime.utcnow() - timedelta(seconds=PASSWORD_RESET_TOKEN_TTL)
-    if password_reset_token.created_at < dt_ttl:
-        raise HTTPException(status_code=400, detail="Expired token")
+    if not state or state != stored_state:
+        return JSONResponse({"error": "Invalid state"}, status_code=400)
 
-    user_id = password_reset_token.user_id
-    user = crud.user.get_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="Incorrect email or password")
+    if session_id:
+        redis_client.delete(session_id)
+        redis_client.delete(f"logout_state:{session_id}")
 
-    if not user.is_confirmed:
-        raise HTTPException(400, detail="User not confirmed")
-
-    user.hashed_password = crud.user.get_hashed_password(password)
-    crud.login.delete_password_reset_token(db, user_id)
-    return {"msg": "Password updated successfully"}
+    request.session.clear()
+    response = RedirectResponse(url=FRONTEND_BASE_URL)
+    response.delete_cookie("session")
+    return response

@@ -3,12 +3,11 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
-import app.tests.utils.login as login
 import app.tests.utils.openai as openai
 from app.tests.test_api import TestApi, log_and_assert
 
 from pyalbert.clients import LlmClient
-from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD, LLM_TABLE
+from pyalbert.config import LLM_TABLE
 
 # Define multiple test cases for conversations
 conversation_testcases = [
@@ -69,27 +68,27 @@ class TestEndpointsUser(TestApi):
         }
 
         # Unauthenticated user
-        response = openai.chat_completions(client, None, conversation)
+        response = openai.chat_completions(client, conversation)
         assert response.status_code in [400, 401, 403]
 
     @pytest.mark.parametrize("conversation", conversation_testcases)
     @pytest.mark.parametrize("rag", rag_testcases)
     @pytest.mark.parametrize("stream", [True, False])
     def test_chat_completion(self, client: TestClient, conversation, rag, stream):
+        model_ = LLM_TABLE[0]
+        api_key = model_["key"]
+
         conversation["stream"] = stream
         if rag:
             conversation["rag"] = rag
-
-        # Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
-        assert response.status_code == 200
-        token = response.json()["token"]
-
+            
         # Authenticated user
         if stream:
-            response, _ = asyncio.run(openai.chat_completion_stream(client, token, conversation))
+            response, _ = asyncio.run(
+                openai.chat_completion_stream(client, conversation, key=api_key)
+            )
         else:
-            response = openai.chat_completions(client, token, conversation)
+            response = openai.chat_completions(client, conversation, key=api_key)
 
         log_and_assert(response, 200)
 
@@ -101,22 +100,31 @@ class TestEndpointsUser(TestApi):
             assert "content" in response_json["choices"][0]["message"]
 
         # Test LlmClient
-        model_ = LLM_TABLE[0]
         model_name = model_["model"]
-        model_url = model_["url"]
-        aclient = LlmClient(model_name, base_url=model_url, api_key="something")
-        result = aclient.generate(messages=conversation["messages"], rag=rag)
+        aclient = LlmClient(model_name)
+     
+        try:
+            result = aclient.generate(messages=conversation["messages"], rag=rag)
+        except Exception as e:
+            print("Exception occurred:", e)
+            result = None
+
+        if result is None:
+            print("Result is None. Likely due to an authentication error or an issue with the request.")
+        else:
+            print("Result:", result)
+
+        assert result is not None, "Result should not be None"
+        assert hasattr(result, 'choices'), "Result should have 'choices' attribute"
         assert len(result.choices[0].message.content) > 0
 
     @pytest.mark.parametrize("input", embedding_testcases)
     def test_create_embeddings(self, client: TestClient, input):
-        # Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
-        assert response.status_code == 200
-        token = response.json()["token"]
+        model_ = LLM_TABLE[0]
+        api_key = model_["key"]
 
         # Authenticated user
-        response = openai.create_embeddings(client, token, input)
+        response = openai.create_embeddings(client, data=input, key=api_key)
 
         log_and_assert(response, 200)
 

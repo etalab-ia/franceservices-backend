@@ -1,36 +1,21 @@
-import hashlib
-from datetime import datetime, timedelta
+from typing import Annotated
 
-from jose import jwt
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app import crud
 
-from pyalbert.config import ACCESS_TOKEN_TTL, SECRET_KEY
-
-ALGORITHM = "HS256"
+from pyalbert.config import ALBERT_API_KEY
 
 
-def encode_token(user_id):
-    dt_now = datetime.utcnow()
-    payload = {
-        "exp": dt_now + timedelta(seconds=ACCESS_TOKEN_TTL),
-        "iat": dt_now,
-        "sub": str(user_id),  # with python-jose jwt, sub must be a string
-    }
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+def decode_api_token(token):
+    return crud.user.resolve_user_token(str(token))
 
 
-def decode_token(db, token):
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    if crud.login.get_blacklist_token(db, token):
-        raise Exception("Blacklisted token")
-    return int(payload["sub"])
-
-
-def encode_api_token(token: str):
-    hash = hashlib.sha256(token.encode()).hexdigest()
-    return hash
-
-
-def decode_api_token(db, token):
-    return crud.user.resolve_user_token(db, token)
+def check_api_key(
+    api_key: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer(scheme_name="API key"))],
+):
+    if api_key.scheme != "Bearer":
+        raise HTTPException(status_code=403, detail="Invalid authentication scheme")
+    if api_key.credentials != ALBERT_API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API key")

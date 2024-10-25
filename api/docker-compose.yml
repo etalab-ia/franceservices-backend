@@ -7,7 +7,6 @@ services:
     environment:
       - APP_VERSION=1.0.0
       - MODELS_URLS="['http://localhost:8080']"
-      - SECRET_KEY=changeme
       - ELASTIC_HOST=elasticsearch
       - ELASTIC_PORT=9200
       - ELASTIC_PASSWORD=changeme
@@ -15,16 +14,13 @@ services:
       - QDRANT_GRPC_PORT=6334
       - QDRANT_REST_PORT=6333
       - POSTGRES_URI=postgresql://postgres:changeme@postgres:5432/postgres
-      - FIRST_ADMIN_USERNAME=admin
-      - FIRST_ADMIN_EMAIL=admin@changeme.com
-      - FIRST_ADMIN_PASSWORD=changeme
-      - MJ_API_KEY=changeme
-      - MJ_API_SECRET=changeme
       - CONTACT_EMAIL=contact@changeme.com
       - BACKEND_CORS_ORIGINS="*"
       - API_WHITELIST_FILE=pyalbert/config/whitelist_config.json
-      - FRONT_URL=http://localhost:3000
       - API_URL=http://localhost:8000
+      - REDIS_HOST=http://localhost
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=changeme
     ports:
       - 8000:8090
     depends_on:
@@ -48,3 +44,11 @@ services:
       timeout: 60s
       retries: 5
       start_period: 80s
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ./data/redis:/data

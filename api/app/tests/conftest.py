@@ -10,15 +10,13 @@ import requests
 from fastapi.testclient import TestClient
 
 os.environ["ENV"] = "unittest"
-from app.db.create_admin_user import get_or_create_admin_user
 from app.db.session import SessionLocal
 from app.main import app
 
-from pyalbert.config import ELASTIC_PORT, LLM_TABLE, QDRANT_REST_PORT
+from pyalbert.config import ELASTIC_PORT, LLM_TABLE, PROCONNECT_PORT, QDRANT_REST_PORT
 
 if len(LLM_TABLE) > 0:
     LLM_HOST, LLM_PORT = urlparse(LLM_TABLE[0]["url"]).netloc.split(":")
-
 
 def start_mock_server(
     command, health_route="/healthcheck", health_headers=None, timeout=10, interval=1, cwd=None
@@ -118,10 +116,16 @@ def client() -> Generator:
 
 @pytest.fixture(scope="session")
 def db() -> Generator:
-    print("Setup session...")
     try:
         session = SessionLocal()
         yield session
     finally:
         session.close()
     print("Teardown session.")
+
+# proconnect
+@pytest.fixture(scope="session")
+def mock_server_proconnect():
+    process = start_mock_server(["uvicorn", "app.tests.mockups.proconnect:app", "--port", PROCONNECT_PORT], cwd=APP_FOLDER)
+    yield
+    process.kill()

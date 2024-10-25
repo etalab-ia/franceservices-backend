@@ -28,7 +28,7 @@ def auto_set_chat_name(chat_id: int, stream: schemas.StreamCreate) -> str | Iter
         # Update db_chat
         db_chat = crud.chat.get_chat(db, chat_id)
         if not db_chat:
-            return
+            return None
 
         db_chat.chat_name = chat_name
         db.commit()

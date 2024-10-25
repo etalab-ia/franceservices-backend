@@ -1,45 +1,77 @@
 import pytest
 from fastapi.testclient import TestClient
+import requests
 
 import app.tests.utils.chat as chat
-import app.tests.utils.login as login
 from app.tests.test_api import TestApi
-
-from pyalbert.config import FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD
-
+from pyalbert.config import PROCONNECT_URL
 
 class TestEndpointsChat(TestApi):
-    # TODO: add assert on response json
     @pytest.mark.asyncio
+    @pytest.mark.usefixtures("mock_server_proconnect")
     def test_chat(self, client: TestClient):
-        # Sign In:
-        response = login.sign_in(client, FIRST_ADMIN_EMAIL, FIRST_ADMIN_PASSWORD)
-        assert response.status_code == 200
-        token = response.json()["token"]
+        # Test login
+        login_response = requests.get(f"{PROCONNECT_URL}/mocked-login")
+        assert login_response.status_code == 200
+        assert "session" in login_response.cookies
+
+        # Attach session cookie to client  
+        session_cookie = login_response.cookies["session"]
+        client.cookies.set("session", session_cookie)
 
         # Read Chats:
-        response = chat.read_chats(client, token)
+        response = chat.read_chats(client)
         assert response.status_code == 200
+       
+        assert isinstance(response.json(), list), "Expected a list of chats"
 
         # Create Chat:
-        response = chat.create_chat(client, token, "qa")
+        response = chat.create_chat(client, "qa")
         assert response.status_code == 200
-        chat_id = response.json()["id"]
+        chat_data = response.json()
+     
+        assert "id" in chat_data, "Expected chat_id in response"
+        chat_id = chat_data["id"]
+        assert chat_data["chat_type"] == "qa", "Chat type should be 'qa'"
 
         # Read Chat:
-        response = chat.read_chat(client, token, chat_id)
+        response = chat.read_chat(client, chat_id)
         assert response.status_code == 200
+        assert response.json()["id"] == chat_id, "Chat ID should match"
 
         # Update Chat:
+        new_chat_name = "My new chat name"
+        new_chat_type = "meeting"
         response = chat.update_chat(
-            client, token, chat_id, chat_name="My new chat name", chat_type="meeting"
+            client, chat_id, chat_name=new_chat_name, chat_type=new_chat_type
         )
         assert response.status_code == 200
+        updated_chat = response.json()
+       
+        assert updated_chat["chat_name"] == new_chat_name, "Chat name should be updated"
+        assert updated_chat["chat_type"] == new_chat_type, "Chat type should be updated"
 
-        # Read Chat:
-        response = chat.read_chat(client, token, chat_id)
+        # Read Chat again to verify updates:
+        response = chat.read_chat(client, chat_id)
         assert response.status_code == 200
+        read_chat = response.json()
+        assert read_chat["chat_name"] == new_chat_name, "Updated chat name should persist"
+        assert read_chat["chat_type"] == new_chat_type, "Updated chat type should persist"
 
         # Delete Chat:
-        response = chat.delete_chat(client, token, chat_id)
+        response = chat.delete_chat(client, chat_id)
         assert response.status_code == 200
+
+        # Verify chat is deleted:
+        response = chat.read_chat(client, chat_id)
+        assert response.status_code == 404, "Chat should not be found after deletion"
+
+        # Test logout
+        logout_response = requests.get(f"{PROCONNECT_URL}/mocked-logout", cookies=client.cookies)
+        assert logout_response.status_code == 200
+        assert "session" not in logout_response.cookies
+
+        # Verify that we can't access chats after logout
+        response = chat.read_chats(client)
+      
+        assert response.status_code == 401, "Should not be able to read chats after logout"

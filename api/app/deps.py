@@ -1,11 +1,13 @@
-from fastapi import Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import HTTPException
+from itsdangerous import URLSafeSerializer
 from starlette.requests import Request
 
-from app import crud, models
-from app.auth import decode_api_token, decode_token
 from app.db.session import SessionLocal
+from helpers.redis.redis_session_middleware import redis_client
+from pyalbert.config import SECRET_KEY
+from app.crud.user import UserInfo
 
+serializer = URLSafeSerializer(SECRET_KEY)
 
 def get_db():
     db = SessionLocal()
@@ -13,32 +15,24 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> models.User:
-    """Get authenticated user from the Bearer authorization header"""
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        raise HTTPException(400, detail="Authorization header must be provided")
-
+ 
+def get_current_user(request: Request) -> UserInfo:
+    session_id = request.cookies.get("session")
+    
+    if not session_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    session_data = redis_client.get(session_id)
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    
     try:
-        token = auth_header.split(" ")[1]
+        user_data = serializer.loads(session_data)
+        if "user" in user_data:
+            user = UserInfo(**user_data["user"])
+        else:
+            user = UserInfo(**user_data)
+        return user
     except Exception as e:
-        raise HTTPException(401, detail="Unauthorized") from e
-
-    try:
-        user = decode_api_token(db, token)
-        if not user:
-            raise NotImplementedError
-    except Exception as e:
-        try:
-            user_id = decode_token(db, token)
-            user = crud.user.get_user(db, user_id)
-        except Exception as e2:
-            raise HTTPException(401, detail="Unauthorized") from e2
-
-    if not user:
-        raise HTTPException(404, detail="User not found")
-    if not user.is_confirmed:
-        raise HTTPException(400, detail="User not confirmed")
-    return user
+        print(f"Error: {e}")
+        raise HTTPException(status_code=401, detail="Invalid session data")

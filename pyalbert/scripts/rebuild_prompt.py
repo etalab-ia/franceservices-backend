@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 import sys
 
 sys.path.append(".")
@@ -10,11 +9,10 @@ from pyalbert.prompt import get_prompter
 if __name__ == "__main__":
     config = dict(
         base_url="https://franceservices.etalab.gouv.fr/",
-        username=os.getenv("FIRST_ADMIN_USERNAME"),
-        password=os.getenv("FIRST_ADMIN_PASSWORD"),
     )
     stream_id = 3
     client = AlbertClient(**config)
+    
 
     # Rebuild a single rag prompt
     # Note: retroactive, sensitive to changes in prompt template

@@ -29,7 +29,7 @@ def get_chats(
     return query.offset(skip).limit(limit).all()
 
 
-def create_chat(db: Session, chat: schemas.ChatCreate, user_id: int, commit=True) -> models.Chat:
+def create_chat(db: Session, chat: schemas.ChatCreate, user_id: str, commit=True) -> models.Chat:
     chat = chat.model_dump()
     db_chat = models.Chat(**chat, user_id=user_id)
     db.add(db_chat)

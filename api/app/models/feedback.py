@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -17,8 +17,7 @@ class Feedback(Base):
     message = Column(Text, nullable=True)
     reason = Column(Text, nullable=True)
 
-    user = relationship("User", back_populates="feedbacks")
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(String)
 
     stream = relationship("Stream", back_populates="feedback")
     stream_id = Column(Integer, ForeignKey("streams.id"))

@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 
 from app.db import base  # noqa: F401
-from app.db.create_admin_user import get_or_create_admin_user
 from app.db.session import SessionLocal
 
 from pyalbert.config import ENV
@@ -13,6 +12,4 @@ from pyalbert.config import ENV
 
 def init_db() -> Session:
     db = SessionLocal()
-    if ENV != "unittest":
-        get_or_create_admin_user(db)
     return db
