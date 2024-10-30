@@ -1,26 +1,22 @@
 import json
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Generator
+from typing import Callable, Generator
 
-import lz4.frame
+import lz4.frame  # type: ignore
 import requests
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-from qdrant_client import models as QdrantModels
+from elasticsearch import Elasticsearch  # type: ignore
+from qdrant_client import QdrantClient  # type: ignore
+from qdrant_client import models as QdrantModels  # type: ignore
 
 from pyalbert import collate_ix_name
 from pyalbert.config import (
-    ACCESS_TOKEN_TTL,
-    ALBERT_MODELS_API_KEY,
     API_PREFIX_V2,
     API_URL,
     ELASTICSEARCH_CREDS,
     ELASTICSEARCH_IX_VER,
     ELASTICSEARCH_URL,
-    FIRST_ADMIN_PASSWORD,
-    FIRST_ADMIN_USERNAME,
     HYBRID_COLLECTIONS,
     LLM_API_VER,
     LLM_TABLE,
@@ -40,17 +36,9 @@ from pyalbert.utils import log_and_raise_for_status, retry, sse_decoder
 class AlbertClient:
     CONFIG = {
         "base_url": API_URL,
-        "username": FIRST_ADMIN_USERNAME,
-        "password": FIRST_ADMIN_PASSWORD,
     }
 
     def __init__(self, api_key=None, **user_config):
-        if api_key is not None and (user_config.get("username") or user_config.get("password")):
-            print(
-                "Error: You need to either set the api_key or the username/password couple, but not both at the same time."
-            )
-            exit(2)
-
         config = self.CONFIG
         if user_config:
             config.update(user_config)
@@ -58,44 +46,31 @@ class AlbertClient:
         self.url = (
             config["base_url"].rstrip("/") + "/" + API_PREFIX_V2.strip("/") if API_PREFIX_V2 else ""
         )
-        self.username = config["username"]
-        self.password = config["password"]
 
-        # Token:
-        self.token = None
-        self.token_dt = None
-        self.token_ttl = ACCESS_TOKEN_TTL - 2
         self.api_key = api_key
 
-    def _is_token_expired(self):
-        if self.token is None or self.token_dt is None:
-            return True
-        dt_ttl = datetime.utcnow() - timedelta(seconds=self.token_ttl)
-        return self.token_dt < dt_ttl
 
     def _sign_in(self):
         json_data = {"username": self.username, "password": self.password}
         response = self._fetch("POST", "/sign_in", json_data=json_data)
-        self.token = response.json()["token"]
-        self.token_dt = datetime.utcnow()
+
+        self.access_token = response.json()["access_token"]
+        self.refresh_token = response.json()["refresh_token"]
 
     def _fetch(self, method, route, headers=None, json_data=None, stream=None):
-        d = {
+        d: dict[str, Callable] = {
             "POST": requests.post,
             "GET": requests.get,
             "PUT": requests.put,
             "DELETE": requests.delete,
         }
+
         response = d[method](f"{self.url}{route}", headers=headers, json=json_data, stream=stream)
         log_and_raise_for_status(response, "Albert API error")
         return response
 
     def _signed_in_fetch(self, method, route, json_data=None, stream=None):
-        if self.api_key:
-            self.token = self.api_key
-        elif self._is_token_expired():
-            self._sign_in()
-        headers = {"Authorization": f"Bearer {self.token}"}
+        headers = {"access_token": self.access_token, "refresh_token": self.refresh_token}
         return self._fetch(method, route, headers=headers, json_data=json_data, stream=stream)
 
     def search(
@@ -141,7 +116,7 @@ class AlbertClient:
             return None
         return lz4.frame.decompress(bytes.fromhex(stream["prompt"])).decode("utf-8")
 
-    def review_chat(self, chat_id: int) -> str | None:
+    def review_chat(self, chat_id: int) -> dict | None:
         """Get the raw prompt used for the given stream id"""
         chat = self.get_full_chat(chat_id)
         return chat
@@ -171,9 +146,9 @@ class AlbertClient:
 
 
 class LlmClient:
-    def __init__(self, model: str, api_key=None, base_url=None):
+    def __init__(self, model: str, base_url=None, api_key=None):
         self.model = model
-        self.api_key = api_key
+        self.key = None
         if not base_url:
             model_ = next((m for m in LLM_TABLE if m["model"] == model), None)
             if not model_:
@@ -181,10 +156,13 @@ class LlmClient:
 
             self.url = model_["url"]
             self.url = f"{self.url}/{LLM_API_VER}" if LLM_API_VER else self.url
+            self.key = model_["key"]
         else:
             self.url = base_url
 
         self.url = self.url.rstrip("/")
+        if api_key is not None:
+            self.key = api_key
 
     @staticmethod
     def _get_streaming_response(response: requests.Response) -> Generator[bytes, None, None]:
@@ -217,11 +195,11 @@ class LlmClient:
             json_data["rag"] = RagParams(**rag).model_dump()
 
         headers = None
-        if self.api_key:
-            headers = {"Authorization": f"Bearer {self.api_key}"}
-        elif ALBERT_MODELS_API_KEY:
-            headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
+
+        if self.key:
+            headers = {"Authorization": f"Bearer {self.key}"}
         url = f"{self.url}{path}"
+
         response = requests.post(url, headers=headers, json=json_data, stream=stream)
         log_and_raise_for_status(response, "Albert API error")
 
@@ -245,9 +223,9 @@ class LlmClient:
     ) -> list[float] | list[list[float]] | dict:
         """Simple interface to create an embedding vector from a text input or a list of texd inputs."""
         model = model or RAG_EMBEDDING_MODEL
-        model, url = next(
-            ((d["model"], d["url"]) for d in LLM_TABLE if d["model"] == model),
-            (None, None),
+        model, url, key = next(
+            ((d["model"], d["url"], d["key"]) for d in LLM_TABLE if d["model"] == model),
+            (None, None, None),
         )
 
         if not model:
@@ -262,8 +240,8 @@ class LlmClient:
         headers = None
         if api_key:
             headers = {"Authorization": f"Bearer {api_key}"}
-        elif ALBERT_MODELS_API_KEY:
-            headers = {"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"}
+        elif key:
+            headers = {"Authorization": f"Bearer {key}"}
         url = f"{url}/{LLM_API_VER}{path}" if LLM_API_VER else f"{url}{path}"
         response = requests.post(url, headers=headers, json=json_data)
         log_and_raise_for_status(response, "LLM API error")
@@ -279,29 +257,46 @@ class LlmClient:
         return results
 
 
+@dataclass
+class SearchEngineConfig:
+    # Hybrid search is activated by default in the current implementation
+    # for the cllection in {hybrid_collections}
+    default_engine: str = "elasticsearch"
+    hybrid_collections: list[str] = field(default_factory=lambda: HYBRID_COLLECTIONS.copy())
+    es_url: str = ELASTICSEARCH_URL
+    es_creds: tuple[str, str] = ELASTICSEARCH_CREDS
+    es_col_version: str = ELASTICSEARCH_IX_VER
+    qdrant_url: str = QDRANT_URL
+    qdrant_grpc_port: str = QDRANT_GRPC_PORT
+    qdrant_rest_port: str = QDRANT_REST_PORT
+    qdrant_use_grpc: bool = QDRANT_USE_GRPC
+    qdrant_col_version: str = QDRANT_IX_VER
+
+
 class SearchEngineClient:
-    # Global config
-    CONFIG = {
-        "default_engine": "elasticsearch",
-        "hybrid_collections": HYBRID_COLLECTIONS,
-        # Elastic config
-        "es_url": ELASTICSEARCH_URL,
-        "es_creds": ELASTICSEARCH_CREDS,
-        "es_col_version": ELASTICSEARCH_IX_VER,
-        # Qdrant config
-        "qdrant_url": QDRANT_URL,
-        "qdrant_grpc_port": QDRANT_GRPC_PORT,
-        "qdrant_rest_port": QDRANT_REST_PORT,
-        "qdrant_use_grpc": QDRANT_USE_GRPC,
-        "qdrant_col_version": QDRANT_IX_VER,
-    }
-
     def __init__(self, **config):
-        self.config = self.CONFIG.copy()
+        default_config = SearchEngineConfig()
         if config:
-            self.config.update(config)
+            for key, value in config.items():
+                if hasattr(default_config, key):
+                    setattr(default_config, key, value)
+                else:
+                    raise KeyError(f"Invalid config key: {key}")
+        self.config = default_config
 
-        self.config = namedtuple("Config", self.config.keys())(**self.config)
+    # Get document from elasticsearch in the current implementation
+    def get_document(self, index_name: str, uid: str) -> dict:
+        index = collate_ix_name(index_name, ELASTICSEARCH_IX_VER)
+        client = Elasticsearch(self.config.es_url, basic_auth=self.config.es_creds)
+
+        if index_name == "sheets":
+            doc = client.get(index=index, id=uid)["_source"]
+        elif index_name == "chunks":
+            doc = client.get(index=index, id=uid)["_source"]
+        else:
+            raise NotImplementedError("Index unkown")
+
+        return doc
 
     def search(
         self,
@@ -332,7 +327,7 @@ class SearchEngineClient:
         :param k: The constant k in the RRF formula
         :return: A combined list of results with updated scores
         """
-        combined_scores = {}
+        combined_scores: dict[str, float] = {}
         doc_map = {}
         for results in group_results:
             for rank, result in enumerate(results):
@@ -384,14 +379,9 @@ class SearchEngineClient:
         # Lexical search
         fuzziness = {}
         if len(query.split()) < 25:
-            fuzziness =  {"fuzziness": "AUTO"}
+            fuzziness = {"fuzziness": "AUTO"}
         lexical_query = {
-            "multi_match": {
-                "query": query,
-                "type": "best_fields",
-                "tie_breaker": 0.3,
-                **fuzziness
-            }
+            "multi_match": {"query": query, "type": "best_fields", "tie_breaker": 0.3, **fuzziness}
         }
 
         lexical_query = {

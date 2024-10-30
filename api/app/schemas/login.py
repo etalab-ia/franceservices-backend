@@ -14,7 +14,7 @@ class App(str, Enum):
 class SignInForm(BaseModel):
     username: str | None = None
     email: EmailStr | None = None
-    password: constr(pattern=PASSWORD_PATTERN)
+    password: str | None = None
 
 
 class SendResetPasswordEmailForm(BaseModel):

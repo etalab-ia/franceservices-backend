@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Generator
 
-from tqdm import tqdm
+from tqdm import tqdm  # type: ignore
 
 from pyalbert.clients import LlmClient
 
@@ -13,7 +13,7 @@ class CorpusHandler(ABC):
         self._corpus = corpus
 
     @classmethod
-    def create_handler(cls, corpus_name: str, corpus:list[dict]) -> "CorpusHandler":
+    def create_handler(cls, corpus_name: str, corpus: list[dict]) -> "CorpusHandler":
         """Get the appropriate handler subclass from the string corpus name."""
         corpuses = {
             "spp_experiences": SppExperiencesHandler,
@@ -37,7 +37,7 @@ class CorpusHandler(ABC):
             end_idx = min(start_idx + batch_size, len(corpus))
             yield corpus[start_idx:end_idx]
 
-    def iter_docs_embeddings(self, batch_size: int) -> Generator[tuple[list], None, None]:
+    def iter_docs_embeddings(self, batch_size: int) -> Generator[tuple[list, list], None, None]:
         desc = f"Processing corpus {self._name} with embeddings..."
         for batch in self.iter_docs(batch_size=batch_size, desc=desc):
             batch_embeddings = embed([self.doc_to_chunk(x) for x in batch])

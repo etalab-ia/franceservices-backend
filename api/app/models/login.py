@@ -19,8 +19,7 @@ class PasswordResetToken(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     token = Column(String(500), unique=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    user = relationship("User", back_populates="password_reset_token")

@@ -4,8 +4,11 @@ from pathlib import Path
 from typing import Any, Optional
 
 import yaml
-from huggingface_hub import hf_hub_download
-from huggingface_hub.utils._errors import EntryNotFoundError, RepositoryNotFoundError
+from huggingface_hub import hf_hub_download  # type: ignore
+from huggingface_hub.utils._errors import (  # type: ignore
+    EntryNotFoundError,
+    RepositoryNotFoundError,
+)
 from jinja2 import BaseLoader, Environment, Template, meta
 from pydantic import BaseModel
 
@@ -143,7 +146,7 @@ class PromptConfig(BaseModel):
             logger.info(f"prompt_config configuration not found for repo {hf_repo_id}")
             config = {"global_config": {}}
 
-        return cls(**config, exclude_unset=True)
+        return cls(**config, exclude_unset=True)  # type: ignore
 
     @classmethod
     def from_file(cls, config_filename):
@@ -303,6 +306,9 @@ def prompts_from_llm_table(table: list[dict]) -> dict[str, dict]:
 # Cache prompts templates to be faster
 PROMPTS = {}
 
+def get_prompts():
+    return PROMPTS
+
 
 class Prompter:
     # Default sampling params fo a given child class
@@ -359,7 +365,7 @@ class Prompter:
             self.template["default"] = self.template.get("default") or {}
 
         # Eventually stores the sources returned by the last RAG prompt built
-        self.sources = None
+        self.sources: list | None = None
 
     @prompt_encoder
     @sources_length_checker
