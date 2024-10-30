@@ -1,7 +1,7 @@
 import sys
 
 from helpers.redis.redis_session_middleware import RedisSessionMiddleware
-
+from helpers.redis.csrf_middleware import CSRFMiddleware
 sys.path.append("..")
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import JSONResponse
@@ -52,6 +52,8 @@ app = FastAPI(
 )
 
 app.add_middleware(ErrorLoggingMiddleware)
+
+app.add_middleware(CSRFMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

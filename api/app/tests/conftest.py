@@ -13,7 +13,7 @@ os.environ["ENV"] = "unittest"
 from app.db.session import SessionLocal
 from app.main import app
 
-from pyalbert.config import ELASTIC_PORT, LLM_TABLE, PROCONNECT_PORT, QDRANT_REST_PORT
+from pyalbert.config import ELASTIC_PORT, LLM_TABLE, PROCONNECT_PORT, PROCONNECT_URL, QDRANT_REST_PORT
 
 if len(LLM_TABLE) > 0:
     LLM_HOST, LLM_PORT = urlparse(LLM_TABLE[0]["url"]).netloc.split(":")
@@ -104,9 +104,25 @@ def mock_server_models():
 
 
 @pytest.fixture(scope="module")
-def client() -> Generator:
-    with TestClient(app) as c:
-        yield c
+def client() -> Generator[TestClient, None, None]:
+    """
+    Create a test client with authentication for all tests
+    """
+    with TestClient(app) as test_client:
+        # Login and set tokens
+        login_response = requests.get(f"{PROCONNECT_URL}/mocked-login")
+        assert login_response.status_code == 200
+        
+        # Set session cookie
+        session_cookie = login_response.cookies["session"]
+        test_client.cookies.set("session", session_cookie)
+        
+        # Set CSRF token in both cookie and header
+        csrf_token = login_response.cookies["csrftoken"]
+        test_client.cookies.set("csrftoken", csrf_token)
+        test_client.headers["csrftoken"] = csrf_token
+        
+        yield test_client
 
 
 #

@@ -15,13 +15,7 @@ class TestEndpointsStream(TestApi):
     @pytest.mark.asyncio
     @pytest.mark.usefixtures("mock_server_proconnect")
     def test_user_stream(self, client: TestClient):
-        # Sign In:
-        login_response = requests.get(f"{PROCONNECT_URL}/mocked-login")
-        # Attach session cookie to client
-        session_cookie = login_response.cookies["session"]
-        client.cookies.set("session", session_cookie)
-
-        # Read Streams:
+       # Read Streams:
         response = stream.read_streams(client)
         assert response.status_code == 200
 
@@ -50,18 +44,13 @@ class TestEndpointsStream(TestApi):
     @pytest.mark.asyncio
     @pytest.mark.usefixtures("mock_server_proconnect")
     def test_chat_stream(self, client: TestClient):
-        # Sign In:
-        login_response = requests.get(f"{PROCONNECT_URL}/mocked-login")
-        # Attach session cookie to client
-        session_cookie = login_response.cookies["session"]
-        client.cookies.set("session", session_cookie)
-
         # Read Streams:
         response = stream.read_streams(client)
         assert response.status_code == 200
 
         # Create Chat:
         response = chat.create_chat(client, "meeting")
+        print("response: ",response)
         assert response.status_code == 200
         chat_id = response.json()["id"]
 

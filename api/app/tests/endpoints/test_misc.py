@@ -12,15 +12,6 @@ class TestEndpointsMisc(TestApi):
     @pytest.mark.asyncio
     @pytest.mark.usefixtures("mock_server_proconnect")
     def test_misc(self, client: TestClient):
-        # Sign In:
-        login_response = requests.get(f"{PROCONNECT_URL}/mocked-login")
-        assert login_response.status_code == 200
-        assert "session" in login_response.cookies
-
-        # Attach session cookie to client
-        session_cookie = login_response.cookies["session"]
-        client.cookies.set("session", session_cookie)
-
         # Read models:
         response = misc.get_models(client)
         assert response.status_code == 200

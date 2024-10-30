@@ -57,6 +57,7 @@ embedding_testcases = [
 
 
 class TestEndpointsUser(TestApi):
+    @pytest.mark.usefixtures("mock_server_proconnect")
     def test_chat_completion_auth(self, client: TestClient):
         # Define the data payload with role/message structure
         conversation = {
@@ -74,6 +75,7 @@ class TestEndpointsUser(TestApi):
     @pytest.mark.parametrize("conversation", conversation_testcases)
     @pytest.mark.parametrize("rag", rag_testcases)
     @pytest.mark.parametrize("stream", [True, False])
+    @pytest.mark.usefixtures("mock_server_proconnect")
     def test_chat_completion(self, client: TestClient, conversation, rag, stream):
         model_ = LLM_TABLE[0]
         api_key = model_["key"]
@@ -119,6 +121,7 @@ class TestEndpointsUser(TestApi):
         assert len(result.choices[0].message.content) > 0
 
     @pytest.mark.parametrize("input", embedding_testcases)
+    @pytest.mark.usefixtures("mock_server_proconnect")
     def test_create_embeddings(self, client: TestClient, input):
         model_ = LLM_TABLE[0]
         api_key = model_["key"]

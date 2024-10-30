@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from itsdangerous import URLSafeSerializer
 import secrets
 from faker import Faker
+import uuid
 
 from app.crud.user import UserInfo
 from app.deps import get_current_user
@@ -38,11 +39,13 @@ async def userinfo(current_user: UserInfo = Depends(get_current_user)):
 async def mocked_login():
     user = create_fake_user()
     session_id = secrets.token_urlsafe()
+    csrf_token = str(uuid.uuid4())
     session_data = serializer.dumps(user.dict())
     redis_client.setex(session_id, PROCONNECT_SESSION_DURATION, session_data)
     
     response = JSONResponse({"message": "Logged in successfully"})
     response.set_cookie(key="session", value=session_id, httponly=True, max_age=PROCONNECT_SESSION_DURATION)
+    response.set_cookie(key="csrftoken", value=csrf_token, httponly=False, max_age=PROCONNECT_SESSION_DURATION)
     return response
 
 @app.get('/mocked-logout')
