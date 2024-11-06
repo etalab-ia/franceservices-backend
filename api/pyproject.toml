@@ -23,6 +23,7 @@ dependencies = [
     "uvicorn==0.30.1",
     "lz4==4.3.3",
     "pyalbert==0.7.6",
+    "itsdangerous"
 ]
 
 # Tests
