@@ -13,7 +13,5 @@ RUN pip install --no-cache-dir --default-timeout=100 .
 # add the rest of the code
 ADD . .
 
-RUN ln -s ../pyalbert pyalbert && pip install . pyalbert
-
 
 CMD ["bash", "start.sh"]

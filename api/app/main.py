@@ -30,10 +30,6 @@ logger = get_logger()
 
 init_db()
 
-print(BACKEND_CORS_ORIGINS)
-print(PROCONNECT_PORT)
-print(PROCONNECT_SESSION_DURATION)
-print(PROCONNECT_OAUTH_ROOT_URL)
 
 class ErrorLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

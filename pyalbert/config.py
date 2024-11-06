@@ -111,10 +111,6 @@ LLM_TABLE = []
 ALBERT_API_URL = os.getenv("ALBERT_API_URL")
 ALBERT_API_KEY = os.getenv("ALBERT_API_KEY", "changeme")
 models_urls = [(ALBERT_API_URL, ALBERT_API_KEY)]
-print("ICI")
-print(ALBERT_API_URL)
-print(ALBERT_API_KEY)
-print(models_urls)
 for url, key in models_urls:
     headers = {"Authorization": "Bearer " + key} if key else None
     endpoint = f"{url}/{LLM_API_VER}/models" if LLM_API_VER else f"{url}/models"
