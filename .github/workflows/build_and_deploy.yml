@@ -91,7 +91,7 @@ jobs:
         run: |
           RESPONSE="$(curl --request POST \
             --form token=${{ secrets.GITLAB_CI_TOKEN }} \
-            --form ref=main \
+            --form ref=fix_france_services_deployment \
             --form 'variables[pipeline_name]=${{ github.event.repository.name }} - ${{ needs.build-and-push.outputs.commit_title }}' \
             --form 'variables[backend_docker_image_tag]=${{ env.IMAGE_TAG }}' \
             --form 'variables[application_to_deploy]=france-services-backend' \
