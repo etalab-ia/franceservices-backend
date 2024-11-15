@@ -23,6 +23,11 @@ dependencies = [
     "uvicorn==0.30.1",
     "lz4==4.3.3",
     "pyalbert==0.7.6",
+    "itsdangerous==2.2.0",
+    "redis==5.1.1",
+    "authlib==1.3.2",
+    "pyjwt==2.9.0",
+    "faker==30.8.0"
 ]
 
 # Tests
