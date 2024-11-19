@@ -2,11 +2,8 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-from sqlalchemy.orm import Session
 
-from app import models
 from app.core import albert_request_intercept
-from app.deps import get_current_user
 
 from pyalbert import get_logger
 from pyalbert.config import LLM_API_VER, LLM_TABLE
@@ -30,7 +27,7 @@ async def forward_stream(
             params=request.query_params,
             json=json,
         ) as response:
-            #response.raise_for_status() ?
+            # response.raise_for_status() ?
             async for chunk in response.aiter_raw():
                 yield chunk
 
@@ -41,7 +38,6 @@ async def forward_stream(
 async def openai_api_proxy(
     request: Request,
     path: str,  # authentication needed
-    current_user: models.User = Depends(get_current_user),
 ):
     """
     Proxy endpoint that forwards requests to the OpenAI API.
@@ -74,7 +70,7 @@ async def openai_api_proxy(
     model = None
     target_url = None
     prompter = None
-    if request.method in ["POST", "PUT", "PATCH"]:
+    if request.method in ["GET", "POST", "PUT", "PATCH"]:
         try:
             # Request Interception
             json_body = await request.json()
@@ -134,7 +130,7 @@ async def openai_api_proxy(
         # @TODO: Handle other strategy (see tools in albert-api)
         sources = getattr(prompter, "sources", None)
         if sources:
-            data["rag_context"] = [{"strategy":"last", "references":sources}]
+            data["rag_context"] = [{"strategy": "last", "references": sources}]
 
         return data
     except httpx.HTTPStatusError as err:
