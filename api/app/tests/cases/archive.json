@@ -2,7 +2,8 @@
   "chat_name": "string",
   "chat_type": "meeting",
   "id": 1,
-  "operator": null,
+  "operators": ["test_operator"],
+  "themes": ["test_theme"],
   "stream_count": 2,
   "streams": [
     {
@@ -64,7 +65,6 @@
       "with_history": true
     }
   ],
-  "themes": null,
   "user_id": 1
 }
 

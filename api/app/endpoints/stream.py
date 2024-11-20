@@ -241,7 +241,7 @@ def start_stream(
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
 
-    if current_user.id not in (db_stream.user_id, chat.user_id):
+    if current_user.id not in (db_stream.user_id, getattr(db_stream.chat, "user_id", None)):
         raise HTTPException(403, detail="Forbidden")
 
     # Get and configure the request parameters
@@ -260,8 +260,8 @@ def start_stream(
     should_sids = db_stream.should_sids
     must_not_sids = db_stream.must_not_sids
     postprocessing = db_stream.postprocessing
-    operators = chat.operators
-    themes = chat.themes
+    operators = getattr(chat, "operators", None)
+    themes = getattr(chat, "themes", None)
 
     sources = None
     if db_stream.sources:
