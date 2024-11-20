@@ -409,6 +409,7 @@ class Prompter:
                 default=self.template["default"],
             )
             prompt = self.template["_template"].render(**data)
+            print("prompt", prompt)
             system_prompt = kwargs.get("system_prompt") or self.template.get("system_prompt") or self.config.get("system_prompt")  # fmt: skip
         else:
             prompt = kwargs["query"]

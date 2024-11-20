@@ -332,16 +332,25 @@ def _parse_xml_text(xml_file, structured=False) -> dict:
     doc["related_questions"] = questions
 
     # Get the Service/contact ressources
-    web_services = [
-        {
-            "title": normalize(q.find("Titre").get_text(" ", strip=True)),
-            "institution": normalize(q.find("Source").get_text(" ", strip=True)),
+    web_services = []
+    for q in soup.find_all("ServiceEnLigne"):
+        if not q.get("URL"):
+            continue
+            
+        title_tag = q.find("Titre")
+        source_tag = q.find("Source")
+        
+        if not title_tag:
+            continue
+            
+        service = {
+            "title": normalize(title_tag.get_text(" ", strip=True)),
+            "institution": normalize(source_tag.get_text(" ", strip=True)) if source_tag else "",
             "url": q["URL"],
             "type": q["type"],
         }
-        for q in soup.find_all("ServiceEnLigne")
-        if q.get("URL")
-    ]
+        web_services.append(service)
+        
     web_services = drop_duplicates(web_services, "title")
     doc["web_services"] = web_services
 

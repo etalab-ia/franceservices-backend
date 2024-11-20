@@ -11,6 +11,7 @@ api/app/tests/test_data/mailjet
 api/pyalbert
 api/../pyalbert
 databases/postgres/data
+api/data/
 #
 # Default
 #
