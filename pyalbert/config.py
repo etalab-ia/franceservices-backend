@@ -100,7 +100,7 @@ LLM_TABLE = []
 for url in MODELS_URLS:
     endpoint = f"{url}/{LLM_API_VER}/models" if LLM_API_VER else f"{url}/models"
     try:
-        response = requests.get(endpoint)
+        response = requests.get(endpoint, headers={"Authorization": f"Bearer {ALBERT_MODELS_API_KEY}"})
         response.raise_for_status()
         # Response body example:
         # {"object":"list","data":[{"object":"model","id":"intfloat/multilingual-e5-large"},{"object":"model","id":"AgentPublic/llama3-instruct-8b"}]}

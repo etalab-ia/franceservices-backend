@@ -76,7 +76,6 @@ class Stream(Base):
     temperature = Column(Float, nullable=False, default=0.2)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-
     prompt = Column(CompressedBytes, nullable=True)
     response = Column(Text, nullable=True)
     rag_sources = Column(JSON, nullable=True)

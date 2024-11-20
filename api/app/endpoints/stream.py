@@ -237,10 +237,11 @@ def start_stream(
     current_user: models.User = Depends(get_current_user),
 ) -> StreamingResponse:
     db_stream = crud.stream.get_stream(db, stream_id)
+    chat = db_stream.chat
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
 
-    if current_user.id not in (db_stream.user_id, getattr(db_stream.chat, "user_id", None)):
+    if current_user.id not in (db_stream.user_id, chat.user_id):
         raise HTTPException(403, detail="Forbidden")
 
     # Get and configure the request parameters
@@ -253,11 +254,14 @@ def start_stream(
     limit = db_stream.limit
     context = db_stream.context
     institution = db_stream.institution
+    
     links = db_stream.links
     temperature = db_stream.temperature
     should_sids = db_stream.should_sids
     must_not_sids = db_stream.must_not_sids
     postprocessing = db_stream.postprocessing
+    operators = chat.operators
+    themes = chat.themes
 
     sources = None
     if db_stream.sources:
@@ -309,6 +313,8 @@ def start_stream(
         should_sids=should_sids,
         must_not_sids=must_not_sids,
         history=history,
+        operators=operators,
+        themes=themes,
     )
 
     # Ptompt length in number of words

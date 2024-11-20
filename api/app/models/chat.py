@@ -18,7 +18,7 @@ class Chat(Base):
 
     chat_name = Column(Text, nullable=True)
     chat_type = Column(Text)
-    operator = Column(Text, nullable=True)
+    operators = Column(JSON, nullable=True)
     themes = Column(JSON, nullable=True)
 
     user = relationship("User", back_populates="chats")

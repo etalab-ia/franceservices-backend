@@ -16,7 +16,7 @@ class ChatBase(BaseModel):
     # Pydantic configuration:
     model_config = ConfigDict(use_enum_values=True)
     chat_type: ChatType
-    operator: str | None = None
+    operators: list[str] | None = None
     themes: list[str] | None = None
 
 
