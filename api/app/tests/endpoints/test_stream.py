@@ -58,7 +58,7 @@ class TestEndpointsStream(TestApi):
         assert response.status_code == 200
 
         # Create Chat:
-        response = chat.create_chat(client, token, "meeting")
+        response = chat.create_chat(client, token, "meeting", operators=["test_operator"], themes=["test_theme"])
         assert response.status_code == 200
         chat_id = response.json()["id"]
 

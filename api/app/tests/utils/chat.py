@@ -9,13 +9,11 @@ def read_chats(client: TestClient, token):
     return client.get(f"{ROOT_PATH}/chats", headers={"Authorization": f"Bearer {token}"})
 
 
-def create_chat(client: TestClient, token, chat_type):
+def create_chat(client: TestClient, token, chat_type, operators=None, themes=None):
     return client.post(
         f"{ROOT_PATH}/chat",
         headers={"Authorization": f"Bearer {token}"},
-        json={
-            "chat_type": chat_type,
-        },
+        json={"chat_type": chat_type, "operators": operators, "themes": themes},
     )
 
 
