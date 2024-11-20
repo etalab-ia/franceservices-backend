@@ -8,7 +8,7 @@ from .user import User
 
 
 class ChatType(str, Enum):
-    qa = "qa"
+    evaluations = "evaluations"
     meeting = "meeting"
 
 
