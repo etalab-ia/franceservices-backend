@@ -36,6 +36,8 @@ def create_user(db: Session, user: schemas.UserCreate, commit=True) -> models.Us
         username=user.username,
         email=user.email,
         hashed_password=get_hashed_password(user.password),
+        organization_id=user.organization_id,
+        organization_name=user.organization_name,
     )
     db.add(db_user)
     if commit:
