@@ -21,9 +21,7 @@ def get_healthcheck() -> dict[str, str]:
 # * Models *
 # **********
 @router.get("/models", tags=["misc"])
-def get_models(
-    current_user: models.User = Depends(get_current_user), response_model=dict[str, list[str]]
-) -> JSONResponse:
+def get_models(current_user: models.User = Depends(get_current_user), response_model=dict[str, list[str]]) -> JSONResponse:
     model_prompts = prompts_from_llm_table(LLM_TABLE)
     prompt_purge = ["template_string", "_template"]
     for k, v in model_prompts.items():
@@ -39,9 +37,7 @@ def get_models(
 
 
 @router.get("/institutions", tags=["misc"])
-def get_institutions(
-    current_user: models.User = Depends(get_current_user), response_model=list[str]
-) -> JSONResponse:
+def get_institutions(current_user: models.User = Depends(get_current_user), response_model=list[str]) -> JSONResponse:
     return JSONResponse(INSTITUTIONS)
 
 
@@ -51,7 +47,5 @@ def get_institutions(
 
 
 @router.get("/organizations/mfs", tags=["misc"])
-def get_mfs_organizations(
-    current_user: models.User = Depends(get_current_user), response_model=list[dict]
-) -> JSONResponse:
+def get_mfs_organizations(response_model=list[dict]) -> JSONResponse:
     return JSONResponse(MFS_ORGANIZATIONS)
