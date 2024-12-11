@@ -3,6 +3,7 @@ from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, Tex
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
+from app import schemas
 from app.db.base_class import Base
 
 
@@ -46,16 +47,15 @@ class Feedback(Base):
     stream_id = Column(Integer, ForeignKey("streams.id"))
 
     def to_dict(self):
-        result_dict = {column.name: getattr(self, column.name) for column in self.__table__.columns}
+        # For serialisation purpose
+        # @DEBUG/HELP1: AttributeError: 'str' object has no attribute '_sa_instance_state'
 
-        if self.user:
-            result_dict["user"] = {"id": self.user.id, "name": self.user.name}
-        else:
-            result_dict["user"] = None
+        # This raise an exception due to relationship !
+        # result = schemas.Stream.from_orm(self)
+        # Relationship are omitted:
+        column_names = [column.name for column in self.__table__.columns]
+        # Or equivalently
+        # column_names = [c.key for c in sqlalchemy.inspect(self).mapper.column_attrs]
+        result = schemas.Feedback(**{k: getattr(self, k) for k in column_names})
 
-        if self.stream:
-            result_dict["stream"] = {"id": self.stream.id, "title": self.stream.title}
-        else:
-            result_dict["stream"] = None
-
-        return result_dict
+        return result

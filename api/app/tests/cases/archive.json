@@ -13,8 +13,11 @@
         "id": 1,
         "is_good": true,
         "message": "that is excelent !",
-        "reason": null,
+        "negatives": null,
+        "note": 0,
+        "positives": null,
         "stream_id": 1,
+        "type": "chat",
         "user_id": 1
       },
       "id": 1,

@@ -42,8 +42,8 @@ class FeedbackBase(BaseModel):
     @model_validator(mode="after")
     def validate_model(self):
         if self.type == FeedbackType.chat:
-            if self.is_good is None or self.message is None:
-                raise ValueError("For 'chat' feedback, 'is_good' and 'message' are required.")
+            if self.is_good is None:
+                raise ValueError("For 'chat' feedback, 'is_good' is required.")
         elif self.type == FeedbackType.evaluations:
             if not self.positives or not self.negatives or self.note is None:
                 raise ValueError("For 'evaluations' feedback, 'positives', 'negatives', and 'note' are required.")

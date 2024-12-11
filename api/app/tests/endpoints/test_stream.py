@@ -86,11 +86,12 @@ class TestEndpointsStream(TestApi):
         assert response.status_code == 200
 
         # Send feedbacks
-        response = feedback.create_feedback(client, token, stream_id, {"is_good": True})
+        response = feedback.create_feedback(client, token, stream_id, {"is_good": True, "type": "chat", "message": "that is excelent !"})
+        print("response: ", response.json())
         assert response.status_code == 200
 
         response = feedback.create_feedback(
-            client, token, stream_id, {"message": "that is excelent !"}
+            client, token, stream_id, {"type": "chat", "is_good": True}
         )
         assert response.status_code == 200
         feedback_id = response.json()["id"]
