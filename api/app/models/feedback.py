@@ -1,9 +1,27 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Text
+from enum import Enum
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, Text, Enum as SQLAlchemyEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from app import schemas
 from app.db.base_class import Base
+
+
+class FeedbackType(str, Enum):
+    chat = "chat"
+    evaluations = "evaluations"
+
+
+class FeedbackPositives(str, Enum):
+    clair = "clair"
+    synthetique = "synthetique"
+    complet = "complet"
+    sources_fiables = "sources_fiables"
+
+
+class FeedbackNegatives(str, Enum):
+    incorrect = "incorrect"
+    incoherent = "incoherent"
+    manque_de_sources = "manque_de_sources"
 
 
 class Feedback(Base):
@@ -13,6 +31,10 @@ class Feedback(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
+    type = Column(SQLAlchemyEnum(FeedbackType, name="feedback_type"), nullable=False)
+    note = Column(Integer, nullable=True, default=0, comment="Note from 0 to 5")
+    positives = Column(JSON, nullable=True, comment="List of positive feedback values")
+    negatives = Column(JSON, nullable=True, comment="List of negative feedback values")
     is_good = Column(Boolean, nullable=True)
     message = Column(Text, nullable=True)
     reason = Column(Text, nullable=True)
@@ -24,15 +46,16 @@ class Feedback(Base):
     stream_id = Column(Integer, ForeignKey("streams.id"))
 
     def to_dict(self):
-        # For serialisation purpose
-        # @DEBUG/HELP1: AttributeError: 'str' object has no attribute '_sa_instance_state'
+        result_dict = {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
-        # This raise an exception due to relationship !
-        # result = schemas.Stream.from_orm(self)
-        # Relationship are omitted:
-        column_names = [column.name for column in self.__table__.columns]
-        # Or equivalently
-        # column_names = [c.key for c in sqlalchemy.inspect(self).mapper.column_attrs]
-        result = schemas.Feedback(**{k: getattr(self, k) for k in column_names})
+        if self.user:
+            result_dict["user"] = {"id": self.user.id, "name": self.user.name}
+        else:
+            result_dict["user"] = None
 
-        return result
+        if self.stream:
+            result_dict["stream"] = {"id": self.stream.id, "title": self.stream.title}
+        else:
+            result_dict["stream"] = None
+
+        return result_dict

@@ -46,7 +46,6 @@ def create_feedback(
     db_stream = crud.stream.get_stream(db, stream_id)
     if db_stream is None:
         raise HTTPException(404, detail="Stream not found")
-
     # Upsert feedback
     if not db_stream.feedback:
         db_feedback = crud.feedback.create_feedback(
