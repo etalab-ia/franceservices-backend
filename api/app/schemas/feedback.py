@@ -45,8 +45,11 @@ class FeedbackBase(BaseModel):
             if self.is_good is None:
                 raise ValueError("For 'chat' feedback, 'is_good' is required.")
         elif self.type == FeedbackType.evaluations:
-            if not self.positives or not self.negatives or self.note is None:
-                raise ValueError("For 'evaluations' feedback, 'positives', 'negatives', and 'note' are required.")
+            if self.note is None:
+                raise ValueError("For 'evaluations' feedback, 'note' is required.")
+            # At least one feedback list should be provided
+            if not self.positives and not self.negatives:
+                raise ValueError("For 'evaluations' feedback, at least 'positives' or 'negatives' is required.")
         else:
             raise ValueError("Feedback type must be either 'chat' or 'evaluations'.")
 
