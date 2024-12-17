@@ -44,7 +44,13 @@ def downgrade() -> None:
     # Convert 'negatives' back to ENUM with explicit casting
     op.execute("""
         ALTER TABLE feedbacks
-        ALTER COLUMN negatives TYPE VARCHAR USING negatives::TEXT
+        ALTER COLUMN negatives TYPE feedbacknegatives
+        USING CASE 
+            WHEN negatives::TEXT = 'incorrect' THEN 'incorrect'::feedbacknegatives
+            WHEN negatives::TEXT = 'incoherent' THEN 'incoherent'::feedbacknegatives
+            WHEN negatives::TEXT = 'manque_de_sources' THEN 'manque_de_sources'::feedbacknegatives
+            ELSE NULL
+        END
     """)
     op.alter_column('feedbacks', 'negatives',
                type_=postgresql.ENUM('incorrect', 'incoherent', 'manque_de_sources', name='feedbacknegatives'),
@@ -55,7 +61,14 @@ def downgrade() -> None:
     # Convert 'positives' back to ENUM with explicit casting
     op.execute("""
         ALTER TABLE feedbacks
-        ALTER COLUMN positives TYPE VARCHAR USING positives::TEXT
+        ALTER COLUMN positives TYPE feedbackpositives
+        USING CASE 
+            WHEN positives::TEXT = 'clair' THEN 'clair'::feedbackpositives
+            WHEN positives::TEXT = 'synthetique' THEN 'synthetique'::feedbackpositives
+            WHEN positives::TEXT = 'complet' THEN 'complet'::feedbackpositives
+            WHEN positives::TEXT = 'sources_fiables' THEN 'sources_fiables'::feedbackpositives
+            ELSE NULL
+        END
     """)
     op.alter_column('feedbacks', 'positives',
                type_=postgresql.ENUM('clair', 'synthetique', 'complet', 'sources_fiables', name='feedbackpositives'),

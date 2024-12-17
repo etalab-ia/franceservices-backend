@@ -32,7 +32,7 @@ class Feedback(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    type = Column(SQLAlchemyEnum(FeedbackType, name="feedback_type"), nullable=False)
+    type = Column(SQLAlchemyEnum(FeedbackType, name="feedback_type"), nullable=False, default=FeedbackType.chat)
     note = Column(Integer, nullable=True, default=0, comment="Note from 0 to 5")
     positives = Column(JSON, nullable=True, comment="List of positive feedback values")
     negatives = Column(JSON, nullable=True, comment="List of negative feedback values")
