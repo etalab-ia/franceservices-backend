@@ -19,9 +19,12 @@ class FeedbackPositives(str, Enum):
 
 
 class FeedbackNegatives(str, Enum):
-    incorrect = "incorrect"
-    incoherent = "incoherent"
+    erreurs_grammaires = "erreurs_grammaires"
+    hallucinations = "hallucinations"
+    imprecisions = "imprecisions"
+    inconsistance = "inconsistance"
     manque_de_sources = "manque_de_sources"
+    trop_long = "trop_long"
 
 
 class FeedbackBase(BaseModel):

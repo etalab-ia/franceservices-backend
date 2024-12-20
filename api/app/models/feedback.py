@@ -11,20 +11,6 @@ class FeedbackType(str, Enum):
     chat = "chat"
     evaluations = "evaluations"
 
-
-class FeedbackPositives(str, Enum):
-    clair = "clair"
-    synthetique = "synthetique"
-    complet = "complet"
-    sources_fiables = "sources_fiables"
-
-
-class FeedbackNegatives(str, Enum):
-    incorrect = "incorrect"
-    incoherent = "incoherent"
-    manque_de_sources = "manque_de_sources"
-
-
 class Feedback(Base):
     __tablename__ = "feedbacks"
 
