@@ -51,5 +51,10 @@ prompts:
     template: rag_gt_prompt_operators_template.jinja
     default:
         limit: 7
+  - mode: rag-gt-operators-llama
+    system_prompt: "Tu es Albert, le chatbot des Maisons France Service qui donne des réponses sourcées."
+    template: rag_gt_prompt_operators_llama_template.jinja
+    default:
+        limit: 7
   - mode: analysis-gt
     template: analysis_prompt_template.jinja
