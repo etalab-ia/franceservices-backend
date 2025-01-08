@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - main_without_pro_connect
+      - dev
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}/franceservices-backend
