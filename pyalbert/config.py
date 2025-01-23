@@ -66,7 +66,7 @@ API_PREFIX_V2 = API_PREFIX.rstrip("/") + "/" + API_ROUTE_VER if API_ROUTE_VER el
 API_PREFIX_V1 = API_PREFIX.rstrip("/") + "/v1"
 
 # Elasticsearch
-ELASTICSEARCH_IX_VER = "v5"
+ELASTICSEARCH_IX_VER = "v6"
 ELASTIC_HOST = os.environ.get("ELASTIC_HOST", "localhost")
 ELASTIC_PORT = os.environ.get("ELASTIC_PORT", "9200")
 ELASTICSEARCH_URL = f"http://{ELASTIC_HOST}:{ELASTIC_PORT}"
