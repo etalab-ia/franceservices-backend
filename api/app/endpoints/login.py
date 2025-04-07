@@ -67,9 +67,13 @@ def send_reset_password_email(
     token = uuid.uuid4().hex
     crud.login.create_password_reset_token(db, token, user_id, commit=False)
     db.commit()
-
-    mailjet_client = MailjetClient()
-    mailjet_client.send_reset_password_email(email, token, app)
+    try:
+        mailjet_client = MailjetClient()
+        mailjet_client.send_reset_password_email(email, token, app)
+    except Exception as e:
+        print("Failed to send email: ", e)
+        raise HTTPException(status_code=500, detail="Failed to send email")
+    print("Email sent successfully")
     return {"msg": "Password recovery email sent"}
 
 

@@ -8,8 +8,12 @@ class MailjetClient:
         self.mailjet = Client(auth=(MJ_API_KEY, MJ_API_SECRET))
 
     def _send_create(self, data):
-        result = self.mailjet.send.create(data=data)
-        return result.json()
+        try:
+            result = self.mailjet.send.create(data=data)
+            return result.json()
+        except Exception as e:
+            print("Error sending email:", e)
+            return None
 
     def _send(self, to, subject, text):
         data = {
