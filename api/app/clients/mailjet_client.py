@@ -5,7 +5,12 @@ from pyalbert.config import CONTACT_EMAIL, FRONT_URL, MJ_API_KEY, MJ_API_SECRET
 
 class MailjetClient:
     def __init__(self):
-        self.mailjet = Client(auth=(MJ_API_KEY, MJ_API_SECRET))
+        try:
+            self.mailjet = Client(auth=(MJ_API_KEY, MJ_API_SECRET))
+            print("Mailjet client initialized successfully")
+        except Exception as e:
+            print("Error initializing Mailjet client:", e)
+            raise e
 
     def _send_create(self, data):
         try:
@@ -22,7 +27,12 @@ class MailjetClient:
             "Subject": subject,
             "Text-part": text,
         }
-        return self._send_create(data)
+        try:
+            print("Sending email:", data)
+            return self._send_create(data)
+        except Exception as e:
+            print("Error sending email:", e)
+            return None
 
     def send_contact_email(self, user, subject, text, institution=None):
         to = CONTACT_EMAIL
