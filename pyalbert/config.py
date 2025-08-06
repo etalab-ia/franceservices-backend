@@ -88,7 +88,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")  # @deprecated
 # The sources that will be parsed, chunked, indexed and embeded for the RAG.
 SHEET_SOURCES = ["service-public", "travail-emploi"]
 # Default embedding model
-RAG_EMBEDDING_MODEL = "BAAI/bge-m3"
+RAG_EMBEDDING_MODEL = "embeddings-small"
 HYBRID_COLLECTIONS = ["spp_experiences", "chunks"]
 
 # Build the LLM table and from the LLM API endpoints
